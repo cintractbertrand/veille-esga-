@@ -17,17 +17,26 @@
     </div>
   </header>
 
-  <nav class="tabs wrap" role="tablist">
-    <button class="tab active" data-tab="semaine">Cette semaine</button>
-    <button class="tab" data-tab="calendrier">Calendrier</button>
-    <button class="tab" data-tab="categories">Par catégorie</button>
-    <button class="tab" data-tab="historique">Historique</button>
-    <button class="tab" data-tab="lecteur">Lecteur PV</button>
-  </nav>
+  <div class="barre">
+    <nav class="wrap equipes" aria-label="Équipes">
+      <span class="equipes-titre">Mon équipe</span>
+      <div class="chips" id="chips"></div>
+    </nav>
+    <nav class="tabs wrap" role="tablist">
+      <button class="tab active" data-tab="semaine">Cette semaine</button>
+      <button class="tab" data-tab="calendrier">Calendrier</button>
+      <button class="tab" data-tab="historique">Historique</button>
+      <button class="tab" data-tab="lecteur">Lecteur PV</button>
+    </nav>
+  </div>
 
   <main class="wrap">
     <section id="tab-semaine" class="panel active">
       <div class="card resume" id="resume"></div>
+      <div id="matchs-semaine-bloc" hidden>
+        <h2>Matchs des 7 prochains jours</h2>
+        <ul class="echeances" id="matchs-semaine"></ul>
+      </div>
       <h2>À ne pas manquer</h2>
       <ul class="echeances" id="a-venir"></ul>
       <h2>Toutes les mentions du club</h2>
@@ -45,16 +54,31 @@
         <span><i class="dot urgent"></i>Échéance urgente</span>
         <span><i class="dot attention"></i>À surveiller</span>
         <span><i class="dot info"></i>Info</span>
-        <span><i class="dot match"></i>Match cité dans un PV</span>
+        <span><i class="dot match"></i>Match</span>
       </div>
       <div class="cal" id="cal"></div>
       <div id="cal-jour" class="card cal-jour" hidden></div>
     </section>
 
-    <section id="tab-categories" class="panel">
-      <div class="chips" id="chips"></div>
-      <input id="recherche" class="search" type="search" placeholder="Rechercher (adversaire, commission, mot-clé…)">
-      <div id="cat-cards" class="cat-cards"></div>
+    <section id="tab-equipe" class="panel">
+      <div class="eq-head">
+        <h2 id="eq-titre"></h2>
+        <button class="btn" id="eq-fermer">Retour à tout le club</button>
+      </div>
+      <div class="eq-stats" id="eq-stats"></div>
+      <div id="eq-matchs-bloc" hidden>
+        <h2>Prochains matchs</h2>
+        <ul class="echeances" id="eq-matchs"></ul>
+        <div id="eq-matchs-passes" class="eq-passes"></div>
+      </div>
+      <h2 id="eq-ech-titre">Prochaines échéances</h2>
+      <ul class="echeances" id="eq-ech"></ul>
+      <div id="eq-amendes-bloc" hidden>
+        <h2 id="eq-amendes-titre">Amendes</h2>
+        <div id="eq-amendes"></div>
+      </div>
+      <h2>Toutes les mentions dans les PV</h2>
+      <input id="recherche" class="search" type="search" placeholder="Rechercher (adversaire, commission, joueur, mot-clé…)">
       <div id="items-cat" class="items"></div>
     </section>
 

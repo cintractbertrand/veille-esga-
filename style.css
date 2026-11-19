@@ -93,10 +93,6 @@ a { color: var(--club); }
 .chip.active { background: var(--club); border-color: var(--club); color: #fff; }
 .chip small { opacity: .75; }
 .search { width: 100%; margin: 12px 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); font: inherit; }
-.cat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 16px; }
-.cat-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; }
-.cat-card h3 { margin: 0 0 4px; }
-.cat-card p { margin: 2px 0; font-size: .85rem; color: var(--muted); }
 
 .timeline { list-style: none; padding: 0; margin: 16px 0 0; border-left: 3px solid var(--line); }
 .timeline li { position: relative; margin: 0 0 16px 16px; }
@@ -133,3 +129,47 @@ a { color: var(--club); }
 .lect-frame iframe { width: 100%; height: 80vh; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
 .lect-aide { font-size: .8rem; color: var(--muted); }
 @media (max-width: 760px) { .lect-body { grid-template-columns: 1fr; } .lect-fiches { max-height: none; } .lect-frame iframe { height: 70vh; } }
+
+/* Barre du haut : équipes + onglets (collante) */
+.barre { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+.barre .tabs { position: static; padding-top: 6px; padding-bottom: 8px; }
+.equipes { display: flex; align-items: center; gap: 10px; padding-top: 10px; }
+.equipes-titre { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
+.equipes .chips { flex-wrap: nowrap; overflow-x: auto; margin: 0; padding: 2px 0 4px; scrollbar-width: thin; }
+.equipes .chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.equipes .chip:hover { border-color: var(--club); }
+.equipes .chip .dot { margin: 0; }
+.equipes .chip.active .dot { background: #fff; }
+@media (min-width: 760px) { .equipes .chips { flex-wrap: wrap; overflow: visible; } }
+
+/* Vue équipe */
+.eq-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.eq-head h2 { margin: 0; flex: 1; font-size: 1.4rem; }
+.eq-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.eq-stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; min-width: 100px; font: inherit; color: var(--text); text-align: left; }
+.eq-stat b { display: block; font-size: 1.3rem; }
+.eq-stat span { font-size: .8rem; color: var(--muted); }
+.eq-stat.urgent b { color: var(--urgent); } .eq-stat.attention b { color: var(--attention); }
+button.eq-stat:hover { border-color: var(--club); }
+.eq-last { width: 100%; margin: 2px 0 0; font-size: .8rem; color: var(--muted); }
+.echeance.match { border-left: 4px solid var(--match); }
+.echeance.passe { opacity: .7; }
+.eq-passes details { margin-top: 8px; }
+.eq-passes summary { cursor: pointer; color: var(--muted); font-size: .9rem; margin-bottom: 8px; }
+.table-wrap { overflow-x: auto; margin-top: 10px; }
+.amendes { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); font-size: .88rem; }
+.amendes th, .amendes td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.amendes th { font-size: .75rem; text-transform: uppercase; color: var(--muted); }
+.amendes small { color: var(--muted); }
+.amendes .num { text-align: right; white-space: nowrap; }
+.amendes tfoot td { font-weight: 700; border-bottom: 0; }
+.equipes .chip.tout.active { background: var(--text); border-color: var(--text); color: var(--bg); }
+@media (max-width: 560px) {
+  .hero { padding: 18px 0 14px; }
+  .stats { gap: 6px; margin-top: 10px; }
+  .stat { min-width: 0; flex: 1 1 40%; padding: 6px 10px; }
+  .stat b { font-size: 1.15rem; }
+  .equipes-titre { display: none; }
+  .eq-stat { min-width: 0; flex: 1 1 28%; padding: 6px 10px; }
+  .eq-stat b { font-size: 1.1rem; }
+}
