@@ -16,7 +16,7 @@
   const today = new Date(); today.setHours(0,0,0,0);
   const joursAvant = (s) => Math.round((parseD(s) - today) / 86400000);
 
-  let data, all = [], pvById = {}, matchs = [], dossiers = [], extraits = {}, sommaire = {};
+  let data, all = [], pvById = {}, matchs = [], dossiers = [], sommaire = {};
   let calMonth, catActive = null, query = "";
 
   // matchs.json et dossiers.json sont facultatifs : le site fonctionne sans eux
@@ -25,11 +25,9 @@
     .then((r) => r.json())
     .then(async (j) => {
       data = j;
-      let ex;
       let so;
-      [matchs, dossiers, ex, so] = await Promise.all([charger("data/matchs.json"), charger("data/dossiers.json"), charger("data/extraits.json"), charger("data/sommaire.json")]);
+      [matchs, dossiers, so] = await Promise.all([charger("data/matchs.json"), charger("data/dossiers.json"), charger("data/sommaire.json")]);
       if (Array.isArray(so)) so.forEach((e) => { sommaire[e.pv] = e.rubriques || e.commissions || []; });
-      if (Array.isArray(ex)) ex.forEach((e) => { extraits[e.pv] = e.extraits || []; });
       if (!Array.isArray(matchs)) matchs = [];
       if (!Array.isArray(dossiers)) dossiers = [];
       matchs.sort((a, b) => a.date.localeCompare(b.date) || (a.heure || "").localeCompare(b.heure || ""));
@@ -507,7 +505,7 @@
     }
   });
 
-  // ---- Lecture suivie : tous les passages du PV qui concernent Genas, à la suite (data/extraits.json)
+  // ---- Lecture suivie : tous les passages du PV qui concernent Genas, à la suite
   let lectMode = "suivie";
   const RE_CLUB_G = /(genas(?:\s+azieu)?(?:\s+e\.?s\.?)?|\besga\b|523341)/gi;
   const surligne = (t) => esc(t).replace(RE_CLUB_G, "<mark>$1</mark>");
