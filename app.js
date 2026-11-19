@@ -16,7 +16,7 @@
   const today = new Date(); today.setHours(0,0,0,0);
   const joursAvant = (s) => Math.round((parseD(s) - today) / 86400000);
 
-  let data, all = [], pvById = {}, matchs = [], dossiers = [], extraits = {};
+  let data, all = [], pvById = {}, matchs = [], dossiers = [], extraits = {}, sommaire = {};
   let calMonth, catActive = null, query = "";
 
   // matchs.json et dossiers.json sont facultatifs : le site fonctionne sans eux
@@ -26,7 +26,9 @@
     .then(async (j) => {
       data = j;
       let ex;
-      [matchs, dossiers, ex] = await Promise.all([charger("data/matchs.json"), charger("data/dossiers.json"), charger("data/extraits.json")]);
+      let so;
+      [matchs, dossiers, ex, so] = await Promise.all([charger("data/matchs.json"), charger("data/dossiers.json"), charger("data/extraits.json"), charger("data/sommaire.json")]);
+      if (Array.isArray(so)) so.forEach((e) => { sommaire[e.pv] = e.rubriques || e.commissions || []; });
       if (Array.isArray(ex)) ex.forEach((e) => { extraits[e.pv] = e.extraits || []; });
       if (!Array.isArray(matchs)) matchs = [];
       if (!Array.isArray(dossiers)) dossiers = [];
@@ -418,7 +420,7 @@
   // Le site du District interdit l'affichage de ses PDF dans une autre page : on lit la
   // copie publiée avec le site (pv-pdf/).
   const RE_CLUB = /genas|\besga\b|523341/i; // « Genas Azieu », « ESGA » ou le numéro du club
-  const lect = { num: null, page: 1, zoom: 1, doc: null, docNum: null, pages: null, hl: [], hlIdx: -1, rendu: 0 };
+  const lect = { num: null, page: 1, zoom: 1, doc: null, docNum: null, pages: null, cur: null, focus: null };
   if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdfjs/pdf.worker.min.js";
 
   // ---- Extrait du PV dans une fiche : on découpe la page autour du passage cité
@@ -550,8 +552,16 @@
           <ul>${annexes.map((e) => `<li>${pageLien(e.page)}<span>${surligne(e.texte.replace(/\s{2,}/g, " · "))}</span></li>`).join("")}</ul></details>` : ""}
         </div>`;
     }
-    $("#lect-suivie").querySelectorAll(".pg-lien").forEach((b) => b.onclick = () => { lect.page = +b.dataset.page; lect.focus = true; lect.hlIdx = -1; setMode("pdf"); });
+    $("#lect-suivie").querySelectorAll(".pg-lien").forEach((b) => b.onclick = () => { lect.page = +b.dataset.page; lect.focus = { p: +b.dataset.page, i: 0 }; setMode("pdf"); window.scrollTo({ top: 0 }); });
     $("#lect-suivie").querySelectorAll("[data-go-pdf]").forEach((b) => b.onclick = () => setMode("pdf"));
+  }
+
+  // ---- PDF complet : toutes les pages à la suite (défilement de la page), dessinées à la demande
+  const estMobile = () => window.matchMedia("(max-width: 900px)").matches;
+  function ouvrirSide(o) {
+    $("#lect-body").classList.toggle("side-off", !o);
+    $("#lect-side-btn").setAttribute("aria-expanded", o);
+    document.body.classList.toggle("noscroll", o && estMobile());
   }
 
   function renderLecteur() {
@@ -561,10 +571,22 @@
     $("#lect-page").onchange = () => allerPage(+$("#lect-page").value || 1);
     $("#lect-prec").onclick = () => allerPage(lect.page - 1);
     $("#lect-suiv").onclick = () => allerPage(lect.page + 1);
-    $("#lect-plus").onclick = () => { lect.zoom = Math.min(3, lect.zoom * 1.25); afficherPage(); };
-    $("#lect-moins").onclick = () => { lect.zoom = Math.max(0.5, lect.zoom / 1.25); afficherPage(); };
-    $("#lect-genas").onclick = passageSuivant;
-    let t; window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { if ($("#tab-lecteur").classList.contains("active")) afficherPage(); }, 200); });
+    $("#lect-plus").onclick = () => zoomer(1.25);
+    $("#lect-moins").onclick = () => zoomer(1 / 1.25);
+    $("#lect-genas").onclick = () => passage(1);
+    $("#lect-gprec").onclick = () => passage(-1);
+    $("#lect-side-btn").onclick = () => ouvrirSide($("#lect-body").classList.contains("side-off"));
+    $("#lect-side-close").onclick = () => ouvrirSide(false);
+    if (estMobile()) ouvrirSide(false);
+    // sur téléphone, le sommaire est un tiroir : un toucher à côté le referme
+    document.addEventListener("click", (e) => {
+      if (estMobile() && !$("#lect-body").classList.contains("side-off") && !e.target.closest("#lect-side, #lect-side-btn")) ouvrirSide(false);
+    });
+    const barreH = () => document.documentElement.style.setProperty("--barre-h", ($(".barre").offsetHeight || 0) + "px");
+    barreH(); window.addEventListener("resize", barreH);
+    let t, w = window.innerWidth;
+    window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { if (window.innerWidth !== w && lect.doc && !$("#lect-pdf").hidden) { w = window.innerWidth; mettreEnPage(lect.page); } }, 250); });
+    window.addEventListener("scroll", suivreScroll, { passive: true });
     if (data.pvs[0]) lire(data.pvs[0].numero, 1, false);
   }
 
@@ -572,26 +594,41 @@
 
   function lire(num, page, ouvrir = true) {
     const pv = pvById[num]; if (!pv) return;
-    lect.num = num; lect.page = page; lect.hlIdx = -1; lect.focus = page > 1;
+    lect.num = num; lect.page = page; lect.focus = page > 1 ? { p: page, i: 0 } : null;
     $("#lect-pv").value = num;
     $("#lect-ext").href = localPdf(pv);
     const its = all.filter((i) => i.pv === num).sort((a, b) => (a.page || 0) - (b.page || 0));
-    $("#lect-fiches").innerHTML = `<h3>Mentions du club</h3>` + (its.map((i) => `<button class="lect-fiche ${esc(i.gravite)}" data-page="${i.page || 1}"><b>p. ${i.page || "?"}</b> · ${esc(i.categorie)}<br>${esc(i.titre)}</button>`).join("") || `<p class="empty">Aucune mention.</p>`);
-    $("#lect-fiches").querySelectorAll(".lect-fiche").forEach((b) => b.onclick = () => allerPage(+b.dataset.page));
-    if (ouvrir) { lectMode = "pdf"; showTab("lecteur"); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    $("#lect-fiches").innerHTML = `<h3>Fiches de ce PV</h3>` + (its.map((i) => `<button class="lect-fiche ${esc(i.gravite)}" data-page="${i.page || 1}"><b>p. ${i.page || "?"}</b> · ${esc(i.categorie)}<br>${esc(i.titre)}</button>`).join("") || `<p class="empty">Aucune fiche.</p>`);
+    $("#lect-fiches").querySelectorAll(".lect-fiche").forEach((b) => b.onclick = () => { allerPage(+b.dataset.page, 0); if (estMobile()) ouvrirSide(false); });
+    renderSommaire(num);
+    if (ouvrir) { lectMode = "pdf"; showTab("lecteur"); window.scrollTo({ top: 0 }); }
     else if ($("#tab-lecteur").classList.contains("active")) lectRafraichir();
+  }
+
+  // sommaire des commissions (data/sommaire.json, facultatif)
+  function renderSommaire(num) {
+    const som = (sommaire[num] || []).filter((c) => c && c.page);
+    const groupes = [];
+    som.forEach((c) => { const g = c.groupement || "Autres"; let x = groupes.find((y) => y.nom === g); if (!x) groupes.push(x = { nom: g, items: [] }); x.items.push(c); });
+    $("#lect-sommaire").innerHTML = groupes.length ? `<h3>Sommaire du PV</h3>` + groupes.map((g) => {
+      const n = g.items.reduce((t, c) => t + (c.mentions || 0), 0);
+      const ouvert = /vall/i.test(g.nom) || (n > 0 && g.nom !== "Annexes");
+      return `<details class="lect-som" ${ouvert ? "open" : ""}><summary>${esc(g.nom)}${n ? ` <small>${n} Genas</small>` : ""}</summary>
+        ${g.items.map((c) => `<button class="lect-som-b ${c.mentions ? "has" : ""}" data-page="${c.page}"><span>${esc(c.titre || "")}</span><small>p. ${c.page}${c.mentions ? ` · <b>${c.mentions}</b>` : ""}</small></button>`).join("")}</details>`;
+    }).join("") : "";
+    $("#lect-sommaire").querySelectorAll(".lect-som-b").forEach((b) => b.onclick = () => { allerPage(+b.dataset.page, b.classList.contains("has") ? 0 : null); if (estMobile()) ouvrirSide(false); });
   }
 
   function lectRafraichir() { setMode(lectMode); }
 
-  // appelé quand l'onglet Lecteur devient visible (il faut sa largeur pour dessiner la page)
   async function lectAfficher() {
     const pv = pvById[lect.num]; if (!pv) return;
     if (!window.pdfjsLib) { $("#lect-view").innerHTML = `<p class="empty">Le lecteur n'a pas pu se charger. <a href="${esc(localPdf(pv))}" target="_blank" rel="noopener">Ouvrir le PDF ↗</a></p>`; return; }
     if (lect.docNum !== lect.num) {
-      lect.docNum = lect.num; lect.doc = null; lect.pages = null;
+      lect.docNum = lect.num; lect.doc = null; lect.pages = null; lect.pageN = {};
       $("#lect-view").innerHTML = `<p class="empty">Chargement du PV n°${pv.numero}…</p>`;
       $("#lect-pages").innerHTML = `<p class="empty">Recherche en cours…</p>`;
+      $("#lect-gcount").textContent = "Genas";
       const num = lect.num;
       try {
         const doc = await chargerDoc(pv);
@@ -599,6 +636,9 @@
         lect.doc = doc;
         $("#lect-total").textContent = `/ ${doc.numPages}`;
         $("#lect-page").max = doc.numPages;
+        const p1 = await doc.getPage(1);
+        lect.ratio = p1.getViewport({ scale: 1 }).height / p1.getViewport({ scale: 1 }).width;
+        mettreEnPage(lect.focus ? lect.focus.p : 1);
         chercherClub(doc, num);
       } catch (e) {
         lect.docNum = null;
@@ -606,8 +646,138 @@
         $("#lect-pages").innerHTML = "";
         return;
       }
+    } else if (lect.focus) allerPage(lect.focus.p, lect.focus.i);
+    lect.focus = null;
+  }
+
+  // une case par page, à la bonne taille ; les pages sont dessinées quand elles approchent de l'écran
+  function mettreEnPage(versP) {
+    const doc = lect.doc, view = $("#lect-view");
+    if (lect.obs) lect.obs.disconnect();
+    lect.rendues = new Map();
+    const largeur = Math.max(260, view.clientWidth) * lect.zoom;
+    lect.largeur = largeur;
+    view.innerHTML = "";
+    view.classList.toggle("zoome", lect.zoom > 1.01);
+    for (let p = 1; p <= doc.numPages; p++) {
+      const slot = document.createElement("div");
+      slot.className = "pg-slot"; slot.dataset.p = p;
+      slot.style.width = largeur + "px"; slot.style.height = Math.round(largeur * (lect.ratios?.[p] || lect.ratio)) + "px";
+      slot.innerHTML = `<span class="pg-num">${p}</span>`;
+      view.appendChild(slot);
     }
-    afficherPage(lect.focus); lect.focus = false;
+    lect.obs = new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) dessiner(+e.target.dataset.p); }), { rootMargin: "1200px 0px" });
+    view.querySelectorAll(".pg-slot").forEach((s) => lect.obs.observe(s));
+    if (versP > 1) allerPage(versP, lect.focus ? lect.focus.i : null, true);
+  }
+
+  async function dessiner(p) {
+    if (lect.rendues.has(p)) return;
+    const doc = lect.doc, slot = $(`#lect-view .pg-slot[data-p="${p}"]`); if (!slot) return;
+    const jeton = {}; lect.rendues.set(p, jeton);
+    const page = await doc.getPage(p);
+    const base = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: lect.largeur / base.width });
+    (lect.ratios = lect.ratios || {})[p] = base.height / base.width;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.floor(vp.width * dpr); canvas.height = Math.floor(vp.height * dpr);
+    canvas.style.width = vp.width + "px"; canvas.style.height = vp.height + "px";
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+    if (lect.rendues.get(p) !== jeton) return;
+    const tc = await page.getTextContent();
+    const boxes = tc.items.filter((it) => RE_CLUB.test(it.str)).map((it) => {
+      const tx = pdfjsLib.Util.transform(vp.transform, it.transform);
+      const h = Math.hypot(tx[2], tx[3]);
+      return { x: tx[4] - 3, y: tx[5] - h * 1.05, w: it.width * vp.scale + 6, h: h * 1.35 };
+    }).sort((a, b) => a.y - b.y || a.x - b.x);
+    if (lect.rendues.get(p) !== jeton) return;
+    slot.style.height = vp.height + "px";
+    slot.innerHTML = `<span class="pg-num">${p}</span>`;
+    slot.appendChild(canvas);
+    boxes.forEach((b, i) => {
+      const d = document.createElement("div"); d.className = "hl"; d.dataset.i = i;
+      Object.assign(d.style, { left: b.x + "px", top: b.y + "px", width: b.w + "px", height: b.h + "px" });
+      slot.appendChild(d);
+    });
+    slot.classList.add("ok"); slot.classList.toggle("genas", boxes.length > 0);
+    // on libère la mémoire des pages éloignées
+    if (lect.rendues.size > 12) [...lect.rendues.keys()].sort((a, b) => Math.abs(b - lect.page) - Math.abs(a - lect.page)).slice(0, lect.rendues.size - 12).forEach((q) => {
+      lect.rendues.delete(q);
+      const s = $(`#lect-view .pg-slot[data-p="${q}"]`); if (s) { s.classList.remove("ok"); s.innerHTML = `<span class="pg-num">${q}</span>`; }
+    });
+    if (lect.attente && lect.attente.p === p) { const a = lect.attente; lect.attente = null; montrerHl(a.p, a.i); }
+  }
+
+  const hauteurBarres = () => (($(".barre") || {}).offsetHeight || 0) + (($("#lect-bar") || {}).offsetHeight || 0) + 8;
+
+  function allerPage(p, i = null, instant) {
+    if (!lect.doc) { lect.page = p; return; }
+    p = Math.max(1, Math.min(lect.doc.numPages, p));
+    const slot = $(`#lect-view .pg-slot[data-p="${p}"]`); if (!slot) return;
+    lect.page = p; majPage();
+    window.scrollTo({ top: slot.getBoundingClientRect().top + window.scrollY - hauteurBarres(), behavior: instant ? "auto" : "smooth" });
+    if (i != null) { if (slot.classList.contains("ok")) montrerHl(p, i); else { lect.attente = { p, i }; dessiner(p); } }
+  }
+
+  function montrerHl(p, i) {
+    const slot = $(`#lect-view .pg-slot[data-p="${p}"]`); if (!slot) return;
+    const hls = slot.querySelectorAll(".hl"); if (!hls.length) return;
+    i = Math.max(0, Math.min(hls.length - 1, i < 0 ? hls.length + i : i));
+    document.querySelectorAll("#lect-view .hl.on").forEach((x) => x.classList.remove("on"));
+    const el = hls[i]; el.classList.add("on");
+    lect.cur = { p, i };
+    const y = slot.getBoundingClientRect().top + window.scrollY + el.offsetTop - hauteurBarres() - window.innerHeight * 0.25;
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+    const view = $("#lect-view");
+    if (view.scrollWidth > view.clientWidth) view.scrollTo({ left: Math.max(0, el.offsetLeft - 40), behavior: "smooth" });
+    majCompteur();
+  }
+
+  // passage Genas suivant (dir = 1) ou précédent (dir = -1), d'une page à l'autre
+  function passage(dir) {
+    const pages = lect.pages || lect.pagesPartiel || [];
+    if (!pages.length) return;
+    const cur = lect.cur && lect.cur.p === lect.page ? lect.cur : { p: lect.page, i: dir > 0 ? -1 : 0 };
+    const n = (pages.find((r) => r.p === cur.p) || {}).n || 0;
+    if (dir > 0 && cur.i + 1 < n) return allerPage(cur.p, cur.i + 1);
+    if (dir < 0 && cur.i - 1 >= 0 && n) return allerPage(cur.p, cur.i - 1);
+    const cible = dir > 0 ? (pages.find((r) => r.p > cur.p) || pages[0]) : ([...pages].reverse().find((r) => r.p < cur.p) || pages[pages.length - 1]);
+    allerPage(cible.p, dir > 0 ? 0 : cible.n - 1);
+  }
+
+  function majCompteur() {
+    const pages = lect.pages || lect.pagesPartiel || [];
+    const total = pages.reduce((t, r) => t + r.n, 0);
+    let rang = 0;
+    if (lect.cur) { for (const r of pages) { if (r.p < lect.cur.p) rang += r.n; else if (r.p === lect.cur.p) { rang += lect.cur.i + 1; break; } } }
+    $("#lect-gcount").textContent = total ? (rang ? `${rang} / ${total}` : `${total} Genas`) : "Genas";
+  }
+
+  function majPage() {
+    $("#lect-page").value = lect.page;
+    document.querySelectorAll(".lect-pg, .lect-fiche").forEach((b) => b.classList.toggle("on", +(b.dataset.p || b.dataset.page) === lect.page));
+  }
+
+  let scrollT;
+  function suivreScroll() {
+    if (scrollT || !lect.doc || $("#lect-pdf").hidden || !$("#tab-lecteur").classList.contains("active")) return;
+    scrollT = requestAnimationFrame(() => {
+      scrollT = null;
+      const ligne = hauteurBarres() + window.innerHeight * 0.3;
+      const slots = $("#lect-view").children;
+      let bas = 0, haut = slots.length - 1;
+      while (bas < haut) { const m = (bas + haut) >> 1; if (slots[m].getBoundingClientRect().bottom < ligne) bas = m + 1; else haut = m; }
+      const p = +(slots[bas] && slots[bas].dataset.p) || 1;
+      if (p !== lect.page) { lect.page = p; majPage(); }
+    });
+  }
+
+  function zoomer(f) {
+    const z = Math.max(0.5, Math.min(3, lect.zoom * f));
+    if (z === lect.zoom || !lect.doc) return;
+    lect.zoom = z; mettreEnPage(lect.page);
+    allerPage(lect.page, null, true);
   }
 
   // repère toutes les pages qui citent le club, en arrière-plan
@@ -621,77 +791,14 @@
       if (p % 10 === 0 || p === doc.numPages) majPages(res, p === doc.numPages);
     }
     lect.pages = res;
+    majCompteur();
   }
   function majPages(res, fini) {
     $("#lect-pages").innerHTML = (res.map((r) => `<button class="lect-pg ${r.p === lect.page ? "on" : ""}" data-p="${r.p}">p. ${r.p}<small>${r.n}</small></button>`).join("")
       || (fini ? `<p class="empty">Le club n'apparaît pas dans ce PV.</p>` : "")) + (fini ? "" : `<p class="empty">Recherche en cours…</p>`);
-    $("#lect-pages").querySelectorAll(".lect-pg").forEach((b) => b.onclick = () => allerPage(+b.dataset.p));
+    $("#lect-pages").querySelectorAll(".lect-pg").forEach((b) => b.onclick = () => { allerPage(+b.dataset.p, 0); if (estMobile()) ouvrirSide(false); });
     lect.pagesPartiel = res;
-  }
-
-  function allerPage(p, idx = 0) {
-    if (!lect.doc) { lect.page = p; return; }
-    lect.page = Math.max(1, Math.min(lect.doc.numPages, p));
-    lect.hlIdx = idx - 1;
-    afficherPage(true);
-  }
-
-  async function afficherPage(versHl) {
-    const doc = lect.doc; if (!doc) return;
-    const n = ++lect.rendu, pnum = lect.page;
-    $("#lect-page").value = pnum;
-    document.querySelectorAll(".lect-pg, .lect-fiche").forEach((b) => b.classList.toggle("on", +(b.dataset.p || b.dataset.page) === pnum));
-    const page = await doc.getPage(pnum);
-    const view = $("#lect-view");
-    const largeur = Math.max(280, view.clientWidth - 2);
-    const base = page.getViewport({ scale: 1 });
-    const vp = page.getViewport({ scale: (largeur / base.width) * lect.zoom });
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.floor(vp.width * dpr); canvas.height = Math.floor(vp.height * dpr);
-    canvas.style.width = vp.width + "px"; canvas.style.height = vp.height + "px";
-    await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
-    if (n !== lect.rendu) return;
-    // surlignage des passages qui citent le club
-    const tc = await page.getTextContent();
-    const boxes = tc.items.filter((it) => RE_CLUB.test(it.str)).map((it) => {
-      const tx = pdfjsLib.Util.transform(vp.transform, it.transform);
-      const h = Math.hypot(tx[2], tx[3]), w = it.width * vp.scale;
-      return { x: tx[4] - 3, y: tx[5] - h * 1.05, w: w + 6, h: h * 1.35 };
-    }).sort((a, b) => a.y - b.y || a.x - b.x);
-    const pg = document.createElement("div");
-    pg.className = "lect-pg-page"; pg.style.width = vp.width + "px"; pg.style.height = vp.height + "px";
-    pg.appendChild(canvas);
-    boxes.forEach((b, i) => {
-      const d = document.createElement("div"); d.className = "hl"; d.dataset.i = i;
-      Object.assign(d.style, { left: b.x + "px", top: b.y + "px", width: b.w + "px", height: b.h + "px" });
-      pg.appendChild(d);
-    });
-    if (n !== lect.rendu) return;
-    view.innerHTML = ""; view.appendChild(pg);
-    lect.hl = boxes;
-    $("#lect-aide").textContent = boxes.length
-      ? `${boxes.length} passage${boxes.length > 1 ? "s" : ""} sur Genas Azieu / ESGA surligné${boxes.length > 1 ? "s" : ""} sur cette page.`
-      : "Aucune mention de Genas Azieu ni de l'ESGA sur cette page.";
-    if (versHl && boxes.length) montrerHl(Math.max(0, lect.hlIdx + 1));
-  }
-
-  function montrerHl(i) {
-    lect.hlIdx = i;
-    const el = $(`#lect-view .hl[data-i="${i}"]`); if (!el) return;
-    document.querySelectorAll("#lect-view .hl.on").forEach((x) => x.classList.remove("on"));
-    el.classList.add("on");
-    const view = $("#lect-view");
-    view.scrollTo({ top: Math.max(0, el.offsetTop - view.clientHeight / 3), left: Math.max(0, el.offsetLeft - 40), behavior: "smooth" });
-    const r = view.getBoundingClientRect();
-    if (r.top < 100 || r.bottom > window.innerHeight) scrollTo$(view);
-  }
-
-  function passageSuivant() {
-    if (lect.hlIdx + 1 < lect.hl.length) return montrerHl(lect.hlIdx + 1);
-    const pages = lect.pages || lect.pagesPartiel || [];
-    const suiv = pages.find((r) => r.p > lect.page) || pages[0];
-    if (suiv) allerPage(suiv.p, 0);
+    majCompteur();
   }
 
   document.addEventListener("click", (e) => {
