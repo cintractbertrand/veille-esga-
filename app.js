@@ -4,7 +4,7 @@
   const MOIS_C = ["janv","févr","mars","avr","mai","juin","juil","août","sept","oct","nov","déc"];
   const JOURS = ["lun","mar","mer","jeu","ven","sam","dim"];
   const GRAV_ORDRE = { urgent: 0, attention: 1, info: 2 };
-  const CAT_ORDRE = ["Club","Seniors","Seniors F","U20","U19","U18","U17","U16","U15","U15F","U14","U13","U13F","U12","U11","U10","U9","U8","U7","Futsal","Vétérans","Foot loisir"];
+  const CAT_ORDRE = ["Club","Seniors","Seniors F","U18F","U20","U19","U18","U17","U16","U15","U15F","U14","U13","U13F","U12","U11","U10","U9","U9F","U8","U7","Futsal","Vétérans","Foot loisir"];
 
   const parseD = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
   const isoD = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -28,6 +28,10 @@
       pv.items.forEach((it) => all.push({ ...it, pv: pv.numero, pvDate: pv.date, pvUrl: pv.url }));
     });
     const last = data.pvs[0];
+    // une fiche urgente d'un ancien PV dont toutes les échéances sont passées n'est plus urgente
+    all.forEach((i) => {
+      if (i.gravite === "urgent" && i.pv !== (last && last.numero) && (i.echeances || []).every((e) => joursAvant(e.date) < 0)) i.gravite = "attention";
+    });
     $("#club-nom").textContent = data.club.nom;
     $("#pv-courant").innerHTML = last
       ? `Dernier PV : <a href="${esc(last.url)}" target="_blank" rel="noopener">n°${last.numero} du ${fmtD(last.date)}</a> · club n°${esc(data.club.numero)}`

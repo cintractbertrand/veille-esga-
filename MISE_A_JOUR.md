@@ -22,3 +22,7 @@ Cette procédure est suivie par la tâche planifiée chaque jeudi soir.
      - `page` : la page du PDF.
 5. Mettre à jour `mis_a_jour`, vérifier que le JSON est valide (`python3 -m json.tool data/pv.json`), puis faire un commit « PV n°XXX du JJ/MM » et le pousser sur `main`. GitHub Pages republie le site tout seul.
 6. Envoyer à Bertrand un court résumé de 3 lignes maximum avec le lien du site.
+
+## Limites connues
+- Le site du District refuse les téléchargements depuis GitHub Actions (403), donc le texte des PV est lu par Claude.
+- La lecture automatique couvre environ les 27 premières pages de chaque PV. Les dernières pages contiennent surtout les plateaux U7-U13 et les annexes de désignations. Il faut y penser si une info semble manquer.

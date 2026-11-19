@@ -29,7 +29,11 @@
             "exterieur": "GENAS AZIEU"
           },
           "echeances": [
-            { "date": "2026-11-23", "heure": "09:00", "libelle": "Envoyer le rapport à la Discipline (U15F, Montchat / Genas)" }
+            {
+              "date": "2026-11-23",
+              "heure": "09:00",
+              "libelle": "Envoyer le rapport à la Discipline (U15F, Montchat / Genas)"
+            }
           ],
           "page": 11
         },
@@ -42,7 +46,10 @@
           "titre": "Club non à jour de règlement",
           "detail": "Le club figure sur la liste des clubs non à jour de leur règlement au 19 novembre 2026. Un délai supplémentaire est accordé jusqu'au 30 novembre 2026 pour régulariser. Le PV n'indique pas de montant.",
           "echeances": [
-            { "date": "2026-11-30", "libelle": "Régulariser le règlement auprès du District" }
+            {
+              "date": "2026-11-30",
+              "libelle": "Régulariser le règlement auprès du District"
+            }
           ],
           "page": 3
         },
@@ -72,9 +79,580 @@
           "titre": "Soirée des partenaires du District à Genas",
           "detail": "Le club accueille la soirée des partenaires du District de Lyon et du Rhône.",
           "echeances": [
-            { "date": "2026-11-26", "heure": "19:15", "libelle": "Soirée des partenaires du District au club" }
+            {
+              "date": "2026-11-26",
+              "heure": "19:15",
+              "libelle": "Soirée des partenaires du District au club"
+            }
           ],
           "page": 2
+        }
+      ]
+    },
+    {
+      "numero": 765,
+      "date": "2026-11-12",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/f40fc6f5f38eb2a4ea02e9641e722b29.pdf",
+      "pages": 41,
+      "resume": "La Discipline demande un rapport au club après la fin de match agitée entre l'AS Saint-Priest et nos Seniors féminines (D1F) du 8 novembre, notamment sur le comportement de la joueuse n°11. L'arbitre a aussi transmis une observation d'après-match à la Discipline et à la Commission féminine.",
+      "items": [
+        {
+          "id": "765-1",
+          "categorie": "Seniors F",
+          "commission": "Discipline",
+          "type": "discipline",
+          "gravite": "urgent",
+          "titre": "Rapport demandé : fin de match à Saint-Priest",
+          "detail": "La Commission de Discipline demande au club un rapport détaillé sur les évènements survenus à l'issue de la rencontre et sur le comportement de la joueuse n°11. Une procédure d'instruction est ouverte. Le club doit informer les licenciées concernées, qui peuvent consulter le dossier au District ou demander à être entendues. Un rapport est aussi demandé à Saint-Priest sur sa joueuse n°13.",
+          "echeances": [
+            {
+              "date": "2026-11-16",
+              "heure": "09:00",
+              "libelle": "Rapport à la Discipline (Seniors F, St-Priest / Genas)"
+            }
+          ],
+          "page": 11,
+          "match": {
+            "date": "2026-11-08",
+            "competition": "Seniors F D1",
+            "domicile": "AS ST PRIEST",
+            "exterieur": "GENAS AZIEU",
+            "numero": "55839388"
+          }
+        },
+        {
+          "id": "765-2",
+          "categorie": "Seniors F",
+          "commission": "Arbitrage",
+          "type": "observation",
+          "gravite": "attention",
+          "titre": "Observation de l'arbitre après le match",
+          "detail": "L'arbitre a envoyé une observation d'après-match sur la rencontre. Elle a été transmise à la Commission de Discipline et à la Commission féminine.",
+          "echeances": [],
+          "page": 15,
+          "match": {
+            "date": "2026-11-08",
+            "competition": "Seniors F D1",
+            "domicile": "AS ST PRIEST",
+            "exterieur": "GENAS AZIEU"
+          }
+        }
+      ]
+    },
+    {
+      "numero": 764,
+      "date": "2026-11-05",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/98cfc99378307d78d3669e09cca95c34.pdf",
+      "pages": 48,
+      "resume": "Deuxième rappel pour la feuille de match Vétérans contre Pusignan du 9 octobre, toujours manquante : sans envoi avant le lundi 9 novembre à 14h, le match est perdu (0 point) avec 150 € d'amende. Rien d'autre pour le club.",
+      "items": [
+        {
+          "id": "764-1",
+          "categorie": "Vétérans",
+          "commission": "Compétitions",
+          "type": "reglement",
+          "gravite": "urgent",
+          "titre": "2e rappel : feuille de match manquante",
+          "detail": "La feuille de match doit parvenir au District avant le lundi 9 novembre 2026 à 14h. Sinon, l'article 7-03 s'applique : 0 point et 150 € d'amende.",
+          "echeances": [
+            {
+              "date": "2026-11-09",
+              "heure": "14:00",
+              "libelle": "Dernier délai feuille de match Vétérans / Pusignan"
+            }
+          ],
+          "page": 16,
+          "match": {
+            "date": "2026-10-09",
+            "competition": "Vétérans Poule F",
+            "domicile": "GENAS AZIEU 35",
+            "exterieur": "PUSIGNAN 35",
+            "numero": "79343124"
+          }
+        },
+        {
+          "id": "764-2",
+          "categorie": "U15",
+          "commission": "Compétitions",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Coupe DLR U15 à Tarare : feuille manquante côté Tarare",
+          "detail": "Le match est cité dans la rubrique des feuilles de match manquantes. Seul Tarare, l'équipe qui recevait, est concerné par l'amende de 20 €.",
+          "echeances": [],
+          "page": 16,
+          "match": {
+            "date": "2026-10-24",
+            "competition": "Coupe DLR U15",
+            "domicile": "FC TARARE 1",
+            "exterieur": "GENAS AZIEU 1",
+            "numero": "79932397"
+          }
+        }
+      ]
+    },
+    {
+      "numero": 763,
+      "date": "2026-10-29",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/484da9eb885834aa8a6962ded8f6796a.pdf",
+      "pages": 48,
+      "resume": "Le club apparaît dans les listes d'engagés de 4 coupes (Vétérans, Vial, U18F et U15F). Premier rappel pour la feuille de match Vétérans contre Pusignan du 9 octobre.",
+      "items": [
+        {
+          "id": "763-1",
+          "categorie": "Vétérans",
+          "commission": "Compétitions",
+          "type": "reglement",
+          "gravite": "attention",
+          "titre": "1er rappel : feuille de match manquante",
+          "detail": "La feuille de match doit être envoyée au District, faute de quoi l'article 7-03 des Règlements sportifs s'applique.",
+          "echeances": [],
+          "page": 21,
+          "match": {
+            "date": "2026-10-09",
+            "competition": "Vétérans Poule F",
+            "domicile": "GENAS AZIEU 35",
+            "exterieur": "PUSIGNAN 35",
+            "numero": "79343124"
+          }
+        },
+        {
+          "id": "763-2",
+          "categorie": "Club",
+          "commission": "Coupes",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Engagés en coupes : Vétérans, Vial, U18F et U15F",
+          "detail": "Les équipes engagées sont l'équipe Vétérans en Coupe Vétérans, l'équipe 2 en Coupe Vial, l'équipe 2 en Coupe DLR U18F et l'équipe U15F en Coupe DLR U15F.",
+          "echeances": [],
+          "page": 19
+        },
+        {
+          "id": "763-3",
+          "categorie": "U15",
+          "commission": "Compétitions",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Coupe DLR U15 à Tarare cité",
+          "detail": "Le match est cité dans la rubrique des coupes, sans motif ni sanction pour Genas.",
+          "echeances": [],
+          "page": 21,
+          "match": {
+            "date": "2026-10-24",
+            "competition": "Coupe DLR U15",
+            "domicile": "FC TARARE 1",
+            "exterieur": "GENAS AZIEU 1",
+            "numero": "79932397"
+          }
+        }
+      ]
+    },
+    {
+      "numero": 762,
+      "date": "2026-10-22",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/710b4d4c731ebe66a8917393a9919179.pdf",
+      "pages": 38,
+      "resume": "Amende de 20 € pour la feuille de match Vétérans contre Pusignan du 9 octobre, non transmise. L'équipe 1 est engagée en Coupe DLR U20.",
+      "items": [
+        {
+          "id": "762-1",
+          "categorie": "Vétérans",
+          "commission": "Compétitions",
+          "type": "sanction",
+          "gravite": "attention",
+          "titre": "Amende de 20 € : feuille de match non transmise",
+          "detail": "Le club, qui recevait, est amendé de 20 € pour ne pas avoir transmis la feuille de match.",
+          "echeances": [],
+          "page": 17,
+          "match": {
+            "date": "2026-10-09",
+            "competition": "Vétérans Poule F",
+            "domicile": "GENAS AZIEU 35",
+            "exterieur": "PUSIGNAN 35",
+            "numero": "79343124"
+          }
+        },
+        {
+          "id": "762-2",
+          "categorie": "U20",
+          "commission": "Coupes",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Engagé en Coupe DLR U20",
+          "detail": "L'équipe 1 figure sur la liste des engagés de la Coupe DLR U20.",
+          "echeances": [],
+          "page": 16
+        }
+      ]
+    },
+    {
+      "numero": 761,
+      "date": "2026-10-15",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/c1478a23b5d42ac4d4e9b5add8a58a7c.pdf",
+      "pages": 40,
+      "resume": "Semaine calme. La réserve Seniors a perdu 4-1 à l'ASA Villeurbanne en D1, un arbitre du District est désigné pour le match U17 à Vaulx, et la feuille de match Vétérans du 9 octobre est signalée.",
+      "items": [
+        {
+          "id": "761-1",
+          "categorie": "Seniors",
+          "commission": "Presse",
+          "type": "match",
+          "gravite": "info",
+          "titre": "D1 : défaite 4-1 de la réserve à Villeurbanne",
+          "detail": "L'ASA Villeurbanne bat la réserve de l'ES Genas 4-1, en D1 Poule B, le week-end des 10 et 11 octobre.",
+          "echeances": [],
+          "page": 1,
+          "match": {
+            "date": "2026-10-11",
+            "competition": "Seniors D1 Poule B",
+            "domicile": "ASA VILLEURBANNE",
+            "exterieur": "GENAS AZIEU 2"
+          }
+        },
+        {
+          "id": "761-2",
+          "categorie": "U17",
+          "commission": "Délégation",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Arbitre désigné : Vaulx St Alban / Genas",
+          "detail": "Le District désigne Xavier Fernandez pour arbitrer ce match.",
+          "echeances": [],
+          "page": 4,
+          "match": {
+            "date": "2026-10-17",
+            "competition": "U17",
+            "domicile": "ENT. VAULXOIS ST ALBAN 1",
+            "exterieur": "GENAS AZIEU"
+          }
+        },
+        {
+          "id": "761-3",
+          "categorie": "Vétérans",
+          "commission": "Compétitions",
+          "type": "reglement",
+          "gravite": "info",
+          "titre": "Feuille de match Vétérans signalée",
+          "detail": "Le match est cité dans la rubrique des feuilles de match. Le District rappelle que les transmissions FMI doivent se faire avant le dimanche minuit, avec une feuille papier en cas de panne.",
+          "echeances": [],
+          "page": 17,
+          "match": {
+            "date": "2026-10-09",
+            "competition": "Vétérans Poule F",
+            "domicile": "GENAS AZIEU 35",
+            "exterieur": "PUSIGNAN 35",
+            "numero": "79343124"
+          }
+        }
+      ]
+    },
+    {
+      "numero": 760,
+      "date": "2026-10-08",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/bc8e5de19678a8aa5fbd9ac70eeb250d.pdf",
+      "pages": 48,
+      "resume": "Une déléguée du District est désignée pour le match U20 contre Moins, et la réserve Seniors a fait 1-1 contre Bron. Elle est 2e ex aequo de D1 Poule B.",
+      "items": [
+        {
+          "id": "760-1",
+          "categorie": "U20",
+          "commission": "Délégation",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Déléguée désignée : Genas / AL Moins",
+          "detail": "Le District désigne Sylvie Dos Santos comme déléguée de ce match U20.",
+          "echeances": [],
+          "page": 4,
+          "match": {
+            "date": "2026-10-10",
+            "competition": "U20",
+            "domicile": "GENAS AZIEU",
+            "exterieur": "AM. LAÏQUE MOINS"
+          }
+        },
+        {
+          "id": "760-2",
+          "categorie": "Seniors",
+          "commission": "Presse",
+          "type": "match",
+          "gravite": "info",
+          "titre": "D1 : 1-1 contre Bron, la réserve sur le podium",
+          "detail": "La réserve fait 1-1 contre l'AS Bron lors de la 4e journée. Elle est l'un des deux dauphins de l'ES Lierguoise.",
+          "echeances": [],
+          "page": 9
+        }
+      ]
+    },
+    {
+      "numero": 759,
+      "date": "2026-10-01",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/95818b4ad4b1e9e61a9b36c5f3358995.pdf",
+      "pages": 43,
+      "resume": "Pas de décision concernant le club. Genas accueille l'un des trois sites du plateau U7F et U9F (« Plateau des Copines ») le 10 octobre.",
+      "items": [
+        {
+          "id": "759-1",
+          "categorie": "U9F",
+          "commission": "Féminines",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Plateau des Copines U7F et U9F à Genas",
+          "detail": "Genas est l'un des 3 sites du plateau de la journée 4, ouvert aux licenciées et non licenciées. Il a lieu de 9h30 à 11h, avec un rendez-vous à 9h10, chemin de Cadou à Genas.",
+          "echeances": [
+            {
+              "date": "2026-10-10",
+              "heure": "09:30",
+              "libelle": "Plateau U7F/U9F à Genas (RDV 9h10)"
+            }
+          ],
+          "page": 17
+        }
+      ]
+    },
+    {
+      "numero": 758,
+      "date": "2026-09-24",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/4013661fa9e2bd041849f34dfdd7b388.pdf",
+      "pages": 41,
+      "resume": "Deux mutations d'arbitres : Mehdi Abarour arrive du FC Lyon Football, et Anaïs Rambaud part à l'AS Saint-Martin-en-Haut. Ces deux dossiers relèvent de la CRSA de la Ligue.",
+      "items": [
+        {
+          "id": "758-1",
+          "categorie": "Club",
+          "commission": "Arbitrage",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Arbitre arrivant : Mehdi Abarour",
+          "detail": "L'arbitre Mehdi Abarour quitte le FC Lyon Football pour Genas en 2026-2027. La décision relève de la CRSA, et un appel est possible sous 7 jours.",
+          "echeances": [],
+          "page": 11
+        },
+        {
+          "id": "758-2",
+          "categorie": "Club",
+          "commission": "Arbitrage",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Arbitre partant : Anaïs Rambaud",
+          "detail": "L'arbitre Anaïs Rambaud quitte Genas pour l'AS Saint-Martin-en-Haut en 2026-2027. La décision relève de la CRSA.",
+          "echeances": [],
+          "page": 13
+        }
+      ]
+    },
+    {
+      "numero": 757,
+      "date": "2026-09-17",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/8154887a78414c9a1b0641c5fb22f835.pdf",
+      "pages": 46,
+      "resume": "L'équipe 1 Seniors et l'équipe 1 U15 sont engagées en Coupe de Lyon et du Rhône.",
+      "items": [
+        {
+          "id": "757-1",
+          "categorie": "Seniors",
+          "commission": "Coupes",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Engagé en Coupe DLR Seniors",
+          "detail": "L'équipe 1 figure sur la liste des engagés de la Coupe DLR Seniors.",
+          "echeances": [],
+          "page": 13
+        },
+        {
+          "id": "757-2",
+          "categorie": "U15",
+          "commission": "Coupes",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Engagé en Coupe DLR U15",
+          "detail": "L'équipe 1 figure sur la liste des engagés de la Coupe DLR U15.",
+          "echeances": [],
+          "page": 14
+        }
+      ]
+    },
+    {
+      "numero": 756,
+      "date": "2026-09-10",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/151d54551d51cc2bb721b09e3342d024.pdf",
+      "pages": 40,
+      "resume": "Bon début de la réserve Seniors en D1 : elle tient en échec l'UGA Lyon-Décines, relégué de R3. Le club est engagé en Coupe DLR Vétérans et U20.",
+      "items": [
+        {
+          "id": "756-1",
+          "categorie": "Seniors",
+          "commission": "Presse",
+          "type": "match",
+          "gravite": "info",
+          "titre": "D1 J1 : la réserve accroche l'UGA Lyon-Décines",
+          "detail": "Match nul pour la réserve face à l'UGA Lyon-Décines, relégué de R3, lors de la 1re journée de D1 Poule B.",
+          "echeances": [],
+          "page": 1,
+          "match": {
+            "date": "2026-09-06",
+            "competition": "Seniors D1 Poule B",
+            "domicile": "UGA LYON-DECINES",
+            "exterieur": "GENAS AZIEU 2"
+          }
+        },
+        {
+          "id": "756-2",
+          "categorie": "Vétérans",
+          "commission": "Coupes",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Engagé en Coupe DLR Vétérans",
+          "detail": "Le club figure sur la liste des engagés de la Coupe DLR Vétérans.",
+          "echeances": [],
+          "page": 11
+        },
+        {
+          "id": "756-3",
+          "categorie": "U20",
+          "commission": "Coupes",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Engagé en Coupe DLR U20",
+          "detail": "L'équipe 1 figure sur la liste des engagés de la Coupe DLR U20.",
+          "echeances": [],
+          "page": 12
+        }
+      ]
+    },
+    {
+      "numero": 755,
+      "date": "2026-09-03",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/c22bc6c1d266d24f00c4078a5c31d851.pdf",
+      "pages": 27,
+      "resume": "L'équipe 1 Seniors, en R3, est exemptée du 1er tour de la Coupe DLR. Le club est inscrit aux coupes du Groupement Vallée du Rhône en Seniors, U17 et U15, et a 5 équipes en plateaux de coupe le 12 septembre.",
+      "items": [
+        {
+          "id": "755-1",
+          "categorie": "Seniors",
+          "commission": "Coupes",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Coupe DLR : l'équipe 1 (R3) est exemptée du 1er tour",
+          "detail": "L'équipe 1 n'a pas de match au 1er tour de la Coupe de Lyon et du Rhône Seniors, le week-end des 12 et 13 septembre.",
+          "echeances": [],
+          "page": 10
+        },
+        {
+          "id": "755-2",
+          "categorie": "Seniors",
+          "commission": "Presse",
+          "type": "match",
+          "gravite": "info",
+          "titre": "D1 J1 : UGA Décines / réserve de Genas annoncé",
+          "detail": "Le match de la réserve est annoncé pour la 1re journée de D1 Poule B.",
+          "echeances": [],
+          "page": 8,
+          "match": {
+            "date": "2026-09-06",
+            "competition": "Seniors D1 Poule B",
+            "domicile": "UGA LYON-DECINES",
+            "exterieur": "GENAS AZIEU 2"
+          }
+        },
+        {
+          "id": "755-3",
+          "categorie": "Club",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Inscrit aux coupes du groupement : Seniors, U17 et U15",
+          "detail": "Les inscriptions sont enregistrées. Les frais ne sont comptés qu'en cas de participation réelle.",
+          "echeances": [],
+          "page": 26
+        },
+        {
+          "id": "755-4",
+          "categorie": "Club",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Plateaux de coupe le 12 septembre (5 équipes)",
+          "detail": "Genas 1 joue en Coupe Festival, plateau 4, contre La Revolée, Ozon et St Alban. Genas 2, 3, 4 et 6 jouent en Coupe Vallée du Rhône, plateaux 13, 15, 16 et 17. Jonglage obligatoire avant les matchs, 2 qualifiés par plateau. Les feuilles sont à renvoyer sous 48h.",
+          "echeances": [
+            {
+              "date": "2026-09-12",
+              "heure": "13:30",
+              "libelle": "Plateaux de coupe du Groupement Vallée du Rhône (5 équipes Genas)"
+            }
+          ],
+          "page": 27
+        }
+      ]
+    },
+    {
+      "numero": 754,
+      "date": "2026-08-27",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/ab042e2b0aca611390bb93737d95285a.pdf",
+      "pages": 22,
+      "resume": "Les poules U13 du Groupement Vallée du Rhône (provisoires) sont publiées, avec 6 équipes de Genas. L'assemblée générale du groupement, obligatoire, a lieu le 4 septembre à Diémoz. Premiers matchs Seniors des équipes 2 et 3 à Décines et à Loire-sur-Rhône.",
+      "items": [
+        {
+          "id": "754-1",
+          "categorie": "U13",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Poules U13 provisoires : 6 équipes Genas",
+          "detail": "Genas 1 est en poule B, Genas 2 en C, Genas 3 en D, Genas 4 en E, Genas 5 en F et Genas 6 en J. Les poules ne sont pas définitives et les clubs peuvent faire des retours. Le tirage de la Coupe VDR a lieu le 2 septembre, et les inscriptions doivent être faites avant.",
+          "echeances": [
+            {
+              "date": "2026-09-02",
+              "libelle": "Tirage Coupe Vallée du Rhône U13 (inscriptions avant)"
+            }
+          ],
+          "page": 23
+        },
+        {
+          "id": "754-2",
+          "categorie": "Club",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "info",
+          "gravite": "attention",
+          "titre": "AG du groupement obligatoire",
+          "detail": "L'assemblée générale du Groupement Vallée du Rhône est obligatoire pour tous les clubs. Elle a lieu à la salle des Générations à Diémoz.",
+          "echeances": [
+            {
+              "date": "2026-09-04",
+              "heure": "19:00",
+              "libelle": "AG obligatoire du Groupement Vallée du Rhône (Diémoz)"
+            }
+          ],
+          "page": 22
+        },
+        {
+          "id": "754-3",
+          "categorie": "Seniors",
+          "commission": "Délégation",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Désignations : équipes 2 et 3 en déplacement",
+          "detail": "Les désignations du week-end des 5 et 6 septembre concernent deux matchs : Lyon Décines 1 contre Genas 2, et US Loire-sur-Rhône 2 contre Genas 3 (D3 probable).",
+          "echeances": [],
+          "page": 1
+        }
+      ]
+    },
+    {
+      "numero": 753,
+      "date": "2026-08-20",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/8c2c1eb132b860d249e61f39c743d06e.pdf",
+      "pages": 12,
+      "resume": "Début de saison : le club figure parmi les inscrits du Groupement Vallée du Rhône en Seniors, U17, U15 et U13. Les poules U13 sont programmées à partir du 25 août.",
+      "items": [
+        {
+          "id": "753-1",
+          "categorie": "Club",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Inscrit au Groupement Vallée du Rhône",
+          "detail": "Le club est inscrit en Seniors, U17, U15 et U13. Les poules U13 sont programmées à partir du 25 août. L'AG obligatoire a lieu le 4 septembre à 19h à Diémoz.",
+          "echeances": [],
+          "page": 12
         }
       ]
     }
