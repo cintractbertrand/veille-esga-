@@ -16,7 +16,7 @@
   const today = new Date(); today.setHours(0,0,0,0);
   const joursAvant = (s) => Math.round((parseD(s) - today) / 86400000);
 
-  let data, all = [], pvById = {}, matchs = [], dossiers = [];
+  let data, all = [], pvById = {}, matchs = [], dossiers = [], extraits = {};
   let calMonth, catActive = null, query = "";
 
   // matchs.json et dossiers.json sont facultatifs : le site fonctionne sans eux
@@ -25,7 +25,9 @@
     .then((r) => r.json())
     .then(async (j) => {
       data = j;
-      [matchs, dossiers] = await Promise.all([charger("data/matchs.json"), charger("data/dossiers.json")]);
+      let ex;
+      [matchs, dossiers, ex] = await Promise.all([charger("data/matchs.json"), charger("data/dossiers.json"), charger("data/extraits.json")]);
+      if (Array.isArray(ex)) ex.forEach((e) => { extraits[e.pv] = e.extraits || []; });
       if (!Array.isArray(matchs)) matchs = [];
       if (!Array.isArray(dossiers)) dossiers = [];
       matchs.sort((a, b) => a.date.localeCompare(b.date) || (a.heure || "").localeCompare(b.heure || ""));
@@ -103,7 +105,7 @@
     document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === t));
     showPanel(t);
     history.replaceState(null, "", "#" + t);
-    if (t === "lecteur") lectAfficher();
+    if (t === "lecteur") lectRafraichir();
   }
 
   // vue d'une équipe (catégorie) ou des urgences, ouverte depuis la barre du haut
@@ -503,7 +505,57 @@
     }
   });
 
+  // ---- Lecture suivie : tous les passages du PV qui concernent Genas, à la suite (data/extraits.json)
+  let lectMode = "suivie";
+  const RE_CLUB_G = /(genas(?:\s+azieu)?(?:\s+e\.?s\.?)?|\besga\b|523341)/gi;
+  const surligne = (t) => esc(t).replace(RE_CLUB_G, "<mark>$1</mark>");
+
+  function setMode(m) {
+    lectMode = m;
+    document.querySelectorAll(".seg-b").forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
+    $("#lect-suivie").hidden = m !== "suivie";
+    $("#lect-pdf").hidden = m !== "pdf";
+    if (m === "pdf") lectAfficher(); else renderSuivie();
+  }
+
+  // recolle les lignes coupées par la mise en page du PDF
+  function paragraphes(t) {
+    const out = [];
+    t.split("\n").forEach((l) => {
+      const prev = out[out.length - 1];
+      if (prev != null && prev.length >= 80 && !/[.:;!?)]$/.test(prev.trim()) && /^[a-zà-ÿ0-9(«"]/.test(l.trim())) out[out.length - 1] = prev.trimEnd() + " " + l.trim();
+      else out.push(l);
+    });
+    return out;
+  }
+
+  function renderSuivie() {
+    const num = lect.num, pv = pvById[num]; if (!pv) return;
+    const ex = extraits[num];
+    if (!ex || !ex.length) {
+      $("#lect-suivie").innerHTML = `<p class="empty">La lecture suivie n'est pas encore prête pour ce PV. <button class="btn-link" data-go-pdf="1">Lire le PDF complet ›</button></p>`;
+    } else {
+      const corps = ex.filter((e) => e.section !== "Annexes"), annexes = ex.filter((e) => e.section === "Annexes");
+      // on regroupe les passages consécutifs d'une même rubrique
+      const groupes = [];
+      corps.forEach((e) => { const g = groupes[groupes.length - 1]; if (g && g.section === (e.section || "")) g.items.push(e); else groupes.push({ section: e.section || "", items: [e] }); });
+      const pageLien = (p) => `<button class="pg-lien" data-page="${p}">p. ${p} ›</button>`;
+      $("#lect-suivie").innerHTML = `
+        <div class="suivie-tete"><div><p class="kicker-dark">Lecture suivie</p><h2>PV n°${pv.numero} du ${fmtD(pv.date)}</h2></div>
+          <p class="sec-note">${corps.length} passage${corps.length > 1 ? "s" : ""} sur Genas${annexes.length ? ` · ${annexes.length} ligne${annexes.length > 1 ? "s" : ""} d'annexes` : ""} · clique sur un n° de page pour voir le PDF</p></div>
+        ${pv.resume ? `<div class="resume"><strong>En bref :</strong> ${esc(pv.resume)}</div>` : ""}
+        <div class="suivie">${groupes.map((g) => `<section class="suivie-g"><h3>${esc(g.section ? g.section.charAt(0) + g.section.slice(1).toLowerCase() : "Autres passages")}</h3>
+          ${g.items.map((e) => `<article class="passage"><div class="passage-p">${pageLien(e.page)}</div><div class="passage-t">${paragraphes(e.texte).map((l) => `<p>${surligne(l)}</p>`).join("")}</div></article>`).join("")}</section>`).join("")}
+        ${annexes.length ? `<details class="suivie-annexes"><summary>Annexes : désignations et dossiers (${annexes.length} ligne${annexes.length > 1 ? "s" : ""})</summary>
+          <ul>${annexes.map((e) => `<li>${pageLien(e.page)}<span>${surligne(e.texte.replace(/\s{2,}/g, " · "))}</span></li>`).join("")}</ul></details>` : ""}
+        </div>`;
+    }
+    $("#lect-suivie").querySelectorAll(".pg-lien").forEach((b) => b.onclick = () => { lect.page = +b.dataset.page; lect.focus = true; lect.hlIdx = -1; setMode("pdf"); });
+    $("#lect-suivie").querySelectorAll("[data-go-pdf]").forEach((b) => b.onclick = () => setMode("pdf"));
+  }
+
   function renderLecteur() {
+    document.querySelectorAll(".seg-b").forEach((b) => b.onclick = () => setMode(b.dataset.mode));
     $("#lect-pv").innerHTML = data.pvs.map((pv) => `<option value="${pv.numero}">PV n°${pv.numero} du ${fmtD(pv.date)} (${pv.items.length} mention${pv.items.length > 1 ? "s" : ""})</option>`).join("");
     $("#lect-pv").onchange = () => lire(+$("#lect-pv").value, 1, false);
     $("#lect-page").onchange = () => allerPage(+$("#lect-page").value || 1);
@@ -526,9 +578,11 @@
     const its = all.filter((i) => i.pv === num).sort((a, b) => (a.page || 0) - (b.page || 0));
     $("#lect-fiches").innerHTML = `<h3>Mentions du club</h3>` + (its.map((i) => `<button class="lect-fiche ${esc(i.gravite)}" data-page="${i.page || 1}"><b>p. ${i.page || "?"}</b> · ${esc(i.categorie)}<br>${esc(i.titre)}</button>`).join("") || `<p class="empty">Aucune mention.</p>`);
     $("#lect-fiches").querySelectorAll(".lect-fiche").forEach((b) => b.onclick = () => allerPage(+b.dataset.page));
-    if (ouvrir) { showTab("lecteur"); window.scrollTo({ top: 0, behavior: "smooth" }); }
-    else if ($("#tab-lecteur").classList.contains("active")) lectAfficher();
+    if (ouvrir) { lectMode = "pdf"; showTab("lecteur"); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    else if ($("#tab-lecteur").classList.contains("active")) lectRafraichir();
   }
+
+  function lectRafraichir() { setMode(lectMode); }
 
   // appelé quand l'onglet Lecteur devient visible (il faut sa largeur pour dessiner la page)
   async function lectAfficher() {

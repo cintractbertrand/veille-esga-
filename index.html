@@ -7,7 +7,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%231d4ed8%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
   <title>Veille PV ESGA</title>
   <meta name="description" content="Synthèse hebdomadaire des PV du District de Lyon et du Rhône pour l'ES Genas Azieu">
-  <link rel="stylesheet" href="style.css?v=2026-11-19g">
+  <link rel="stylesheet" href="style.css?v=2026-11-19h">
 </head>
 <body>
   <header class="hero">
@@ -121,6 +121,14 @@
     <section id="tab-lecteur" class="panel">
       <div class="lect-head">
         <select id="lect-pv" class="select" aria-label="Choisir un PV"></select>
+        <div class="seg" role="tablist" aria-label="Mode de lecture">
+          <button class="seg-b on" data-mode="suivie">Lecture suivie</button>
+          <button class="seg-b" data-mode="pdf">PDF complet</button>
+        </div>
+      </div>
+      <div id="lect-suivie" class="lect-suivie"></div>
+      <div id="lect-pdf" hidden>
+      <div class="lect-head lect-pdf-head">
         <div class="lect-nav">
           <button class="btn icon" id="lect-prec" aria-label="Page précédente">‹</button>
           <label class="lect-page">Page <input id="lect-page" type="number" min="1" value="1"> <span id="lect-total"></span></label>
@@ -144,6 +152,7 @@
           <p class="lect-aide" id="lect-aide">Les passages qui citent Genas Azieu ou l'ESGA sont surlignés en jaune.</p>
         </div>
       </div>
+      </div>
     </section>
 
     <section id="tab-historique" class="panel">
@@ -156,6 +165,6 @@
   </footer>
 
   <script src="vendor/pdfjs/pdf.min.js"></script>
-  <script src="app.js?v=2026-11-19g"></script>
+  <script src="app.js?v=2026-11-19h"></script>
 </body>
 </html>
