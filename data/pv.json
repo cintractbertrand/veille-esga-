@@ -10,7 +10,7 @@
       "numero": 766,
       "date": "2026-11-19",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/305f7612dd1a6f4a7701ac3665089208.pdf",
-      "pages": 45,
+      "pages": 137,
       "resume": "Semaine chargée : la Discipline demande un rapport après les incidents de fin de match U15F à Montchat, à rendre avant lundi 9h. La Trésorerie signale que le club n'est pas à jour de règlement, avec un délai jusqu'au 30 novembre. Le District tiendra sa soirée des partenaires à Genas le 26 novembre.",
       "items": [
         {
@@ -93,7 +93,7 @@
       "numero": 765,
       "date": "2026-11-12",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/f40fc6f5f38eb2a4ea02e9641e722b29.pdf",
-      "pages": 41,
+      "pages": 122,
       "resume": "La Discipline demande un rapport au club après la fin de match agitée entre l'AS Saint-Priest et nos Seniors féminines (D1F) du 8 novembre, notamment sur le comportement de la joueuse n°11. L'arbitre a aussi transmis une observation d'après-match à la Discipline et à la Commission féminine.",
       "items": [
         {
@@ -143,7 +143,7 @@
       "numero": 764,
       "date": "2026-11-05",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/98cfc99378307d78d3669e09cca95c34.pdf",
-      "pages": 48,
+      "pages": 142,
       "resume": "Deuxième rappel pour la feuille de match Vétérans contre Pusignan du 9 octobre, toujours manquante : sans envoi avant le lundi 9 novembre à 14h, le match est perdu (0 point) avec 150 € d'amende. Rien d'autre pour le club.",
       "items": [
         {
@@ -187,6 +187,17 @@
             "exterieur": "GENAS AZIEU 1",
             "numero": "79932397"
           }
+        },
+        {
+          "id": "764-3",
+          "categorie": "Seniors",
+          "commission": "Presse",
+          "type": "match",
+          "gravite": "info",
+          "titre": "D3 : l'équipe 3 dans le groupe des 4es",
+          "detail": "L'ES Genas C est 4e ex aequo, à cinq points du trio de tête (AS Bron GL B, CS Méginand C et AL Moins).",
+          "echeances": [],
+          "page": 9
         }
       ]
     },
@@ -194,7 +205,7 @@
       "numero": 763,
       "date": "2026-10-29",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/484da9eb885834aa8a6962ded8f6796a.pdf",
-      "pages": 48,
+      "pages": 134,
       "resume": "Le club apparaît dans les listes d'engagés de 4 coupes (Vétérans, Vial, U18F et U15F). Premier rappel pour la feuille de match Vétérans contre Pusignan du 9 octobre.",
       "items": [
         {
@@ -243,6 +254,45 @@
             "exterieur": "GENAS AZIEU 1",
             "numero": "79932397"
           }
+        },
+        {
+          "id": "763-4",
+          "categorie": "Seniors",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Coupe GVR : Genas 2 qualifié, Genas 3 éliminé aux tirs au but",
+          "detail": "Chaponnay 2 – Genas 2 : 1-4. Genas 3 – Pont-de-Chéruy 2 : 3-3, puis 3 tirs au but à 4.",
+          "echeances": [],
+          "page": 41
+        },
+        {
+          "id": "763-5",
+          "categorie": "U15",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Coupe GVR U15 : victoire 4-1 à Vienne",
+          "detail": "Vienne 2 – Genas 2 : 1-4, l'équipe 2 est qualifiée.",
+          "echeances": [],
+          "page": 42,
+          "match": {
+            "date": "2026-10-24",
+            "competition": "Coupe GVR U15",
+            "domicile": "VIENNE 2",
+            "exterieur": "GENAS 2"
+          }
+        },
+        {
+          "id": "763-6",
+          "categorie": "Seniors",
+          "commission": "PSEM",
+          "type": "observation",
+          "gravite": "info",
+          "titre": "Match de coupe observé par la PSEM",
+          "detail": "La rencontre de Coupe GVR Chaponnay 2 – Genas fait partie des matchs observés par la PSEM. Il n'y a aucune sanction.",
+          "echeances": [],
+          "page": 5
         }
       ]
     },
@@ -250,7 +300,7 @@
       "numero": 762,
       "date": "2026-10-22",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/710b4d4c731ebe66a8917393a9919179.pdf",
-      "pages": 38,
+      "pages": 98,
       "resume": "Amende de 20 € pour la feuille de match Vétérans contre Pusignan du 9 octobre, non transmise. L'équipe 1 est engagée en Coupe DLR U20.",
       "items": [
         {
@@ -281,6 +331,23 @@
           "detail": "L'équipe 1 figure sur la liste des engagés de la Coupe DLR U20.",
           "echeances": [],
           "page": 16
+        },
+        {
+          "id": "762-3",
+          "categorie": "Seniors",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Coupe GVR : horaires des matchs",
+          "detail": "Genas 3 reçoit Pont-de-Chéruy 2 le 24 octobre à 19h. Le match Chaponnay 2 – Genas 2 se joue à 12h30.",
+          "echeances": [],
+          "page": 34,
+          "match": {
+            "date": "2026-10-24",
+            "competition": "Coupe GVR Seniors",
+            "domicile": "GENAS 3",
+            "exterieur": "PONT DE CHERUY 2"
+          }
         }
       ]
     },
@@ -288,7 +355,7 @@
       "numero": 761,
       "date": "2026-10-15",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/c1478a23b5d42ac4d4e9b5add8a58a7c.pdf",
-      "pages": 40,
+      "pages": 107,
       "resume": "Semaine calme. La réserve Seniors a perdu 4-1 à l'ASA Villeurbanne en D1, un arbitre du District est désigné pour le match U17 à Vaulx, et la feuille de match Vétérans du 9 octobre est signalée.",
       "items": [
         {
@@ -342,6 +409,34 @@
             "exterieur": "PUSIGNAN 35",
             "numero": "79343124"
           }
+        },
+        {
+          "id": "761-4",
+          "categorie": "Seniors",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Coupe GVR : tirage des équipes 2 et 3",
+          "detail": "Le tirage de la Coupe du Groupement Vallée du Rhône Seniors donne Genas 3 contre Pont-de-Chéruy 2, et Chaponnay 2 contre Genas 2.",
+          "echeances": [],
+          "page": 37
+        },
+        {
+          "id": "761-5",
+          "categorie": "U15",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Coupe GVR U15 : Vienne 2 – Genas 2",
+          "detail": "Tirage de la Coupe U15 du groupement. Le match se joue le 24 octobre à 15h30.",
+          "echeances": [],
+          "page": 37,
+          "match": {
+            "date": "2026-10-24",
+            "competition": "Coupe GVR U15",
+            "domicile": "VIENNE 2",
+            "exterieur": "GENAS 2"
+          }
         }
       ]
     },
@@ -349,7 +444,7 @@
       "numero": 760,
       "date": "2026-10-08",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/bc8e5de19678a8aa5fbd9ac70eeb250d.pdf",
-      "pages": 48,
+      "pages": 137,
       "resume": "Une déléguée du District est désignée pour le match U20 contre Moins, et la réserve Seniors a fait 1-1 contre Bron. Elle est 2e ex aequo de D1 Poule B.",
       "items": [
         {
@@ -386,7 +481,7 @@
       "numero": 759,
       "date": "2026-10-01",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/95818b4ad4b1e9e61a9b36c5f3358995.pdf",
-      "pages": 43,
+      "pages": 137,
       "resume": "Aucune décision concernant le club cette semaine.",
       "items": []
     },
@@ -394,7 +489,7 @@
       "numero": 758,
       "date": "2026-09-24",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/4013661fa9e2bd041849f34dfdd7b388.pdf",
-      "pages": 41,
+      "pages": 132,
       "resume": "Deux mutations d'arbitres : Mehdi Abarour arrive du FC Lyon Football, et Anaïs Rambaud part à l'AS Saint-Martin-en-Haut. Ces deux dossiers relèvent de la CRSA de la Ligue.",
       "items": [
         {
@@ -456,7 +551,7 @@
       "numero": 756,
       "date": "2026-09-10",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/151d54551d51cc2bb721b09e3342d024.pdf",
-      "pages": 40,
+      "pages": 115,
       "resume": "Bon début de la réserve Seniors en D1 : elle tient en échec l'UGA Lyon-Décines, relégué de R3. Le club est engagé en Coupe DLR Vétérans et U20.",
       "items": [
         {
@@ -504,7 +599,7 @@
       "numero": 755,
       "date": "2026-09-03",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/c22bc6c1d266d24f00c4078a5c31d851.pdf",
-      "pages": 27,
+      "pages": 66,
       "resume": "L'équipe 1 Seniors (R3) est exemptée du 1er tour de la Coupe DLR. Le club est inscrit aux coupes du Groupement Vallée du Rhône en Seniors, U17 et U15.",
       "items": [
         {
@@ -552,7 +647,7 @@
       "numero": 754,
       "date": "2026-08-27",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/ab042e2b0aca611390bb93737d95285a.pdf",
-      "pages": 22,
+      "pages": 43,
       "resume": "Les poules U13 du Groupement Vallée du Rhône (provisoires) sont publiées, avec 6 équipes de Genas. L'assemblée générale du groupement, obligatoire, a lieu le 4 septembre à Diémoz. Premiers matchs Seniors des équipes 2 et 3 à Décines et à Loire-sur-Rhône.",
       "items": [
         {
@@ -605,7 +700,7 @@
       "numero": 753,
       "date": "2026-08-20",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/8c2c1eb132b860d249e61f39c743d06e.pdf",
-      "pages": 12,
+      "pages": 18,
       "resume": "Début de saison : le club figure parmi les inscrits du Groupement Vallée du Rhône en Seniors, U17, U15 et U13. Les poules U13 sont programmées à partir du 25 août.",
       "items": [
         {

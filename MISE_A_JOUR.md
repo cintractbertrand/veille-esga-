@@ -21,8 +21,9 @@ Cette procédure est suivie par la tâche planifiée chaque jeudi soir.
      - `match` (facultatif) : `numero`, `date`, `competition`, `domicile`, `exterieur`.
      - `echeances[]` : `date`, `heure` (facultatif), `libelle`. On y met les dates limites de rapport, les audiences, les fins de suspension, les délais de paiement et les dates de match à rejouer.
      - `page` : la page du PDF.
-5. Mettre à jour `mis_a_jour`, vérifier que le JSON est valide (`python3 -m json.tool data/pv.json`), puis faire un commit « PV n°XXX du JJ/MM » et le pousser sur `main`. GitHub Pages republie le site tout seul.
-6. Envoyer à Bertrand un court résumé de 3 lignes maximum avec le lien du site.
+5. Lancer `python3 outils/extraire_pv.py` : il met à jour tout seul `data/matchs.json` (les matchs du club, tirés des annexes « Désignations par poule ») et `data/dossiers.json` (amendes et dossiers du club, tirés de « Dossiers par club »). Ne pas recopier ces éléments dans `pv.json`.
+6. Mettre à jour `mis_a_jour`, vérifier que le JSON est valide (`python3 -m json.tool data/pv.json`), puis faire un commit « PV n°XXX du JJ/MM » et le pousser sur `main`. GitHub Pages republie le site tout seul.
+7. Envoyer à Bertrand un court résumé de 3 lignes maximum avec le lien du site.
 
 ## Limites connues
 - Le site du District refuse les téléchargements depuis le cloud et depuis GitHub Actions (403). C'est pour cela que le PC de Bertrand télécharge les PDF (`outils/telecharger-pv.ps1`, planifié par `outils/installer-veille.ps1`).
