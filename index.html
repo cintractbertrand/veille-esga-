@@ -22,6 +22,7 @@
     <button class="tab" data-tab="calendrier">Calendrier</button>
     <button class="tab" data-tab="categories">Par catégorie</button>
     <button class="tab" data-tab="historique">Historique</button>
+    <button class="tab" data-tab="lecteur">Lecteur PV</button>
   </nav>
 
   <main class="wrap">
@@ -55,6 +56,19 @@
       <input id="recherche" class="search" type="search" placeholder="Rechercher (adversaire, commission, mot-clé…)">
       <div id="cat-cards" class="cat-cards"></div>
       <div id="items-cat" class="items"></div>
+    </section>
+
+    <section id="tab-lecteur" class="panel">
+      <div class="lect-head">
+        <select id="lect-pv" class="search" aria-label="Choisir un PV"></select>
+        <label class="lect-page">Page <input id="lect-page" type="number" min="1" value="1"></label>
+        <a id="lect-ext" class="btn" target="_blank" rel="noopener">Ouvrir dans un onglet ↗</a>
+      </div>
+      <div class="lect-body">
+        <aside id="lect-fiches" class="lect-fiches"></aside>
+        <div class="lect-frame"><iframe id="lect-iframe" title="PV du District"></iframe>
+          <p class="lect-aide">Si le PV ne s'affiche pas (sur téléphone notamment), utilise « Ouvrir dans un onglet ».</p></div>
+      </div>
     </section>
 
     <section id="tab-historique" class="panel">

@@ -42,6 +42,7 @@
     renderCal();
     renderCats();
     renderTimeline();
+    renderLecteur();
     bindTabs();
   }
 
@@ -50,23 +51,51 @@
     const n = (g) => items.filter((i) => i.gravite === g).length;
     const avenir = all.flatMap((i) => i.echeances || []).filter((e) => joursAvant(e.date) >= 0).length;
     $("#stats").innerHTML = [
-      [items.length, "mentions cette semaine"],
-      [n("urgent"), "urgentes"],
-      [avenir, "échéances à venir"],
-      [data.pvs.length, "PV suivis"],
-    ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
+      [items.length, "mentions cette semaine", "mentions"],
+      [all.filter((i) => i.gravite === "urgent").length, "urgentes", "urgentes"],
+      [avenir, "échéances à venir", "echeances"],
+      [data.pvs.length, "PV suivis", "pv"],
+    ].map(([v, l, g]) => `<button class="stat" data-go="${g}"><b>${v}</b><span>${l}</span></button>`).join("");
+    $("#stats").querySelectorAll(".stat").forEach((b) => b.onclick = () => {
+      const g = b.dataset.go;
+      if (g === "mentions") { showTab("semaine"); scrollTo$("#items-semaine"); }
+      if (g === "echeances") { showTab("semaine"); scrollTo$("#a-venir"); }
+      if (g === "pv") showTab("historique");
+      if (g === "urgentes") { catActive = "Urgentes"; query = ""; $("#recherche").value = ""; renderCats(); showTab("categories"); }
+    });
+  }
+
+  function scrollTo$(sel) {
+    const el = typeof sel === "string" ? $(sel) : sel;
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY - 70;
+    window.scrollTo({ top: y, behavior: "smooth" });
+  }
+
+  // ouvre la fiche dans « Par catégorie » et la met en évidence
+  function ouvrirFiche(id) {
+    catActive = "Toutes"; query = ""; $("#recherche").value = "";
+    renderCats(); showTab("categories");
+    const el = $(`#items-cat [data-fiche="${id}"]`);
+    if (el) { scrollTo$(el); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 2000); }
+  }
+
+  function showTab(t) {
+    document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === t));
+    document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === "tab-" + t));
+    history.replaceState(null, "", "#" + t);
   }
 
   function itemHTML(it, showPv) {
     const m = it.match;
     const match = m ? `<p class="match">⚽ <b>${esc(m.domicile)}</b> – <b>${esc(m.exterieur)}</b> · ${esc(m.competition || "")}${m.date ? " · " + fmtD(m.date) : ""}${m.numero ? " · match n°" + esc(m.numero) : ""}</p>` : "";
     const ech = (it.echeances || []).map((e) => `<span class="badge ${joursAvant(e.date) >= 0 && joursAvant(e.date) <= 7 ? "urgent" : ""}">📅 ${fmtD(e.date)}${e.heure ? " " + e.heure.replace(":", "h") : ""}</span>`).join("");
-    return `<article class="item ${esc(it.gravite)}">
+    return `<article class="item ${esc(it.gravite)}" data-fiche="${esc(it.id)}">
       <div class="meta"><span class="badge cat">${esc(it.categorie)}</span><span class="badge">${esc(it.commission)}</span>${it.gravite !== "info" ? `<span class="badge ${esc(it.gravite)}">${it.gravite === "urgent" ? "Urgent" : "À surveiller"}</span>` : ""}${ech}</div>
       <h3>${esc(it.titre)}</h3>
       ${match}
       <p>${esc(it.detail)}</p>
-      <p class="src">Source : <a href="${esc(it.pvUrl)}${it.page ? "#page=" + it.page : ""}" target="_blank" rel="noopener">PV n°${it.pv}${it.page ? ", page " + it.page : ""}</a>${showPv ? " du " + fmtD(it.pvDate) : ""}</p>
+      <p class="src">Source : <a href="${esc(it.pvUrl)}${it.page ? "#page=" + it.page : ""}" class="lire" data-pv="${it.pv}" data-page="${it.page || 1}">PV n°${it.pv}${it.page ? ", page " + it.page : ""}</a>${showPv ? " du " + fmtD(it.pvDate) : ""} · <a href="${esc(it.pvUrl)}" target="_blank" rel="noopener">PDF ↗</a></p>
     </article>`;
   }
 
@@ -84,10 +113,11 @@
       const d = parseD(e.date), j = joursAvant(e.date);
       const cls = j <= 4 ? "urgent" : j <= 10 ? "attention" : "";
       const cd = j === 0 ? "aujourd'hui" : j === 1 ? "demain" : `dans ${j} jours`;
-      return `<li class="echeance"><div class="date-pill"><b>${d.getDate()}</b><span>${MOIS_C[d.getMonth()]}</span></div>
+      return `<li class="echeance lien" data-id="${esc(e.it.id)}"><div class="date-pill"><b>${d.getDate()}</b><span>${MOIS_C[d.getMonth()]}</span></div>
         <div class="txt"><strong>${esc(e.libelle)}</strong><br><small>${esc(e.it.categorie)} · ${esc(e.it.commission)}${e.heure ? " · " + e.heure.replace(":", "h") : ""}</small></div>
         <span class="countdown ${cls}">${cd}</span></li>`;
     }).join("") || `<li class="empty">Rien à prévoir pour l'instant.</li>`;
+    $("#a-venir").querySelectorAll("[data-id]").forEach((li) => li.onclick = () => ouvrirFiche(li.dataset.id));
   }
 
   function eventsByDay() {
@@ -121,7 +151,8 @@
       const ev = map[el.dataset.d];
       const box = $("#cal-jour");
       box.hidden = false;
-      box.innerHTML = `<strong>${fmtD(el.dataset.d)}</strong><ul>${ev.map((e) => `<li><i class="dot ${e.kind}"></i>${esc(e.label)} <small>(PV n°${e.it.pv})</small></li>`).join("")}</ul>`;
+      box.innerHTML = `<strong>${fmtD(el.dataset.d)}</strong><ul>${ev.map((e) => `<li class="lien" data-id="${esc(e.it.id)}"><i class="dot ${e.kind}"></i>${esc(e.label)} <small>(PV n°${e.it.pv}) · voir la fiche ›</small></li>`).join("")}</ul>`;
+      box.querySelectorAll("[data-id]").forEach((li) => li.onclick = () => ouvrirFiche(li.dataset.id));
     }));
   }
   $("#cal-prev").onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); $("#cal-jour").hidden = true; renderCal(); };
@@ -158,8 +189,9 @@
 
   function renderCats() {
     const cats = catList();
-    $("#chips").innerHTML = ["Toutes", ...cats].map((c) => {
-      const n = c === "Toutes" ? all.length : all.filter((i) => i.categorie === c).length;
+    const nUrg = all.filter((i) => i.gravite === "urgent").length;
+    $("#chips").innerHTML = ["Toutes", ...(nUrg ? ["Urgentes"] : []), ...cats].map((c) => {
+      const n = c === "Toutes" ? all.length : c === "Urgentes" ? nUrg : all.filter((i) => i.categorie === c).length;
       return `<button class="chip ${c === catActive ? "active" : ""}" data-c="${esc(c)}">${esc(c)} <small>${n}</small></button>`;
     }).join("");
     $("#chips").querySelectorAll(".chip").forEach((b) => b.onclick = () => { catActive = b.dataset.c; renderCats(); });
@@ -177,7 +209,7 @@
     $("#cat-cards").querySelectorAll(".cat-card").forEach((el) => el.onclick = () => { catActive = el.dataset.c; renderCats(); });
 
     const q = query.trim().toLowerCase();
-    const items = all.filter((i) => catActive === "Toutes" || i.categorie === catActive)
+    const items = all.filter((i) => catActive === "Toutes" || (catActive === "Urgentes" ? i.gravite === "urgent" : i.categorie === catActive))
       .filter((i) => !q || JSON.stringify(i).toLowerCase().includes(q))
       .sort((a, b) => b.pvDate.localeCompare(a.pvDate) || sortItems(a, b));
     $("#items-cat").innerHTML = items.map((i) => itemHTML(i, true)).join("") || `<p class="empty">Aucun résultat.</p>`;
@@ -188,18 +220,39 @@
     $("#timeline").innerHTML = data.pvs.map((pv, k) => {
       const its = all.filter((i) => i.pv === pv.numero).sort(sortItems);
       return `<li><details ${k === 0 ? "open" : ""}><summary class="card"><strong>PV n°${pv.numero}</strong> · ${fmtD(pv.date)} · ${its.length} mention${its.length > 1 ? "s" : ""}
-        <br><small>${esc(pv.resume)}</small><br><a href="${esc(pv.url)}" target="_blank" rel="noopener">Ouvrir le PDF</a></summary>
+        <br><small>${esc(pv.resume)}</small><br><a href="${esc(pv.url)}" class="lire" data-pv="${pv.numero}" data-page="1">Lire le PV</a></summary>
         <div class="items">${its.map((i) => itemHTML(i)).join("") || `<p class="empty">Aucune mention.</p>`}</div></details></li>`;
     }).join("");
   }
 
+  // Lecteur de PV
+  function renderLecteur() {
+    $("#lect-pv").innerHTML = data.pvs.map((pv) => `<option value="${pv.numero}">PV n°${pv.numero} du ${fmtD(pv.date)} (${pv.items.length} mention${pv.items.length > 1 ? "s" : ""})</option>`).join("");
+    $("#lect-pv").onchange = () => lire(+$("#lect-pv").value, 1, false);
+    $("#lect-page").onchange = () => lire(+$("#lect-pv").value, +$("#lect-page").value || 1, false);
+    if (data.pvs[0]) lire(data.pvs[0].numero, 1, false);
+  }
+  function lire(num, page, ouvrir = true) {
+    const pv = pvById[num]; if (!pv) return;
+    $("#lect-pv").value = num; $("#lect-page").value = page;
+    const fr = $("#lect-iframe"), cible = `${pv.url}#page=${page}`;
+    if (fr.src !== cible) { fr.src = "about:blank"; setTimeout(() => { fr.src = cible; }, 30); }
+    $("#lect-ext").href = `${pv.url}#page=${page}`;
+    const its = all.filter((i) => i.pv === num).sort((a, b) => (a.page || 0) - (b.page || 0));
+    $("#lect-fiches").innerHTML = `<h3>Mentions du club</h3>` + (its.map((i) => `<button class="lect-fiche ${esc(i.gravite)} ${i.page === page ? "on" : ""}" data-page="${i.page || 1}"><b>p. ${i.page || "?"}</b> · ${esc(i.categorie)}<br>${esc(i.titre)}</button>`).join("") || `<p class="empty">Aucune mention.</p>`);
+    $("#lect-fiches").querySelectorAll(".lect-fiche").forEach((b) => b.onclick = () => lire(num, +b.dataset.page, false));
+    if (ouvrir) { showTab("lecteur"); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  }
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a.lire");
+    if (!a || e.ctrlKey || e.metaKey) return;
+    e.preventDefault(); e.stopPropagation();
+    lire(+a.dataset.pv, +a.dataset.page || 1);
+  }, true);
+
   function bindTabs() {
-    const show = (t) => {
-      document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === t));
-      document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === "tab-" + t));
-    };
-    document.querySelectorAll(".tab").forEach((b) => b.onclick = () => { show(b.dataset.tab); history.replaceState(null, "", "#" + b.dataset.tab); });
+    document.querySelectorAll(".tab").forEach((b) => b.onclick = () => showTab(b.dataset.tab));
     const h = location.hash.slice(1);
-    if (["semaine", "calendrier", "categories", "historique"].includes(h)) show(h);
+    if (["semaine", "calendrier", "categories", "historique", "lecteur"].includes(h)) showTab(h);
   }
 })();
