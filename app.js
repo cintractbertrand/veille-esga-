@@ -520,40 +520,109 @@
     if (m === "pdf") lectAfficher(); else renderSuivie();
   }
 
-  // recolle les lignes coupées par la mise en page du PDF
-  function paragraphes(t) {
-    const out = [];
-    t.split("\n").forEach((l) => {
-      const prev = out[out.length - 1];
-      if (prev != null && prev.length >= 80 && !/[.:;!?)]$/.test(prev.trim()) && /^[a-zà-ÿ0-9(«"]/.test(l.trim())) out[out.length - 1] = prev.trimEnd() + " " + l.trim();
-      else out.push(l);
-    });
-    return out;
+  // Lecture suivie : de vrais extraits du PDF (image de la page), avec le contexte autour de
+  // chaque passage sur Genas et le titre de la rubrique (data/sommaire.json).
+  let suivieNum = null;
+  function rubriqueDe(num, p) {
+    const som = (sommaire[num] || []).filter((c) => c.page && c.page <= p);
+    return som.length ? som[som.length - 1] : null;
   }
 
-  function renderSuivie() {
+  async function renderSuivie() {
     const num = lect.num, pv = pvById[num]; if (!pv) return;
-    const ex = extraits[num];
-    if (!ex || !ex.length) {
-      $("#lect-suivie").innerHTML = `<p class="empty">La lecture suivie n'est pas encore prête pour ce PV. <button class="btn-link" data-go-pdf="1">Lire le PDF complet ›</button></p>`;
-    } else {
-      const corps = ex.filter((e) => e.section !== "Annexes"), annexes = ex.filter((e) => e.section === "Annexes");
-      // on regroupe les passages consécutifs d'une même rubrique
-      const groupes = [];
-      corps.forEach((e) => { const g = groupes[groupes.length - 1]; if (g && g.section === (e.section || "")) g.items.push(e); else groupes.push({ section: e.section || "", items: [e] }); });
-      const pageLien = (p) => `<button class="pg-lien" data-page="${p}">p. ${p} ›</button>`;
-      $("#lect-suivie").innerHTML = `
-        <div class="suivie-tete"><div><p class="kicker-dark">Lecture suivie</p><h2>PV n°${pv.numero} du ${fmtD(pv.date)}</h2></div>
-          <p class="sec-note">${corps.length} passage${corps.length > 1 ? "s" : ""} sur Genas${annexes.length ? ` · ${annexes.length} ligne${annexes.length > 1 ? "s" : ""} d'annexes` : ""} · clique sur un n° de page pour voir le PDF</p></div>
-        ${pv.resume ? `<div class="resume"><strong>En bref :</strong> ${esc(pv.resume)}</div>` : ""}
-        <div class="suivie">${groupes.map((g) => `<section class="suivie-g"><h3>${esc(g.section ? g.section.charAt(0) + g.section.slice(1).toLowerCase() : "Autres passages")}</h3>
-          ${g.items.map((e) => `<article class="passage"><div class="passage-p">${pageLien(e.page)}</div><div class="passage-t">${paragraphes(e.texte).map((l) => `<p>${surligne(l)}</p>`).join("")}</div></article>`).join("")}</section>`).join("")}
-        ${annexes.length ? `<details class="suivie-annexes"><summary>Annexes : désignations et dossiers (${annexes.length} ligne${annexes.length > 1 ? "s" : ""})</summary>
-          <ul>${annexes.map((e) => `<li>${pageLien(e.page)}<span>${surligne(e.texte.replace(/\s{2,}/g, " · "))}</span></li>`).join("")}</ul></details>` : ""}
-        </div>`;
+    if (suivieNum === num) return;
+    suivieNum = num;
+    const box = $("#lect-suivie");
+    box.innerHTML = `
+      <div class="suivie-tete"><div><p class="kicker-dark">Lecture suivie</p><h2>PV n°${pv.numero} du ${fmtD(pv.date)}</h2></div>
+        <p class="sec-note" id="suivie-note">Recherche des passages sur Genas…</p></div>
+      ${pv.resume ? `<div class="resume"><strong>En bref :</strong> ${esc(pv.resume)}</div>` : ""}
+      <div class="suivie" id="suivie-corps"></div>
+      <details class="suivie-annexes" id="suivie-annexes" hidden><summary></summary><div class="suivie-ann-corps"></div></details>`;
+    if (!window.pdfjsLib) { $("#suivie-note").textContent = "Le lecteur n'a pas pu se charger."; return; }
+    let doc;
+    try { doc = await chargerDoc(pv); } catch (e) { $("#suivie-note").innerHTML = `Ce PV n'est pas encore disponible. <a href="${esc(pv.url)}" target="_blank" rel="noopener">L'ouvrir sur le site du District ↗</a>`; return; }
+    const debutAnnexes = ((sommaire[num] || []).find((c) => c.groupement === "Annexes") || {}).page || Infinity;
+    const obs = new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) { obs.unobserve(e.target); dessinerExtrait(doc, e.target); } }), { rootMargin: "800px 0px" });
+    let nPass = 0, nAnn = 0, derniere = null;
+    for (let p = 1; p <= doc.numPages; p++) {
+      if (suivieNum !== num) return;
+      const page = await doc.getPage(p);
+      const tc = await page.getTextContent();
+      const groupes = passagesClub(tc.items);
+      if (!groupes.length) continue;
+      const H = page.getViewport({ scale: 1 }).height;
+      const annexe = p >= debutAnnexes;
+      // zone de chaque passage (en points PDF, depuis le haut) avec du contexte autour, fusionnées si elles se touchent
+      const zones = [];
+      groupes.forEach((g) => {
+        const hauts = g.map((it) => H - it.transform[5] - Math.hypot(it.transform[2], it.transform[3]));
+        const bas = g.map((it) => H - it.transform[5]);
+        const z = { y0: Math.max(0, Math.min(...hauts) - (annexe ? 14 : 120)), y1: Math.min(H, Math.max(...bas) + (annexe ? 6 : 70)), n: 1 };
+        const prev = zones[zones.length - 1];
+        if (prev && z.y0 <= prev.y1 + 10) { prev.y1 = Math.max(prev.y1, z.y1); prev.n++; } else zones.push(z);
+      });
+      const rub = rubriqueDe(num, p);
+      zones.forEach((z) => {
+        const el = document.createElement("article");
+        el.className = "extrait-pdf" + (annexe ? " annexe" : "");
+        el.dataset.p = p; el.dataset.y0 = z.y0; el.dataset.y1 = z.y1;
+        const titre = rub ? rub.titre : "";
+        el.innerHTML = `<header><span class="ex-rub">${esc(titre || "PV")}</span><button class="pg-lien" data-page="${p}">p. ${p} · voir dans le PDF ›</button></header><div class="ex-img" style="aspect-ratio: ${(page.getViewport({ scale: 1 }).width / (z.y1 - z.y0)).toFixed(3)}"></div>`;
+        el.querySelector(".pg-lien").onclick = () => { lect.page = p; lect.focus = { p, i: 0 }; setMode("pdf"); window.scrollTo({ top: 0 }); };
+        if (annexe) { $("#suivie-annexes .suivie-ann-corps").appendChild(el); nAnn += z.n; }
+        else {
+          const cle = titre + "|" + (rub ? rub.groupement : "");
+          if (cle !== derniere && titre) { const h = document.createElement("h3"); h.className = "suivie-rub"; h.innerHTML = `${esc(titre)}${rub.groupement && rub.groupement !== "District" ? ` <small>${esc(rub.groupement)}</small>` : ""}`; $("#suivie-corps").appendChild(h); }
+          derniere = cle;
+          $("#suivie-corps").appendChild(el); nPass += z.n;
+        }
+        obs.observe(el);
+      });
+      $("#suivie-note").textContent = `${nPass} passage${nPass > 1 ? "s" : ""} sur Genas · recherche jusqu'à la page ${p} / ${doc.numPages}…`;
+      if (nAnn) { const d = $("#suivie-annexes"); d.hidden = false; d.querySelector("summary").textContent = `Annexes : désignations et dossiers (${nAnn} ligne${nAnn > 1 ? "s" : ""})`; }
     }
-    $("#lect-suivie").querySelectorAll(".pg-lien").forEach((b) => b.onclick = () => { lect.page = +b.dataset.page; lect.focus = { p: +b.dataset.page, i: 0 }; setMode("pdf"); window.scrollTo({ top: 0 }); });
-    $("#lect-suivie").querySelectorAll("[data-go-pdf]").forEach((b) => b.onclick = () => setMode("pdf"));
+    $("#suivie-note").textContent = nPass || nAnn ? `${nPass} passage${nPass > 1 ? "s" : ""} sur Genas${nAnn ? ` · ${nAnn} ligne${nAnn > 1 ? "s" : ""} d'annexes` : ""} · clique sur « voir dans le PDF » pour la page entière` : "Genas n'apparaît pas dans ce PV.";
+  }
+
+  async function dessinerExtrait(doc, el) {
+    try {
+      const page = await doc.getPage(+el.dataset.p);
+      const img = el.querySelector(".ex-img");
+      const base = page.getViewport({ scale: 1 });
+      const largeur = Math.max(260, img.clientWidth);
+      const sc = largeur / base.width, vp = page.getViewport({ scale: sc });
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const y0 = +el.dataset.y0 * sc, y1 = +el.dataset.y1 * sc;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.floor(vp.width * dpr); canvas.height = Math.floor((y1 - y0) * dpr);
+      canvas.style.width = "100%"; canvas.style.height = "auto";
+      const ctx = canvas.getContext("2d");
+      await page.render({ canvasContext: ctx, viewport: vp, transform: [dpr, 0, 0, dpr, 0, -y0 * dpr] }).promise;
+      const tc = await page.getTextContent();
+      img.innerHTML = ""; img.appendChild(canvas);
+      passagesClub(tc.items).flat().forEach((it) => {
+        const tx = pdfjsLib.Util.transform(vp.transform, it.transform);
+        const h = Math.hypot(tx[2], tx[3]), top = tx[5] - h * 1.05 - y0;
+        if (top + h < 0 || top > y1 - y0) return;
+        const d = document.createElement("div"); d.className = "hl";
+        Object.assign(d.style, { left: ((tx[4] - 3) / largeur * 100) + "%", top: (top / (y1 - y0) * 100) + "%", width: ((it.width * sc + 6) / largeur * 100) + "%", height: (h * 1.35 / (y1 - y0) * 100) + "%" });
+        img.appendChild(d);
+      });
+    } catch (e) { el.querySelector(".ex-img").innerHTML = `<p class="empty">Extrait indisponible.</p>`; }
+  }
+
+  // regroupe les mentions du club d'un même paragraphe : elles restent toutes surlignées,
+  // mais ne comptent que pour un passage dans le compteur et la navigation
+  function passagesClub(items) {
+    const club = items.filter((it) => RE_CLUB.test(it.str)).map((it) => ({ it, y: it.transform[5], x: it.transform[4], h: Math.hypot(it.transform[2], it.transform[3]) || 10 }))
+      .sort((a, b) => b.y - a.y || a.x - b.x);
+    const groupes = [];
+    club.forEach((c) => {
+      const g = groupes[groupes.length - 1], prev = g && g[g.length - 1];
+      if (prev && prev.y - c.y <= 2.6 * Math.max(prev.h, c.h)) g.push(c); else groupes.push([c]);
+    });
+    return groupes.map((g) => g.map((c) => c.it));
   }
 
   // ---- PDF complet : toutes les pages à la suite (défilement de la page), dessinées à la demande
@@ -594,6 +663,7 @@
 
   function lire(num, page, ouvrir = true) {
     const pv = pvById[num]; if (!pv) return;
+    if (lect.num !== num) suivieNum = null;
     lect.num = num; lect.page = page; lect.focus = page > 1 ? { p: page, i: 0 } : null;
     $("#lect-pv").value = num;
     $("#lect-ext").href = localPdf(pv);
@@ -655,7 +725,9 @@
     const doc = lect.doc, view = $("#lect-view");
     if (lect.obs) lect.obs.disconnect();
     lect.rendues = new Map();
-    const largeur = Math.max(260, view.clientWidth) * lect.zoom;
+    // largeur utile (sans les marges intérieures) : la page ne déborde pas, donc rien ne bouge sur le côté
+    const cs = getComputedStyle(view);
+    const largeur = Math.floor(Math.max(240, view.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) * lect.zoom);
     lect.largeur = largeur;
     view.innerHTML = "";
     view.classList.toggle("zoome", lect.zoom > 1.01);
@@ -686,17 +758,17 @@
     await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
     if (lect.rendues.get(p) !== jeton) return;
     const tc = await page.getTextContent();
-    const boxes = tc.items.filter((it) => RE_CLUB.test(it.str)).map((it) => {
+    const boxes = passagesClub(tc.items).flatMap((g, gi) => g.map((it) => {
       const tx = pdfjsLib.Util.transform(vp.transform, it.transform);
       const h = Math.hypot(tx[2], tx[3]);
-      return { x: tx[4] - 3, y: tx[5] - h * 1.05, w: it.width * vp.scale + 6, h: h * 1.35 };
-    }).sort((a, b) => a.y - b.y || a.x - b.x);
+      return { g: gi, x: tx[4] - 3, y: tx[5] - h * 1.05, w: it.width * vp.scale + 6, h: h * 1.35 };
+    }));
     if (lect.rendues.get(p) !== jeton) return;
     slot.style.height = vp.height + "px";
     slot.innerHTML = `<span class="pg-num">${p}</span>`;
     slot.appendChild(canvas);
-    boxes.forEach((b, i) => {
-      const d = document.createElement("div"); d.className = "hl"; d.dataset.i = i;
+    boxes.forEach((b) => {
+      const d = document.createElement("div"); d.className = "hl"; d.dataset.g = b.g;
       Object.assign(d.style, { left: b.x + "px", top: b.y + "px", width: b.w + "px", height: b.h + "px" });
       slot.appendChild(d);
     });
@@ -722,10 +794,13 @@
 
   function montrerHl(p, i) {
     const slot = $(`#lect-view .pg-slot[data-p="${p}"]`); if (!slot) return;
-    const hls = slot.querySelectorAll(".hl"); if (!hls.length) return;
-    i = Math.max(0, Math.min(hls.length - 1, i < 0 ? hls.length + i : i));
+    const hls = [...slot.querySelectorAll(".hl")]; if (!hls.length) return;
+    const n = Math.max(...hls.map((h) => +h.dataset.g)) + 1;
+    i = Math.max(0, Math.min(n - 1, i < 0 ? n + i : i));
     document.querySelectorAll("#lect-view .hl.on").forEach((x) => x.classList.remove("on"));
-    const el = hls[i]; el.classList.add("on");
+    const groupe = hls.filter((h) => +h.dataset.g === i);
+    groupe.forEach((h) => h.classList.add("on"));
+    const el = groupe[0];
     lect.cur = { p, i };
     const y = slot.getBoundingClientRect().top + window.scrollY + el.offsetTop - hauteurBarres() - window.innerHeight * 0.25;
     window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
@@ -786,7 +861,7 @@
     for (let p = 1; p <= doc.numPages; p++) {
       if (lect.num !== num) return;
       const tc = await (await doc.getPage(p)).getTextContent();
-      const n = tc.items.filter((it) => RE_CLUB.test(it.str)).length;
+      const n = passagesClub(tc.items).length;
       if (n) res.push({ p, n });
       if (p % 10 === 0 || p === doc.numPages) majPages(res, p === doc.numPages);
     }
