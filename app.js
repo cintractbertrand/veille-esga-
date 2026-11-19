@@ -556,6 +556,19 @@
     $("#lect-suivie").querySelectorAll("[data-go-pdf]").forEach((b) => b.onclick = () => setMode("pdf"));
   }
 
+  // regroupe les mentions du club d'un même paragraphe : elles restent toutes surlignées,
+  // mais ne comptent que pour un passage dans le compteur et la navigation
+  function passagesClub(items) {
+    const club = items.filter((it) => RE_CLUB.test(it.str)).map((it) => ({ it, y: it.transform[5], x: it.transform[4], h: Math.hypot(it.transform[2], it.transform[3]) || 10 }))
+      .sort((a, b) => b.y - a.y || a.x - b.x);
+    const groupes = [];
+    club.forEach((c) => {
+      const g = groupes[groupes.length - 1], prev = g && g[g.length - 1];
+      if (prev && prev.y - c.y <= 2.6 * Math.max(prev.h, c.h)) g.push(c); else groupes.push([c]);
+    });
+    return groupes.map((g) => g.map((c) => c.it));
+  }
+
   // ---- PDF complet : toutes les pages à la suite (défilement de la page), dessinées à la demande
   const estMobile = () => window.matchMedia("(max-width: 900px)").matches;
   function ouvrirSide(o) {
@@ -655,7 +668,9 @@
     const doc = lect.doc, view = $("#lect-view");
     if (lect.obs) lect.obs.disconnect();
     lect.rendues = new Map();
-    const largeur = Math.max(260, view.clientWidth) * lect.zoom;
+    // largeur utile (sans les marges intérieures) : la page ne déborde pas, donc rien ne bouge sur le côté
+    const cs = getComputedStyle(view);
+    const largeur = Math.floor(Math.max(240, view.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) * lect.zoom);
     lect.largeur = largeur;
     view.innerHTML = "";
     view.classList.toggle("zoome", lect.zoom > 1.01);
@@ -686,17 +701,17 @@
     await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
     if (lect.rendues.get(p) !== jeton) return;
     const tc = await page.getTextContent();
-    const boxes = tc.items.filter((it) => RE_CLUB.test(it.str)).map((it) => {
+    const boxes = passagesClub(tc.items).flatMap((g, gi) => g.map((it) => {
       const tx = pdfjsLib.Util.transform(vp.transform, it.transform);
       const h = Math.hypot(tx[2], tx[3]);
-      return { x: tx[4] - 3, y: tx[5] - h * 1.05, w: it.width * vp.scale + 6, h: h * 1.35 };
-    }).sort((a, b) => a.y - b.y || a.x - b.x);
+      return { g: gi, x: tx[4] - 3, y: tx[5] - h * 1.05, w: it.width * vp.scale + 6, h: h * 1.35 };
+    }));
     if (lect.rendues.get(p) !== jeton) return;
     slot.style.height = vp.height + "px";
     slot.innerHTML = `<span class="pg-num">${p}</span>`;
     slot.appendChild(canvas);
-    boxes.forEach((b, i) => {
-      const d = document.createElement("div"); d.className = "hl"; d.dataset.i = i;
+    boxes.forEach((b) => {
+      const d = document.createElement("div"); d.className = "hl"; d.dataset.g = b.g;
       Object.assign(d.style, { left: b.x + "px", top: b.y + "px", width: b.w + "px", height: b.h + "px" });
       slot.appendChild(d);
     });
@@ -722,10 +737,13 @@
 
   function montrerHl(p, i) {
     const slot = $(`#lect-view .pg-slot[data-p="${p}"]`); if (!slot) return;
-    const hls = slot.querySelectorAll(".hl"); if (!hls.length) return;
-    i = Math.max(0, Math.min(hls.length - 1, i < 0 ? hls.length + i : i));
+    const hls = [...slot.querySelectorAll(".hl")]; if (!hls.length) return;
+    const n = Math.max(...hls.map((h) => +h.dataset.g)) + 1;
+    i = Math.max(0, Math.min(n - 1, i < 0 ? n + i : i));
     document.querySelectorAll("#lect-view .hl.on").forEach((x) => x.classList.remove("on"));
-    const el = hls[i]; el.classList.add("on");
+    const groupe = hls.filter((h) => +h.dataset.g === i);
+    groupe.forEach((h) => h.classList.add("on"));
+    const el = groupe[0];
     lect.cur = { p, i };
     const y = slot.getBoundingClientRect().top + window.scrollY + el.offsetTop - hauteurBarres() - window.innerHeight * 0.25;
     window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
@@ -786,7 +804,7 @@
     for (let p = 1; p <= doc.numPages; p++) {
       if (lect.num !== num) return;
       const tc = await (await doc.getPage(p)).getTextContent();
-      const n = tc.items.filter((it) => RE_CLUB.test(it.str)).length;
+      const n = passagesClub(tc.items).length;
       if (n) res.push({ p, n });
       if (p % 10 === 0 || p === doc.numPages) majPages(res, p === doc.numPages);
     }
