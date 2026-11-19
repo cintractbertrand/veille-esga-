@@ -1,0 +1,82 @@
+{
+  "club": {
+    "nom": "ES Genas Azieu",
+    "nom_pv": "GENAS AZIEU E.S.",
+    "numero": "523341"
+  },
+  "mis_a_jour": "2026-11-19",
+  "pvs": [
+    {
+      "numero": 766,
+      "date": "2026-11-19",
+      "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/305f7612dd1a6f4a7701ac3665089208.pdf",
+      "pages": 45,
+      "resume": "Semaine chargée : la Discipline demande un rapport après les incidents de fin de match U15F à Montchat, à rendre avant lundi 9h. La Trésorerie signale que le club n'est pas à jour de règlement, avec un délai jusqu'au 30 novembre. Le District tiendra sa soirée des partenaires à Genas le 26 novembre.",
+      "items": [
+        {
+          "id": "766-1",
+          "categorie": "U15F",
+          "commission": "Discipline",
+          "type": "discipline",
+          "gravite": "urgent",
+          "titre": "Rapport demandé : incidents après match",
+          "detail": "La Commission de Discipline demande au club un rapport détaillé sur les évènements survenus à la fin de la rencontre. Une procédure d'instruction est ouverte, et le même rapport est demandé à Montchat.",
+          "match": {
+            "numero": "79463810",
+            "date": "2026-11-14",
+            "competition": "U15F D1 Poule C",
+            "domicile": "MONTCHAT",
+            "exterieur": "GENAS AZIEU"
+          },
+          "echeances": [
+            { "date": "2026-11-23", "heure": "09:00", "libelle": "Envoyer le rapport à la Discipline (U15F, Montchat / Genas)" }
+          ],
+          "page": 11
+        },
+        {
+          "id": "766-2",
+          "categorie": "Club",
+          "commission": "Trésorerie",
+          "type": "tresorerie",
+          "gravite": "attention",
+          "titre": "Club non à jour de règlement",
+          "detail": "Le club figure sur la liste des clubs non à jour de leur règlement au 19 novembre 2026. Un délai supplémentaire est accordé jusqu'au 30 novembre 2026 pour régulariser. Le PV n'indique pas de montant.",
+          "echeances": [
+            { "date": "2026-11-30", "libelle": "Régulariser le règlement auprès du District" }
+          ],
+          "page": 3
+        },
+        {
+          "id": "766-3",
+          "categorie": "U17",
+          "commission": "PSEM",
+          "type": "observation",
+          "gravite": "info",
+          "titre": "Match observé par la PSEM",
+          "detail": "La rencontre fait partie des matchs observés par la commission Prévention, Sécurité, Éthique et Médiation lors du week-end des 7 et 8 novembre. Il n'y a aucune sanction.",
+          "match": {
+            "date": "2026-11-08",
+            "competition": "U17 D2 Poule A",
+            "domicile": "GENAS AZIEU",
+            "exterieur": "PONT CHERUY"
+          },
+          "echeances": [],
+          "page": 4
+        },
+        {
+          "id": "766-4",
+          "categorie": "Club",
+          "commission": "Secrétariat",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Soirée des partenaires du District à Genas",
+          "detail": "Le club accueille la soirée des partenaires du District de Lyon et du Rhône.",
+          "echeances": [
+            { "date": "2026-11-26", "heure": "19:15", "libelle": "Soirée des partenaires du District au club" }
+          ],
+          "page": 2
+        }
+      ]
+    }
+  ]
+}

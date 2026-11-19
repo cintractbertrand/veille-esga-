@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Veille PV ESGA</title>
+  <meta name="description" content="Synthèse hebdomadaire des PV du District de Lyon et du Rhône pour l'ES Genas Azieu">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="kicker">Veille des PV du District de Lyon et du Rhône</p>
+      <h1 id="club-nom">ES Genas Azieu</h1>
+      <p id="pv-courant" class="sub">Chargement…</p>
+      <div class="stats" id="stats"></div>
+    </div>
+  </header>
+
+  <nav class="tabs wrap" role="tablist">
+    <button class="tab active" data-tab="semaine">Cette semaine</button>
+    <button class="tab" data-tab="calendrier">Calendrier</button>
+    <button class="tab" data-tab="categories">Par catégorie</button>
+    <button class="tab" data-tab="historique">Historique</button>
+  </nav>
+
+  <main class="wrap">
+    <section id="tab-semaine" class="panel active">
+      <div class="card resume" id="resume"></div>
+      <h2>À ne pas manquer</h2>
+      <ul class="echeances" id="a-venir"></ul>
+      <h2>Toutes les mentions du club</h2>
+      <div id="items-semaine" class="items"></div>
+    </section>
+
+    <section id="tab-calendrier" class="panel">
+      <div class="cal-head">
+        <button class="btn" id="cal-prev" aria-label="Mois précédent">‹</button>
+        <h2 id="cal-titre"></h2>
+        <button class="btn" id="cal-next" aria-label="Mois suivant">›</button>
+        <button class="btn btn-ghost" id="ics">Ajouter à mon agenda (.ics)</button>
+      </div>
+      <div class="cal-legend">
+        <span><i class="dot urgent"></i>Échéance urgente</span>
+        <span><i class="dot attention"></i>À surveiller</span>
+        <span><i class="dot info"></i>Info</span>
+        <span><i class="dot match"></i>Match cité dans un PV</span>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div id="cal-jour" class="card cal-jour" hidden></div>
+    </section>
+
+    <section id="tab-categories" class="panel">
+      <div class="chips" id="chips"></div>
+      <input id="recherche" class="search" type="search" placeholder="Rechercher (adversaire, commission, mot-clé…)">
+      <div id="cat-cards" class="cat-cards"></div>
+      <div id="items-cat" class="items"></div>
+    </section>
+
+    <section id="tab-historique" class="panel">
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Synthèse produite automatiquement chaque jeudi soir à partir des PV officiels. En cas de doute, le PV fait foi : chaque fiche renvoie au PDF et à sa page.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
