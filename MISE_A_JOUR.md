@@ -22,7 +22,7 @@ Cette procédure est suivie par la tâche planifiée chaque jeudi soir.
      - `match` (facultatif) : `numero`, `date`, `competition`, `domicile`, `exterieur`.
      - `echeances[]` : `date`, `heure` (facultatif), `libelle`. On y met les dates limites de rapport, les audiences, les fins de suspension, les délais de paiement et les dates de match à rejouer.
      - `page` : la page du PDF.
-5. Lancer `python3 outils/extraire_pv.py` : il met à jour tout seul `data/matchs.json` (les matchs du club, tirés des annexes « Désignations par poule ») `data/dossiers.json` (amendes et dossiers du club, tirés de « Dossiers par club ») et `data/extraits.json` (tous les passages qui citent le club, page par page, pour la lecture suivie). Ne pas recopier ces éléments dans `pv.json`.
+5. Lancer `python3 outils/extraire_pv.py` : il met à jour tout seul `data/matchs.json` (les matchs du club, tirés des annexes « Désignations par poule ») `data/dossiers.json` (amendes et dossiers du club, tirés de « Dossiers par club ») et `data/sommaire.json` (rubriques de chaque PV avec leur page, pour le lecteur). Ne pas recopier ces éléments dans `pv.json`.
 6. Mettre à jour `mis_a_jour`, vérifier que le JSON est valide (`python3 -m json.tool data/pv.json`), puis faire un commit « PV n°XXX du JJ/MM » et le pousser sur `main`. GitHub Pages republie le site tout seul.
 7. Envoyer à Bertrand un court résumé de 3 lignes maximum avec le lien du site.
 
