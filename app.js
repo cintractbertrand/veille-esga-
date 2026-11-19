@@ -4,6 +4,8 @@
   const MOIS_C = ["janv","févr","mars","avr","mai","juin","juil","août","sept","oct","nov","déc"];
   const JOURS = ["lun","mar","mer","jeu","ven","sam","dim"];
   const GRAV_ORDRE = { urgent: 0, attention: 1, info: 2 };
+  // équipes du club, toujours affichées en haut même sans mention dans les PV
+  const CATS_CLUB = ["Club","Seniors","Seniors F","U20","U18F","U17","U15","U15F","U13","U13F","Vétérans"];
   const CAT_ORDRE = ["Club","Seniors","Seniors F","U18F","U20","U19","U18","U17","U16","U15","U15F","U14","U13","U13F","U12","U11","U10","U9","U9F","U8","U7","Futsal","Vétérans","Foot loisir"];
 
   const parseD = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
@@ -259,7 +261,7 @@
   };
 
   function catList() {
-    const cats = [...new Set([...all.map((i) => i.categorie), ...matchs.map((m) => m.categorie), ...dossiers.map((d) => d.categorie)].filter(Boolean))];
+    const cats = [...new Set([...CATS_CLUB, ...all.map((i) => i.categorie), ...matchs.map((m) => m.categorie), ...dossiers.map((d) => d.categorie)].filter(Boolean))];
     const idx = (c) => { const i = CAT_ORDRE.indexOf(c); return i < 0 ? 99 : i; };
     return cats.sort((a, b) => idx(a) - idx(b) || a.localeCompare(b));
   }
@@ -370,7 +372,7 @@
     const h = location.hash.slice(1);
     if (h.startsWith("equipe/")) {
       const c = decodeURIComponent(h.slice(7));
-      if (c === "Urgentes" || all.some((i) => i.categorie === c)) return ouvrirEquipe(c, false);
+      if (c === "Urgentes" || catList().includes(c)) return ouvrirEquipe(c, false);
     }
     if (["semaine", "calendrier", "historique", "lecteur"].includes(h)) showTab(h);
   }
