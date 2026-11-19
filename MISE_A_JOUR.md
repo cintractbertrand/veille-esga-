@@ -16,7 +16,7 @@ Cette procédure est suivie par la tâche planifiée chaque jeudi soir.
      - `categorie` : « Club » si la fiche est générale, sinon Seniors, Seniors F, U19, U17, U15, U15F, U13, Futsal, Vétérans…
      - `commission` : Discipline, Règlements, Appel, Trésorerie, Compétitions, Coupes, Arbitrage, PSEM, Secrétariat…
      - `type` : discipline | sanction | reglement | tresorerie | match | homologation | observation | inscription | info
-     - `inscription` : appel à inscription ou date limite d'engagement (coupes, tournois, futsal, formations) qui concerne le club, même sans citer Genas. La date limite va dans `echeances`. Ignorer les coupes des autres groupements (Genas est dans le Groupement Vallée du Rhône)..
+     - `inscription` : appel à inscription ou date limite d'engagement (coupes, tournois, futsal, formations) qui concerne le club, même sans citer Genas. La date limite va dans `echeances`. Ignorer les coupes des autres groupements (Genas est dans le Groupement Vallée du Rhône).
      - `gravite` : `urgent` s'il y a une action du club à faire sous 7 jours ou une sanction lourde, `attention` s'il y a une amende, une suspension ou un délai, sinon `info`.
      - `titre` et `detail` : des phrases claires en français, avec le nom des joueurs ou la licence s'ils sont publiés, la durée de suspension, la date d'effet et le montant.
      - `match` (facultatif) : `numero`, `date`, `competition`, `domicile`, `exterieur`.
