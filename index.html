@@ -7,7 +7,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%231d4ed8%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
   <title>Veille PV ESGA</title>
   <meta name="description" content="Synthèse hebdomadaire des PV du District de Lyon et du Rhône pour l'ES Genas Azieu">
-  <link rel="stylesheet" href="style.css?v=2026-11-19c">
+  <link rel="stylesheet" href="style.css?v=2026-11-19d">
 </head>
 <body>
   <header class="hero">
@@ -120,13 +120,28 @@
     <section id="tab-lecteur" class="panel">
       <div class="lect-head">
         <select id="lect-pv" class="select" aria-label="Choisir un PV"></select>
-        <label class="lect-page">Page <input id="lect-page" type="number" min="1" value="1"></label>
-        <a id="lect-ext" class="btn" target="_blank" rel="noopener">Ouvrir dans un onglet ↗</a>
+        <div class="lect-nav">
+          <button class="btn icon" id="lect-prec" aria-label="Page précédente">‹</button>
+          <label class="lect-page">Page <input id="lect-page" type="number" min="1" value="1"> <span id="lect-total"></span></label>
+          <button class="btn icon" id="lect-suiv" aria-label="Page suivante">›</button>
+        </div>
+        <div class="lect-nav">
+          <button class="btn icon" id="lect-moins" aria-label="Zoom arrière">−</button>
+          <button class="btn icon" id="lect-plus" aria-label="Zoom avant">+</button>
+        </div>
+        <button class="btn btn-primary" id="lect-genas">Passage ESGA suivant ↓</button>
+        <a id="lect-ext" class="btn" target="_blank" rel="noopener">PDF ↗</a>
       </div>
       <div class="lect-body">
-        <aside id="lect-fiches" class="lect-fiches"></aside>
-        <div class="lect-frame"><iframe id="lect-iframe" title="PV du District"></iframe>
-          <p class="lect-aide" id="lect-aide"></p></div>
+        <aside class="lect-fiches">
+          <div id="lect-fiches"></div>
+          <h3>Pages où le club apparaît</h3>
+          <div id="lect-pages" class="lect-pages"><p class="empty">Recherche en cours…</p></div>
+        </aside>
+        <div class="lect-frame">
+          <div id="lect-view" class="lect-view"><p class="empty">Chargement du PV…</p></div>
+          <p class="lect-aide" id="lect-aide">Les passages qui citent Genas Azieu ou l'ESGA sont surlignés en jaune.</p>
+        </div>
       </div>
     </section>
 
@@ -139,6 +154,7 @@
     <p>Synthèse produite automatiquement chaque jeudi soir à partir des PV officiels. En cas de doute, le PV fait foi : chaque fiche renvoie au PDF et à sa page.</p>
   </footer>
 
-  <script src="app.js?v=2026-11-19c"></script>
+  <script src="vendor/pdfjs/pdf.min.js"></script>
+  <script src="app.js?v=2026-11-19d"></script>
 </body>
 </html>
