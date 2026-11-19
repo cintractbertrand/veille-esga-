@@ -3,23 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b2a6f">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%231d4ed8%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
   <title>Veille PV ESGA</title>
   <meta name="description" content="Synthèse hebdomadaire des PV du District de Lyon et du Rhône pour l'ES Genas Azieu">
-  <link rel="stylesheet" href="style.css?v=2026-11-19b">
+  <link rel="stylesheet" href="style.css?v=2026-11-19c">
 </head>
 <body>
   <header class="hero">
-    <div class="wrap">
-      <p class="kicker">Veille des PV du District de Lyon et du Rhône</p>
-      <h1 id="club-nom">ES Genas Azieu</h1>
-      <p id="pv-courant" class="sub">Chargement…</p>
+    <div class="wrap hero-in">
+      <div class="brand">
+        <div class="crest" aria-hidden="true"><span>ES</span><small>GA</small></div>
+        <div>
+          <p class="kicker">Veille des PV · District de Lyon et du Rhône</p>
+          <h1 id="club-nom">ES Genas Azieu</h1>
+          <p id="pv-courant" class="sub">Chargement…</p>
+        </div>
+      </div>
       <div class="stats" id="stats"></div>
     </div>
   </header>
 
   <div class="barre">
     <nav class="wrap equipes" aria-label="Équipes">
-      <span class="equipes-titre">Mon équipe</span>
+      <span class="equipes-titre">Équipes</span>
       <div class="chips" id="chips"></div>
     </nav>
     <nav class="tabs wrap" role="tablist">
@@ -32,66 +39,94 @@
 
   <main class="wrap">
     <section id="tab-semaine" class="panel active">
-      <div class="card resume" id="resume"></div>
-      <div id="matchs-semaine-bloc" hidden>
-        <h2>Matchs des 7 prochains jours</h2>
-        <ul class="echeances" id="matchs-semaine"></ul>
+      <div class="resume" id="resume"></div>
+      <div class="cols">
+        <div class="col-main">
+          <div class="sec-head"><h2>Mentions du club</h2><span class="sec-note" id="semaine-note"></span></div>
+          <div id="items-semaine" class="items"></div>
+        </div>
+        <aside class="col-side">
+          <div class="side-card">
+            <h2>À ne pas manquer</h2>
+            <ul class="echeances" id="a-venir"></ul>
+          </div>
+          <div class="side-card" id="matchs-semaine-bloc" hidden>
+            <h2>Matchs des 7 prochains jours</h2>
+            <ul class="echeances compact" id="matchs-semaine"></ul>
+            <button class="btn btn-link" id="voir-cal">Voir le calendrier complet ›</button>
+          </div>
+        </aside>
       </div>
-      <h2>À ne pas manquer</h2>
-      <ul class="echeances" id="a-venir"></ul>
-      <h2>Toutes les mentions du club</h2>
-      <div id="items-semaine" class="items"></div>
     </section>
 
     <section id="tab-calendrier" class="panel">
       <div class="cal-head">
-        <button class="btn" id="cal-prev" aria-label="Mois précédent">‹</button>
-        <h2 id="cal-titre"></h2>
-        <button class="btn" id="cal-next" aria-label="Mois suivant">›</button>
-        <button class="btn btn-ghost" id="ics">Ajouter à mon agenda (.ics)</button>
+        <div class="cal-nav">
+          <button class="btn icon" id="cal-prev" aria-label="Mois précédent">‹</button>
+          <h2 id="cal-titre"></h2>
+          <button class="btn icon" id="cal-next" aria-label="Mois suivant">›</button>
+          <button class="btn" id="cal-auj">Aujourd'hui</button>
+        </div>
+        <div class="cal-tools">
+          <select id="cal-filtre" class="select" aria-label="Filtrer par équipe"></select>
+          <button class="btn btn-primary" id="ics">Ajouter à mon agenda (.ics)</button>
+        </div>
       </div>
       <div class="cal-legend">
+        <span><i class="dot match"></i>Match</span>
         <span><i class="dot urgent"></i>Échéance urgente</span>
         <span><i class="dot attention"></i>À surveiller</span>
         <span><i class="dot info"></i>Info</span>
-        <span><i class="dot match"></i>Match</span>
       </div>
       <div class="cal" id="cal"></div>
-      <div id="cal-jour" class="card cal-jour" hidden></div>
+      <div id="cal-jour" class="side-card cal-jour" hidden></div>
+      <div class="sec-head"><h2 id="agenda-titre">Agenda du mois</h2></div>
+      <div id="cal-agenda" class="agenda"></div>
     </section>
 
     <section id="tab-equipe" class="panel">
       <div class="eq-head">
-        <h2 id="eq-titre"></h2>
-        <button class="btn" id="eq-fermer">Retour à tout le club</button>
+        <div>
+          <p class="kicker-dark" id="eq-kicker">Équipe</p>
+          <h2 id="eq-titre"></h2>
+        </div>
+        <button class="btn" id="eq-fermer">‹ Tout le club</button>
       </div>
       <div class="eq-stats" id="eq-stats"></div>
-      <div id="eq-matchs-bloc" hidden>
-        <h2>Prochains matchs</h2>
-        <ul class="echeances" id="eq-matchs"></ul>
-        <div id="eq-matchs-passes" class="eq-passes"></div>
+      <div class="cols">
+        <div class="col-main">
+          <div class="sec-head"><h2>Mentions dans les PV</h2></div>
+          <input id="recherche" class="search" type="search" placeholder="Rechercher (adversaire, commission, joueur, mot-clé…)">
+          <div id="items-cat" class="items"></div>
+          <div id="eq-amendes-bloc" hidden>
+            <div class="sec-head"><h2 id="eq-amendes-titre">Amendes</h2></div>
+            <div id="eq-amendes"></div>
+          </div>
+        </div>
+        <aside class="col-side">
+          <div class="side-card" id="eq-matchs-bloc" hidden>
+            <h2>Prochains matchs</h2>
+            <ul class="echeances compact" id="eq-matchs"></ul>
+            <div id="eq-matchs-passes" class="eq-passes"></div>
+          </div>
+          <div class="side-card">
+            <h2 id="eq-ech-titre">Prochaines échéances</h2>
+            <ul class="echeances" id="eq-ech"></ul>
+          </div>
+        </aside>
       </div>
-      <h2 id="eq-ech-titre">Prochaines échéances</h2>
-      <ul class="echeances" id="eq-ech"></ul>
-      <div id="eq-amendes-bloc" hidden>
-        <h2 id="eq-amendes-titre">Amendes</h2>
-        <div id="eq-amendes"></div>
-      </div>
-      <h2>Toutes les mentions dans les PV</h2>
-      <input id="recherche" class="search" type="search" placeholder="Rechercher (adversaire, commission, joueur, mot-clé…)">
-      <div id="items-cat" class="items"></div>
     </section>
 
     <section id="tab-lecteur" class="panel">
       <div class="lect-head">
-        <select id="lect-pv" class="search" aria-label="Choisir un PV"></select>
+        <select id="lect-pv" class="select" aria-label="Choisir un PV"></select>
         <label class="lect-page">Page <input id="lect-page" type="number" min="1" value="1"></label>
         <a id="lect-ext" class="btn" target="_blank" rel="noopener">Ouvrir dans un onglet ↗</a>
       </div>
       <div class="lect-body">
         <aside id="lect-fiches" class="lect-fiches"></aside>
         <div class="lect-frame"><iframe id="lect-iframe" title="PV du District"></iframe>
-          <p class="lect-aide">Si le PV ne s'affiche pas (sur téléphone notamment), utilise « Ouvrir dans un onglet ».</p></div>
+          <p class="lect-aide" id="lect-aide"></p></div>
       </div>
     </section>
 
@@ -104,6 +139,6 @@
     <p>Synthèse produite automatiquement chaque jeudi soir à partir des PV officiels. En cas de doute, le PV fait foi : chaque fiche renvoie au PDF et à sa page.</p>
   </footer>
 
-  <script src="app.js?v=2026-11-19b"></script>
+  <script src="app.js?v=2026-11-19c"></script>
 </body>
 </html>
