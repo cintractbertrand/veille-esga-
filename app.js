@@ -316,14 +316,18 @@
     return cats.sort((a, b) => idx(a) - idx(b) || a.localeCompare(b));
   }
 
-  const itemsDe = (c) => all.filter((i) => c === "Urgentes" ? i.gravite === "urgent" : i.categorie === c);
+  // vues transversales (toutes équipes) en plus des catégories
+  const RE_INSCR = /inscri|engag|tournoi|candidat|appel à/i;
+  const estInscr = (i) => i.type === "inscription" || RE_INSCR.test(i.titre + " " + i.detail);
+  const SPECIAL = { Urgentes: (i) => i.gravite === "urgent", Inscriptions: estInscr };
+  const itemsDe = (c) => all.filter((i) => SPECIAL[c] ? SPECIAL[c](i) : i.categorie === c);
 
   function renderChips() {
     const nUrg = all.filter((i) => i.gravite === "urgent").length;
     $("#chips").innerHTML = `<button class="chip tout ${catActive ? "" : "active"}" data-c="">Tout le club</button>`
-      + [...(nUrg ? ["Urgentes"] : []), ...catList()].map((c) => {
+      + [...(nUrg ? ["Urgentes"] : []), ...(all.some(estInscr) ? ["Inscriptions"] : []), ...catList()].map((c) => {
       const its = itemsDe(c);
-      const urg = c !== "Urgentes" && its.some((i) => i.gravite === "urgent");
+      const urg = !SPECIAL[c] && its.some((i) => i.gravite === "urgent");
       return `<button class="chip ${c === catActive ? "active" : ""}" data-c="${esc(c)}" aria-pressed="${c === catActive}" title="${its.length} mention${its.length > 1 ? "s" : ""} dans les PV">${urg ? '<i class="dot urgent" title="Urgence en cours"></i>' : ""}${esc(c)}${its.length ? ` <small>${its.length}</small>` : ""}</button>`;
     }).join("");
     $("#chips").querySelectorAll(".chip").forEach((b) => b.onclick = () => {
@@ -340,10 +344,10 @@
     const disc = its.filter((i) => i.type === "discipline" || i.type === "sanction").length;
     const ev = prochaines(its);
     const lastD = its.map((i) => i.pvDate).sort().pop();
-    $("#eq-titre").textContent = c === "Urgentes" ? "Urgences en cours" : c === "Club" ? "Vie du club" : c;
-    $("#eq-kicker").textContent = c === "Urgentes" ? "Toutes équipes" : c === "Club" ? "Administratif · arbitrage · général" : "Équipe";
+    $("#eq-titre").textContent = c === "Urgentes" ? "Urgences en cours" : c === "Inscriptions" ? "Coupes, tournois et inscriptions" : c === "Club" ? "Vie du club" : c;
+    $("#eq-kicker").textContent = SPECIAL[c] ? "Toutes équipes" : c === "Club" ? "Administratif · arbitrage · général" : "Équipe";
     const nAm = (c === "Club" ? dossiers : dossiers.filter((d) => d.categorie === c)).reduce((t, d) => t + (+d.montant || 0), 0);
-    const nMa = c === "Urgentes" || c === "Club" ? 0 : matchs.filter((m) => m.categorie === c && joursAvant(m.date) >= 0).length;
+    const nMa = SPECIAL[c] || c === "Club" ? 0 : matchs.filter((m) => m.categorie === c && joursAvant(m.date) >= 0).length;
     // on n'affiche que les chiffres utiles (la mention reste toujours visible)
     $("#eq-stats").innerHTML = [
       [its.length, `mention${its.length > 1 ? "s" : ""} dans les PV`, "", true],
@@ -352,10 +356,10 @@
       [ev.length, `échéance${ev.length > 1 ? "s" : ""} à venir`, ""],
       [nMa, `match${nMa > 1 ? "s" : ""} à venir`, ""],
       [disc, `dossier${disc > 1 ? "s" : ""} discipline`, ""],
-      ...(c === "Urgentes" || !nAm ? [] : [[euros(nAm), "d'amendes", "", true]]),
+      ...(SPECIAL[c] || !nAm ? [] : [[euros(nAm), "d'amendes", "", true]]),
     ].filter(([v, , , tjs]) => tjs || v).map(([v, l, k]) => `<div class="eq-stat ${k}"><b>${v}</b><span>${l}</span></div>`).join("")
       + (lastD ? `<p class="eq-last">Dernière mention : PV du ${fmtD(lastD)}</p>` : "");
-    const urgView = c === "Urgentes", clubView = c === "Club";
+    const urgView = !!SPECIAL[c], clubView = c === "Club";
     const ms = matchs.filter((m) => m.categorie === c);
     const avenir = ms.filter((m) => joursAvant(m.date) >= 0), passes = ms.filter((m) => joursAvant(m.date) < 0).slice(-3).reverse();
     $("#eq-matchs-bloc").hidden = urgView || clubView || !ms.length;
@@ -634,7 +638,7 @@
     const h = location.hash.slice(1);
     if (h.startsWith("equipe/")) {
       const c = decodeURIComponent(h.slice(7));
-      if (c === "Urgentes" || catList().includes(c)) return ouvrirEquipe(c, false);
+      if (SPECIAL[c] || catList().includes(c)) return ouvrirEquipe(c, false);
     }
     if (["semaine", "calendrier", "historique", "lecteur"].includes(h)) showTab(h);
   }
