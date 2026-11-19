@@ -387,26 +387,8 @@
       "date": "2026-10-01",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/95818b4ad4b1e9e61a9b36c5f3358995.pdf",
       "pages": 43,
-      "resume": "Pas de décision concernant le club. Genas accueille l'un des trois sites du plateau U7F et U9F (« Plateau des Copines ») le 10 octobre.",
-      "items": [
-        {
-          "id": "759-1",
-          "categorie": "U9F",
-          "commission": "Féminines",
-          "type": "info",
-          "gravite": "info",
-          "titre": "Plateau des Copines U7F et U9F à Genas",
-          "detail": "Genas est l'un des 3 sites du plateau de la journée 4, ouvert aux licenciées et non licenciées. Il a lieu de 9h30 à 11h, avec un rendez-vous à 9h10, chemin de Cadou à Genas.",
-          "echeances": [
-            {
-              "date": "2026-10-10",
-              "heure": "09:30",
-              "libelle": "Plateau U7F/U9F à Genas (RDV 9h10)"
-            }
-          ],
-          "page": 17
-        }
-      ]
+      "resume": "Aucune décision concernant le club cette semaine.",
+      "items": []
     },
     {
       "numero": 758,
@@ -523,7 +505,7 @@
       "date": "2026-09-03",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/c22bc6c1d266d24f00c4078a5c31d851.pdf",
       "pages": 27,
-      "resume": "L'équipe 1 Seniors, en R3, est exemptée du 1er tour de la Coupe DLR. Le club est inscrit aux coupes du Groupement Vallée du Rhône en Seniors, U17 et U15, et a 5 équipes en plateaux de coupe le 12 septembre.",
+      "resume": "L'équipe 1 Seniors (R3) est exemptée du 1er tour de la Coupe DLR. Le club est inscrit aux coupes du Groupement Vallée du Rhône en Seniors, U17 et U15.",
       "items": [
         {
           "id": "755-1",
@@ -563,23 +545,6 @@
           "detail": "Les inscriptions sont enregistrées. Les frais ne sont comptés qu'en cas de participation réelle.",
           "echeances": [],
           "page": 26
-        },
-        {
-          "id": "755-4",
-          "categorie": "Club",
-          "commission": "Groupement Vallée du Rhône",
-          "type": "match",
-          "gravite": "info",
-          "titre": "Plateaux de coupe le 12 septembre (5 équipes)",
-          "detail": "Genas 1 joue en Coupe Festival, plateau 4, contre La Revolée, Ozon et St Alban. Genas 2, 3, 4 et 6 jouent en Coupe Vallée du Rhône, plateaux 13, 15, 16 et 17. Jonglage obligatoire avant les matchs, 2 qualifiés par plateau. Les feuilles sont à renvoyer sous 48h.",
-          "echeances": [
-            {
-              "date": "2026-09-12",
-              "heure": "13:30",
-              "libelle": "Plateaux de coupe du Groupement Vallée du Rhône (5 équipes Genas)"
-            }
-          ],
-          "page": 27
         }
       ]
     },

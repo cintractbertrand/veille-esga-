@@ -6,7 +6,7 @@ Cette procédure est suivie par la tâche planifiée chaque jeudi soir.
    https://lyon-rhone.fff.fr/category/commissions-2021-2022/
    (malgré son nom, c'est la page à jour). Repérer le dernier « PV Intégral » (date JJ-MM-AAAA, n° de PV, lien PDF).
 2. Si ce numéro de PV est déjà dans `data/pv.json`, ou si le PV du jour n'est pas encore paru, ne rien modifier et s'arrêter.
-3. Lire tout le PDF et relever chaque passage qui concerne le club : « GENAS », « AZIEU », « ESGA », n° **523341**. Cela inclut les tableaux de sanctions (joueurs, dirigeants), les demandes de rapports, les convocations, les matchs perdus, les forfaits, les amendes, les homologations, les reports, les changements d'horaires, les coupes et tirages, la trésorerie, le futsal, le football féminin et les invitations.
+3. Lire tout le PDF et relever chaque passage qui concerne le club : « GENAS », « AZIEU », « ESGA », n° **523341**. **Ne pas relever** les plateaux du football d'animation (U7 à U13, plateaux de coupe du groupement, « Plateau des Copines »). Cela inclut en revanche les tableaux de sanctions (joueurs, dirigeants), les demandes de rapports, les convocations, les matchs perdus, les forfaits, les amendes, les homologations, les reports, les changements d'horaires, les coupes et tirages, la trésorerie, le futsal, le football féminin et les invitations.
 4. Ajouter en tête de `pvs` dans `data/pv.json` un objet pour ce PV :
    - `numero`, `date` (AAAA-MM-JJ), `url`, `pages`
    - `resume` : 2 ou 3 phrases simples pour le club, avec le plus important d'abord.
@@ -25,4 +25,4 @@ Cette procédure est suivie par la tâche planifiée chaque jeudi soir.
 
 ## Limites connues
 - Le site du District refuse les téléchargements depuis GitHub Actions (403), donc le texte des PV est lu par Claude.
-- La lecture automatique couvre environ les 27 premières pages de chaque PV. Les dernières pages contiennent surtout les plateaux U7-U13 et les annexes de désignations. Il faut y penser si une info semble manquer.
+- La lecture automatique couvre environ les 27 premières pages de chaque PV. Les dernières pages contiennent surtout les plateaux U7-U13, qu'on ne suit pas, et les annexes de désignations.
