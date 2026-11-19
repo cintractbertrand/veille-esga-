@@ -1,0 +1,4240 @@
+[
+ {
+  "pv": 766,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 3
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 7,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de discipline",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission d’appel",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupes district de Lyon et du Rhône",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot ensemble",
+    "groupement": "District",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes",
+    "groupement": "Groupement Brevenne",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Saone Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Foot d’animation",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 35,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 38,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 39,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 40,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 40,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 40,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe festival",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 40,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 41,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 41,
+    "mentions": 5
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 42,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 43,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 44,
+    "mentions": 4
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 48,
+    "mentions": 27
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 125,
+    "mentions": 1
+   }
+  ]
+ },
+ {
+  "pv": 765,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de discipline",
+    "groupement": "District",
+    "page": 9,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission d’appel",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupes district de Lyon et du Rhône",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnat U15 d1",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe nationale futsal",
+    "groupement": "District",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot loisirs",
+    "groupement": "District",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Foot d’animation",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 35,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 37,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 5
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 7
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 41,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 42,
+    "mentions": 2
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 44,
+    "mentions": 23
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 112,
+    "mentions": 1
+   }
+  ]
+ },
+ {
+  "pv": 764,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission de discipline",
+    "groupement": "District",
+    "page": 10,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupes festival pitch U13f",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe festival pitch U13f",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe dlr futsal seniors",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe dlr futsal U18",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot loisirs",
+    "groupement": "District",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Foot d’animation",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 35,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 1
+   },
+   {
+    "titre": "Coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 5
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 40,
+    "mentions": 20
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 47,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 48,
+    "mentions": 2
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 51,
+    "mentions": 28
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 127,
+    "mentions": 1
+   }
+  ]
+ },
+ {
+  "pv": 763,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de discipline",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission d’appel",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupes dlr",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 21,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupes festival pitch U13f",
+    "groupement": "District",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot ensemble",
+    "groupement": "District",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes",
+    "groupement": "Groupement Brevenne",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Saone Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 35,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 35,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 38,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 39,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 40,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 41,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 41,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 42,
+    "mentions": 1
+   },
+   {
+    "titre": "Coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 42,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 43,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 43,
+    "mentions": 10
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 47,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 48,
+    "mentions": 2
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 51,
+    "mentions": 24
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 114,
+    "mentions": 1
+   }
+  ]
+ },
+ {
+  "pv": 762,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 7,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 7,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission d’appel",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission technique et des jeunes",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupes dlr",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission foot loisirs",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 34,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 35,
+    "mentions": 1
+   },
+   {
+    "titre": "Coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 35,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 36,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 37,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 0
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 41,
+    "mentions": 16
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 80,
+    "mentions": 1
+   }
+  ]
+ },
+ {
+  "pv": 761,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de discipline",
+    "groupement": "District",
+    "page": 9,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission d’appel",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnat",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnat futsal U13",
+    "groupement": "District",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot ensemble",
+    "groupement": "District",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Saone Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 35,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 37,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 40,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 41,
+    "mentions": 0
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 43,
+    "mentions": 21
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 95,
+    "mentions": 0
+   }
+  ]
+ },
+ {
+  "pv": 760,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission de discipline",
+    "groupement": "District",
+    "page": 10,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission d’appel",
+    "groupement": "District",
+    "page": 12,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission technique et des jeunes",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupes dlr",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe de Lyon et du Rhône seniors",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe de Lyon et du Rhône U17",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe de Lyon et du Rhône U15",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 23,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe dlr futsal U18",
+    "groupement": "District",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal as villeurbanne",
+    "groupement": "District",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe del futsal femine seniors",
+    "groupement": "District",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot loisirs",
+    "groupement": "District",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations",
+    "groupement": "Groupement Brevenne",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes",
+    "groupement": "Groupement Brevenne",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Saone Metropole",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 38,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 39,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 39,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 40,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 40,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 41,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 42,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 42,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 43,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 43,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 44,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 45,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 45,
+    "mentions": 6
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 48,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 49,
+    "mentions": 2
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 51,
+    "mentions": 29
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 129,
+    "mentions": 0
+   }
+  ]
+ },
+ {
+  "pv": 759,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission fair - play et etoiles",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnats 2026-2027",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe dlr futsal",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnat futsal feminin",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 35,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 40,
+    "mentions": 5
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 42,
+    "mentions": 5
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 43,
+    "mentions": 2
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 46,
+    "mentions": 28
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 130,
+    "mentions": 1
+   }
+  ]
+ },
+ {
+  "pv": 758,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations aux clubs",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission satut de l’arbitrage",
+    "groupement": "District",
+    "page": 10,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission technique et des jeunes",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe de Lyon et du Rhône 2026/2027",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnats 2026-2027",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnat futsal U13",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot loisirs",
+    "groupement": "District",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission festival U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe de groupement U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 35,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 5
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 42,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 42,
+    "mentions": 1
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 44,
+    "mentions": 26
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 128,
+    "mentions": 0
+   }
+  ]
+ },
+ {
+  "pv": 757,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique /",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations aux clubs",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes aux clubs",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des reglements",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de discipline",
+    "groupement": "District",
+    "page": 9,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal jeunes",
+    "groupement": "District",
+    "page": 10,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations unaf lyon et rhone",
+    "groupement": "District",
+    "page": 12,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "District",
+    "page": 12,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe de Lyon et du Rhône 2026/2027",
+    "groupement": "District",
+    "page": 12,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnat futsal U15",
+    "groupement": "District",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnat futsal U18",
+    "groupement": "District",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes",
+    "groupement": "Groupement Brevenne",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes a 11",
+    "groupement": "Groupement Brevenne",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 33,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission festival U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe de groupement U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 34,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 35,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 36,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 37,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 4
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 38,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 6
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 39,
+    "mentions": 16
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 45,
+    "mentions": 5
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 46,
+    "mentions": 0
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 49,
+    "mentions": 28
+   },
+   {
+    "titre": "Dossiers par club",
+    "groupement": "Annexes",
+    "page": 126,
+    "mentions": 1
+   }
+  ]
+ },
+ {
+  "pv": 756,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations aux clubs",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes aux clubs",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de discipline",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 8,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations unaf lyon et rhone",
+    "groupement": "District",
+    "page": 9,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission technique et des jeunes",
+    "groupement": "District",
+    "page": 10,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe de Lyon et du Rhône seniors 2026/2027",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 2
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnat futsal seniors d3",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Championnat futsal feminin",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot loisirs",
+    "groupement": "District",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Saone Metropole",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Saone Metropole",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Saone Metropole",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 27,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission festival U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe de groupement U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 29,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 30,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 31,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 32,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 33,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 33,
+    "mentions": 6
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 34,
+    "mentions": 6
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 35,
+    "mentions": 11
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 40,
+    "mentions": 5
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 41,
+    "mentions": 0
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 43,
+    "mentions": 21
+   }
+  ]
+ },
+ {
+  "pv": 755,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations aux clubs",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes aux clubs",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de delegation",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission fair - play et etoiles",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations unaf lyon et rhone",
+    "groupement": "District",
+    "page": 7,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission des coupes",
+    "groupement": "District",
+    "page": 9,
+    "mentions": 0
+   },
+   {
+    "titre": "Coupe de Lyon et du Rhône seniors 2026/2027",
+    "groupement": "District",
+    "page": 9,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal seniors d3",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal feminin",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal jeunes",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot loisirs",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot ensemble",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Saone Metropole",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission festival U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe de groupement U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 24,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 25,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 26,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 26,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 27,
+    "mentions": 6
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 28,
+    "mentions": 6
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 28,
+    "mentions": 0
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 30,
+    "mentions": 13
+   }
+  ]
+ },
+ {
+  "pv": 754,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations aux clubs",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations importantes aux clubs",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission satut de l’arbitrage",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations unaf lyon et rhone",
+    "groupement": "District",
+    "page": 7,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission technique et des jeunes",
+    "groupement": "District",
+    "page": 9,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 10,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal seniors d3",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal feminin",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot loisirs",
+    "groupement": "District",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot ensemble",
+    "groupement": "District",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Beaujolais",
+    "groupement": "Groupement Beaujolais",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Beaujolais",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Beaujolais",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Beaujolais",
+    "page": 16,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Beaujolais",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Beaujolais",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 17,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U9",
+    "groupement": "Groupement Brevenne",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U11",
+    "groupement": "Groupement Brevenne",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Brevenne",
+    "page": 18,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 19,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 20,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission festival U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe de groupement U13",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 21,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 22,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 22,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 23,
+    "mentions": 6
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 23,
+    "mentions": 0
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 25,
+    "mentions": 7
+   }
+  ]
+ },
+ {
+  "pv": 753,
+  "rubriques": [
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission de l’arbitrage",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations unaf lyon et rhone",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission futsal",
+    "groupement": "District",
+    "page": 7,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal seniors d1 et d2",
+    "groupement": "District",
+    "page": 7,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal seniors d3",
+    "groupement": "District",
+    "page": 8,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal feminin",
+    "groupement": "District",
+    "page": 8,
+    "mentions": 0
+   },
+   {
+    "titre": "Futsal jeunes",
+    "groupement": "District",
+    "page": 8,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission feminines",
+    "groupement": "District",
+    "page": 8,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot ensemble",
+    "groupement": "District",
+    "page": 9,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Brevenne",
+    "groupement": "Groupement Brevenne",
+    "page": 10,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U7",
+    "groupement": "Groupement Brevenne",
+    "page": 10,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Saone Metropole",
+    "groupement": "Groupement Saone Metropole",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Lyon Metropole",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Secretariat",
+    "groupement": "Groupement Lyon Metropole",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 12,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 12,
+    "mentions": 3
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 13,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 13,
+    "mentions": 0
+   },
+   {
+    "titre": "Désignations par poule",
+    "groupement": "Annexes",
+    "page": 15,
+    "mentions": 0
+   }
+  ]
+ },
+ {
+  "pv": 752,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations aux clubs",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 1
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 6,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission d’appel",
+    "groupement": "District",
+    "page": 7,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 9,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission foot ensemble",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 1
+   },
+   {
+    "titre": "Groupement Vallee du Rhone",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 14,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission coupe a 11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U13 - coupe Vallée du Rhône",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U12/U13",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U10/U11",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U8/U9",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 15,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission U6/U7",
+    "groupement": "Groupement Vallee du Rhone",
+    "page": 15,
+    "mentions": 0
+   }
+  ]
+ },
+ {
+  "pv": 751,
+  "rubriques": [
+   {
+    "titre": "Secretariat",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Informations aux clubs",
+    "groupement": "District",
+    "page": 2,
+    "mentions": 0
+   },
+   {
+    "titre": "Tresorerie",
+    "groupement": "District",
+    "page": 3,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission prevention / securite / ethique / mediation",
+    "groupement": "District",
+    "page": 4,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission d’appel",
+    "groupement": "District",
+    "page": 5,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission technique et des jeunes",
+    "groupement": "District",
+    "page": 11,
+    "mentions": 0
+   },
+   {
+    "titre": "Commission des competitions",
+    "groupement": "District",
+    "page": 13,
+    "mentions": 0
+   }
+  ]
+ }
+]
