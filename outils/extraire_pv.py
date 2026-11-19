@@ -3,6 +3,7 @@
 
 - data/matchs.json   : les matchs du club repérés dans les annexes « Désignations par poule »
 - data/dossiers.json : les dossiers du club dans « Dossiers par club » (amendes, sanctions…)
+- data/extraits.json : pour chaque PV, tous les passages qui citent le club, dans l'ordre des pages
 
 Usage : python3 outils/extraire_pv.py
 Le script fusionne avec les fichiers existants (un match = son numéro, un dossier = son numéro).
@@ -141,9 +142,50 @@ def dossiers(t, pv):
     return res
 
 
+ANNEXE = re.compile(r"D[ée]signations par poule|Dossiers par club|G[ée]n[ée]r[ée] le", re.I)
+TITRE = re.compile(r"^\s*([A-ZÉÈÀÂÊÎÔÛÇ0-9][A-ZÉÈÀÂÊÎÔÛÇ0-9 '’./&()-]{5,})\s*$")
+
+
+def extraits(t, pv):
+    """Passages du PV qui citent le club, avec la page et le titre de section le plus proche."""
+    res, section = [], None
+    for num, page in enumerate(t.split("\f"), 1):
+        L = page.splitlines()
+        annexe = bool(ANNEXE.search(page[:600]))
+        blocs, titres = [], {}
+        for i, l in enumerate(L):
+            ti = TITRE.match(l)
+            if ti and not re.match(r"^\s*P\.?\s*V", l) and not CLUB.search(l) and not re.search(r"\d{5}", l) \
+                    and re.search(r"COMMISSION|COUPE|FEUILLE|DEMANDE|TIRAGE|CHAMPIONNAT|PLATEAU|FESTI|RAPPORT|MODIFICATION|R[EÉ]SULTAT|D[EÉ]L[EÉ]GATION|R[EÈ]GLEMENT|DISCIPLINE|FUTSAL|F[EÉ]MININ|ARBITR|TR[EÉ]SOR|SECR[EÉ]TARIAT|INFORMATION|BUREAU|COMIT[EÉ]|GROUPEMENT", l):
+                section = re.sub(r"\s{2,}", " ", ti.group(1)).strip()
+            titres[i] = section
+            if not (CLUB.search(l) or CLUB_NUM in l):
+                continue
+            if annexe:
+                a, b = i, i
+            else:
+                a = i
+                while a > 0 and i - a < 4 and L[a - 1].strip() and not TITRE.match(L[a - 1]):
+                    a -= 1
+                b = i
+                while b + 1 < len(L) and b - i < 3 and L[b + 1].strip() and not TITRE.match(L[b + 1]):
+                    b += 1
+            if blocs and a <= blocs[-1][1] + 1:
+                blocs[-1][1] = max(blocs[-1][1], b)
+            else:
+                blocs.append([a, b])
+        for a, b in blocs:
+            txt = "\n".join(re.sub(r"\s{3,}", "   ", x.strip()) for x in L[a:b + 1] if x.strip())
+            if txt:
+                res.append({"pv": pv, "page": num, "section": "Annexes" if annexe else titres.get(a), "texte": txt})
+    return res
+
+
 def main():
     mpath, dpath = RACINE / "data/matchs.json", RACINE / "data/dossiers.json"
     tous_m = {m["numero"]: m for m in (json.loads(mpath.read_text()) if mpath.exists() else [])}
+    epath = RACINE / "data/extraits.json"
+    tous_e = {}
     tous_d = {d["dossier"]: d for d in (json.loads(dpath.read_text()) if dpath.exists() else [])}
     for pdf in sorted((RACINE / "pv-pdf").glob("*.pdf")):
         t = texte(pdf)
@@ -153,6 +195,7 @@ def main():
         for m in matchs(t, pv):
             if m["numero"] not in tous_m or tous_m[m["numero"]]["pv"] <= pv:
                 tous_m[m["numero"]] = m
+        tous_e[pv] = extraits(t, pv)
         for d in dossiers(t, pv):
             tous_d[d["dossier"]] = d
     # équipe sans numéro (coupes) : retrouvée grâce au niveau indiqué, ex. « (SE D3) » -> équipe Seniors qui joue en D3
@@ -172,7 +215,8 @@ def main():
     d = sorted(tous_d.values(), key=lambda x: x["date"])
     mpath.write_text(json.dumps(m, ensure_ascii=False, indent=1))
     dpath.write_text(json.dumps(d, ensure_ascii=False, indent=1))
-    print(f"{len(m)} matchs, {len(d)} dossiers")
+    epath.write_text(json.dumps([{"pv": k, "extraits": v} for k, v in sorted(tous_e.items(), reverse=True)], ensure_ascii=False, indent=1))
+    print(f"{len(m)} matchs, {len(d)} dossiers, {sum(len(v) for v in tous_e.values())} extraits")
 
 
 if __name__ == "__main__":

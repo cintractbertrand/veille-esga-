@@ -119,6 +119,97 @@
             }
           ],
           "page": 22
+        },
+        {
+          "id": "766-7",
+          "categorie": "U13",
+          "commission": "Commission U13 Vallée du Rhône",
+          "type": "match",
+          "gravite": "info",
+          "titre": "U13 : Genas 2, 3 et 6 qualifiés en Coupe Vallée du Rhône",
+          "detail": "Résultats du 1er tour : Genas 2 (plateau 6, avec Chaponnay 2), Genas 3 (plateau 17, avec Vienne 1) et Genas 6 (plateau 19, avec Entente 3) sont qualifiés. Le groupement rappelle les erreurs à éviter : bonne feuille de match, ne pas calculer soi-même les jongles, tirs au but juste après un match nul, feuilles de jongles rendues au club qui reçoit.",
+          "echeances": [],
+          "page": 41
+        },
+        {
+          "id": "766-8",
+          "categorie": "U13",
+          "commission": "Commission U13 Vallée du Rhône",
+          "type": "match",
+          "gravite": "attention",
+          "titre": "U13 : changements d'horaires et un report",
+          "detail": "Le 21 novembre, Genas 4 – Entente 4 et Genas 6 – Manissieux 3 se jouent à 11h. La Revolée – Genas est reporté au 28 novembre (terrain indisponible). Le 5 décembre, Genas 2 – Moins 2 et Genas 5 – Loire 2 se jouent à 11h.",
+          "echeances": [
+            {
+              "date": "2026-11-21",
+              "heure": "11:00",
+              "libelle": "U13 : Genas 4 – Entente 4 et Genas 6 – Manissieux 3"
+            },
+            {
+              "date": "2026-11-28",
+              "libelle": "U13 : La Revolée – Genas (match reporté)"
+            },
+            {
+              "date": "2026-12-05",
+              "heure": "11:00",
+              "libelle": "U13 : Genas 2 – Moins 2 et Genas 5 – Loire 2"
+            }
+          ],
+          "page": 41
+        },
+        {
+          "id": "766-9",
+          "categorie": "U11",
+          "commission": "Commission U10/U11",
+          "type": "match",
+          "gravite": "info",
+          "titre": "U11 : plateau du 12 décembre déplacé à Mions",
+          "detail": "Le stade de Corbas est fermé. Le plateau de la poule A, journée 5, se joue chez F.C. Mions 2, avec Corbas 1 et Genas 1. Le 19 décembre, les U10-U11 ont une journée futsal en extérieur (foot à 5), hors classement.",
+          "echeances": [
+            {
+              "date": "2026-12-12",
+              "libelle": "U11 : plateau Corbas 1 – Genas 1 – Mions 2 (à Mions)"
+            },
+            {
+              "date": "2026-12-19",
+              "libelle": "U10-U11 : journée futsal en extérieur"
+            }
+          ],
+          "page": 43
+        },
+        {
+          "id": "766-10",
+          "categorie": "U9",
+          "commission": "Commission U8/U9",
+          "type": "match",
+          "gravite": "info",
+          "titre": "U8 et U9 : plateaux du samedi 21 novembre à 9h30",
+          "detail": "Genas 3 joue en U8 à Sud Lyonnais (avec Corbas 2 et Ternay 2) et en U9 à Frontonas (avec Toussieu 2). L'horaire de 9h30 doit être respecté. Les feuilles de plateau se renvoient sur le FAL de Footclubs sous 48h, c'est obligatoire en phase 2.",
+          "echeances": [
+            {
+              "date": "2026-11-21",
+              "heure": "09:30",
+              "libelle": "Plateaux U8 (Sud Lyonnais) et U9 (Frontonas)"
+            }
+          ],
+          "page": 43
+        },
+        {
+          "id": "766-11",
+          "categorie": "U7",
+          "commission": "Commission U6/U7",
+          "type": "match",
+          "gravite": "attention",
+          "titre": "U7 : Genas accueille un plateau le 28 novembre",
+          "detail": "Le festi-foot U7 n°22 a lieu à Genas à 9h30, avec Genas (2 équipes), Verpillière, USEL, Chaponnay Marennes et Val d'Amby. Les U6 jouent le même jour à Diémoz. Le District note aussi le retrait d'une équipe U6 et d'une équipe U7 de Genas : il reste 2 équipes U7 et 1 équipe U6.",
+          "echeances": [
+            {
+              "date": "2026-11-28",
+              "heure": "09:30",
+              "libelle": "Plateau U7 à Genas (festi-foot n°22)"
+            }
+          ],
+          "page": 45
         }
       ]
     },
@@ -169,6 +260,17 @@
             "domicile": "AS ST PRIEST",
             "exterieur": "GENAS AZIEU"
           }
+        },
+        {
+          "id": "765-3",
+          "categorie": "U13",
+          "commission": "Commission U13 Vallée du Rhône",
+          "type": "match",
+          "gravite": "attention",
+          "titre": "U13 : feuille de plateau de coupe non parvenue (Genas 4 et 6)",
+          "detail": "Au 1er tour de la Coupe Vallée du Rhône, la feuille du plateau 19 (Ozon 2, Entente 3, Genas 6, Genas 4) n'est pas parvenue au groupement. Genas 2 et Genas 3 sont qualifiés.",
+          "echeances": [],
+          "page": 38
         }
       ]
     },
@@ -532,7 +634,25 @@
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/95818b4ad4b1e9e61a9b36c5f3358995.pdf",
       "pages": 137,
       "resume": "Aucune décision concernant le club cette semaine.",
-      "items": []
+      "items": [
+        {
+          "id": "759-1",
+          "categorie": "U9F",
+          "commission": "Féminines",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Plateau des Copines U7F et U9F à Genas",
+          "detail": "Genas est l'un des 3 sites du plateau de la journée 4, ouvert aux licenciées et non licenciées. Il a lieu de 9h30 à 11h, avec un rendez-vous à 9h10, chemin de Cadou à Genas.",
+          "echeances": [
+            {
+              "date": "2026-10-10",
+              "heure": "09:30",
+              "libelle": "Plateau U7F/U9F à Genas (RDV 9h10)"
+            }
+          ],
+          "page": 17
+        }
+      ]
     },
     {
       "numero": 758,
@@ -744,6 +864,23 @@
           "detail": "Les inscriptions sont enregistrées. Les frais ne sont comptés qu'en cas de participation réelle.",
           "echeances": [],
           "page": 26
+        },
+        {
+          "id": "755-4",
+          "categorie": "U13",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "match",
+          "gravite": "info",
+          "titre": "Plateaux de coupe U13 le 12 septembre (5 équipes)",
+          "detail": "Genas 1 joue en Coupe Festival, plateau 4, contre La Revolée, Ozon et St Alban. Genas 2, 3, 4 et 6 jouent en Coupe Vallée du Rhône, plateaux 13, 15, 16 et 17. Jonglage obligatoire avant les matchs, 2 qualifiés par plateau. Les feuilles sont à renvoyer sous 48h.",
+          "echeances": [
+            {
+              "date": "2026-09-12",
+              "heure": "13:30",
+              "libelle": "Plateaux de coupe U13 du Groupement (5 équipes Genas)"
+            }
+          ],
+          "page": 27
         }
       ]
     },
