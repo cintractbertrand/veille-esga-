@@ -318,3 +318,27 @@ button.eq-stat { cursor: pointer; } button.eq-stat:hover { border-color: var(--c
 .eq-team:hover { border-color: var(--club); }
 .eq-team.on { border-color: var(--club); border-top-color: var(--club); background: var(--club-soft); }
 @media (max-width: 560px) { .eq-equipes { grid-template-columns: 1fr 1fr; } .eq-team small { display: none; } }
+
+/* Lecture suivie */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius-s); overflow: hidden; background: var(--card); box-shadow: var(--shadow); }
+.seg-b { border: 0; background: none; color: var(--muted); padding: 8px 14px; font-weight: 700; font-size: .86rem; cursor: pointer; }
+.seg-b + .seg-b { border-left: 1px solid var(--line); }
+.seg-b.on { background: var(--club); color: #fff; }
+.lect-pdf-head { margin-top: 12px; }
+.lect-suivie { margin-top: 18px; max-width: 900px; }
+.suivie-tete { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.suivie-tete h2 { margin: 0; font-size: 1.35rem; }
+.suivie-g { margin-bottom: 18px; }
+.suivie-g > h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--club); margin: 0 0 8px; padding-bottom: 6px; border-bottom: 2px solid var(--club-soft); }
+.passage { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-s); padding: 10px 14px; margin-bottom: 8px; box-shadow: var(--shadow); }
+.passage-p { flex: 0 0 auto; }
+.passage-t { min-width: 0; font-size: .9rem; line-height: 1.45; overflow-wrap: anywhere; }
+.passage-t p { margin: 0 0 2px; }
+.pg-lien { border: 1px solid var(--line); background: var(--card-2); color: var(--club); border-radius: 999px; padding: 2px 9px; font-size: .74rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.pg-lien:hover { background: var(--club); color: #fff; border-color: var(--club); }
+mark { background: #fde68a; color: #422006; border-radius: 3px; padding: 0 2px; font-weight: 600; }
+.suivie-annexes { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; box-shadow: var(--shadow); }
+.suivie-annexes summary { cursor: pointer; font-weight: 700; }
+.suivie-annexes ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; font-size: .82rem; }
+.suivie-annexes li { display: flex; gap: 10px; align-items: baseline; padding: 4px 0; border-bottom: 1px dashed var(--line); min-width: 0; }
+.suivie-annexes li span { min-width: 0; overflow-wrap: anywhere; }
