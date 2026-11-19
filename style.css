@@ -306,3 +306,5 @@ button.eq-stat { cursor: pointer; } button.eq-stat:hover { border-color: var(--c
 .extrait-page { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
 .extrait-page canvas { display: block; }
 .extrait-pied { font-size: .78rem; color: var(--muted); margin: 6px 0 0 !important; }
+.chip[data-c="Inscriptions"] { color: var(--match); border-color: color-mix(in srgb, var(--match) 40%, var(--line)); background: var(--match-soft); }
+.chip[data-c="Inscriptions"].active { background: var(--match); border-color: var(--match); color: #fff; }
