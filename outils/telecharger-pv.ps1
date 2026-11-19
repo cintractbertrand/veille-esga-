@@ -18,7 +18,11 @@ git merge --ff-only --quiet origin/main
 $telechargements = (New-Object -ComObject Shell.Application).NameSpace('shell:Downloads').Self.Path
 $deplaces = 0
 if ($telechargements -and (Test-Path $telechargements)) {
-  Get-ChildItem -Path $telechargements -Filter *.pdf | Where-Object { $_.BaseName -match '^[0-9a-f]{32}$' } | ForEach-Object {
+  # On ne prend que les PDF téléchargés depuis le site du District (adresse d'origine notée par Windows).
+  Get-ChildItem -Path $telechargements -Filter *.pdf | Where-Object {
+    $_.BaseName -match '^[0-9a-f]{32}$' -and
+    ((Get-Content -LiteralPath $_.FullName -Stream Zone.Identifier -ErrorAction SilentlyContinue) -match 'lyon-rhone\.fff\.fr')
+  } | ForEach-Object {
     $cible = Join-Path $dossier $_.Name
     if (Test-Path $cible) { Remove-Item $_.FullName } else { Move-Item $_.FullName $cible; $deplaces++ }
   }
