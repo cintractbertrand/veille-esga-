@@ -265,7 +265,7 @@ button.eq-stat { cursor: pointer; } button.eq-stat:hover { border-color: var(--c
 
 /* Téléphone */
 @media (max-width: 760px) {
-  .lect-body { grid-template-columns: 1fr; } .lect-fiches { max-height: none; order: 2; } .lect-view { height: 75vh; padding: 6px; }
+  .lect-body { grid-template-columns: 1fr; } .lect-fiches { max-height: none; order: 2; position: static; } .lect-view { height: 75vh; padding: 6px; }
   .day { min-height: 54px; padding: 4px; }
   .day .pills { display: none; }
   .day .dots { display: flex; }
