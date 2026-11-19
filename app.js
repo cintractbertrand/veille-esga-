@@ -80,7 +80,7 @@
   function scrollTo$(sel) {
     const el = typeof sel === "string" ? $(sel) : sel;
     if (!el) return;
-    const y = el.getBoundingClientRect().top + window.scrollY - 70;
+    const y = el.getBoundingClientRect().top + window.scrollY - (($(".barre") || {}).offsetHeight || 0) - 12;
     window.scrollTo({ top: y, behavior: "smooth" });
   }
 
@@ -103,6 +103,7 @@
     document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === t));
     showPanel(t);
     history.replaceState(null, "", "#" + t);
+    if (t === "lecteur") lectAfficher();
   }
 
   // vue d'une équipe (catégorie) ou des urgences, ouverte depuis la barre du haut
@@ -392,40 +393,152 @@
     }).join("");
   }
 
-  // Lecteur de PV
+  // Lecteur de PV : affichage avec PDF.js pour surligner les passages qui citent le club.
+  // Le site du District interdit l'affichage de ses PDF dans une autre page : on lit la
+  // copie publiée avec le site (pv-pdf/).
+  const RE_CLUB = /genas|\besga\b|523341/i; // « Genas Azieu », « ESGA » ou le numéro du club
+  const lect = { num: null, page: 1, zoom: 1, doc: null, docNum: null, pages: null, hl: [], hlIdx: -1, rendu: 0 };
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdfjs/pdf.worker.min.js";
+
   function renderLecteur() {
     $("#lect-pv").innerHTML = data.pvs.map((pv) => `<option value="${pv.numero}">PV n°${pv.numero} du ${fmtD(pv.date)} (${pv.items.length} mention${pv.items.length > 1 ? "s" : ""})</option>`).join("");
     $("#lect-pv").onchange = () => lire(+$("#lect-pv").value, 1, false);
-    $("#lect-page").onchange = () => lire(+$("#lect-pv").value, +$("#lect-page").value || 1, false);
+    $("#lect-page").onchange = () => allerPage(+$("#lect-page").value || 1);
+    $("#lect-prec").onclick = () => allerPage(lect.page - 1);
+    $("#lect-suiv").onclick = () => allerPage(lect.page + 1);
+    $("#lect-plus").onclick = () => { lect.zoom = Math.min(3, lect.zoom * 1.25); afficherPage(); };
+    $("#lect-moins").onclick = () => { lect.zoom = Math.max(0.5, lect.zoom / 1.25); afficherPage(); };
+    $("#lect-genas").onclick = passageSuivant;
+    let t; window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { if ($("#tab-lecteur").classList.contains("active")) afficherPage(); }, 200); });
     if (data.pvs[0]) lire(data.pvs[0].numero, 1, false);
   }
-  const pdfCache = {};
-  function pdfDe(pv) {
-    if (!pdfCache[pv.numero]) {
-      const local = "pv-pdf/" + pv.url.split("/").pop();
-      pdfCache[pv.numero] = fetch(local, { method: "HEAD" }).then((r) => r.ok ? local : pv.url).catch(() => pv.url);
-    }
-    return pdfCache[pv.numero];
-  }
+
+  const localPdf = (pv) => "pv-pdf/" + pv.url.split("/").pop();
+
   function lire(num, page, ouvrir = true) {
     const pv = pvById[num]; if (!pv) return;
-    $("#lect-pv").value = num; $("#lect-page").value = page;
-    // le site du District interdit l'affichage de ses PDF dans une autre page :
-    // on lit la copie publiée avec le site (pv-pdf/), sinon on renvoie vers le District
-    const fr = $("#lect-iframe");
-    pdfDe(pv).then((base) => {
-      const cible = new URL(`${base}#page=${page}`, location.href).href;
-      if (fr.src !== cible) { fr.src = "about:blank"; setTimeout(() => { fr.src = cible; }, 30); }
-      $("#lect-ext").href = cible;
-      $("#lect-aide").textContent = base === pv.url
-        ? "Ce PV n'est pas encore copié sur le site : s'il ne s'affiche pas, utilise « Ouvrir dans un onglet »."
-        : "Sur téléphone, si le PV ne s'affiche pas, utilise « Ouvrir dans un onglet ».";
-    });
+    lect.num = num; lect.page = page; lect.hlIdx = -1; lect.focus = page > 1;
+    $("#lect-pv").value = num;
+    $("#lect-ext").href = localPdf(pv);
     const its = all.filter((i) => i.pv === num).sort((a, b) => (a.page || 0) - (b.page || 0));
-    $("#lect-fiches").innerHTML = `<h3>Mentions du club</h3>` + (its.map((i) => `<button class="lect-fiche ${esc(i.gravite)} ${i.page === page ? "on" : ""}" data-page="${i.page || 1}"><b>p. ${i.page || "?"}</b> · ${esc(i.categorie)}<br>${esc(i.titre)}</button>`).join("") || `<p class="empty">Aucune mention.</p>`);
-    $("#lect-fiches").querySelectorAll(".lect-fiche").forEach((b) => b.onclick = () => lire(num, +b.dataset.page, false));
+    $("#lect-fiches").innerHTML = `<h3>Mentions du club</h3>` + (its.map((i) => `<button class="lect-fiche ${esc(i.gravite)}" data-page="${i.page || 1}"><b>p. ${i.page || "?"}</b> · ${esc(i.categorie)}<br>${esc(i.titre)}</button>`).join("") || `<p class="empty">Aucune mention.</p>`);
+    $("#lect-fiches").querySelectorAll(".lect-fiche").forEach((b) => b.onclick = () => allerPage(+b.dataset.page));
     if (ouvrir) { showTab("lecteur"); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    else if ($("#tab-lecteur").classList.contains("active")) lectAfficher();
   }
+
+  // appelé quand l'onglet Lecteur devient visible (il faut sa largeur pour dessiner la page)
+  async function lectAfficher() {
+    const pv = pvById[lect.num]; if (!pv) return;
+    if (!window.pdfjsLib) { $("#lect-view").innerHTML = `<p class="empty">Le lecteur n'a pas pu se charger. <a href="${esc(localPdf(pv))}" target="_blank" rel="noopener">Ouvrir le PDF ↗</a></p>`; return; }
+    if (lect.docNum !== lect.num) {
+      lect.docNum = lect.num; lect.doc = null; lect.pages = null;
+      $("#lect-view").innerHTML = `<p class="empty">Chargement du PV n°${pv.numero}…</p>`;
+      $("#lect-pages").innerHTML = `<p class="empty">Recherche en cours…</p>`;
+      const num = lect.num;
+      try {
+        let doc;
+        try { doc = await pdfjsLib.getDocument({ url: localPdf(pv), standardFontDataUrl: "vendor/pdfjs/standard_fonts/" }).promise; }
+        catch (e) { doc = await pdfjsLib.getDocument({ url: pv.url, standardFontDataUrl: "vendor/pdfjs/standard_fonts/" }).promise; }
+        if (lect.num !== num) return;
+        lect.doc = doc;
+        $("#lect-total").textContent = `/ ${doc.numPages}`;
+        $("#lect-page").max = doc.numPages;
+        chercherClub(doc, num);
+      } catch (e) {
+        lect.docNum = null;
+        $("#lect-view").innerHTML = `<p class="empty">Ce PV n'est pas encore disponible dans le lecteur. <a href="${esc(pv.url)}" target="_blank" rel="noopener">L'ouvrir sur le site du District ↗</a></p>`;
+        $("#lect-pages").innerHTML = "";
+        return;
+      }
+    }
+    afficherPage(lect.focus); lect.focus = false;
+  }
+
+  // repère toutes les pages qui citent le club, en arrière-plan
+  async function chercherClub(doc, num) {
+    const res = [];
+    for (let p = 1; p <= doc.numPages; p++) {
+      if (lect.num !== num) return;
+      const tc = await (await doc.getPage(p)).getTextContent();
+      const n = tc.items.filter((it) => RE_CLUB.test(it.str)).length;
+      if (n) res.push({ p, n });
+      if (p % 10 === 0 || p === doc.numPages) majPages(res, p === doc.numPages);
+    }
+    lect.pages = res;
+  }
+  function majPages(res, fini) {
+    $("#lect-pages").innerHTML = (res.map((r) => `<button class="lect-pg ${r.p === lect.page ? "on" : ""}" data-p="${r.p}">p. ${r.p}<small>${r.n}</small></button>`).join("")
+      || (fini ? `<p class="empty">Le club n'apparaît pas dans ce PV.</p>` : "")) + (fini ? "" : `<p class="empty">Recherche en cours…</p>`);
+    $("#lect-pages").querySelectorAll(".lect-pg").forEach((b) => b.onclick = () => allerPage(+b.dataset.p));
+    lect.pagesPartiel = res;
+  }
+
+  function allerPage(p, idx = 0) {
+    if (!lect.doc) { lect.page = p; return; }
+    lect.page = Math.max(1, Math.min(lect.doc.numPages, p));
+    lect.hlIdx = idx - 1;
+    afficherPage(true);
+  }
+
+  async function afficherPage(versHl) {
+    const doc = lect.doc; if (!doc) return;
+    const n = ++lect.rendu, pnum = lect.page;
+    $("#lect-page").value = pnum;
+    document.querySelectorAll(".lect-pg, .lect-fiche").forEach((b) => b.classList.toggle("on", +(b.dataset.p || b.dataset.page) === pnum));
+    const page = await doc.getPage(pnum);
+    const view = $("#lect-view");
+    const largeur = Math.max(280, view.clientWidth - 2);
+    const base = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: (largeur / base.width) * lect.zoom });
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.floor(vp.width * dpr); canvas.height = Math.floor(vp.height * dpr);
+    canvas.style.width = vp.width + "px"; canvas.style.height = vp.height + "px";
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+    if (n !== lect.rendu) return;
+    // surlignage des passages qui citent le club
+    const tc = await page.getTextContent();
+    const boxes = tc.items.filter((it) => RE_CLUB.test(it.str)).map((it) => {
+      const tx = pdfjsLib.Util.transform(vp.transform, it.transform);
+      const h = Math.hypot(tx[2], tx[3]), w = it.width * vp.scale;
+      return { x: tx[4] - 3, y: tx[5] - h * 1.05, w: w + 6, h: h * 1.35 };
+    }).sort((a, b) => a.y - b.y || a.x - b.x);
+    const pg = document.createElement("div");
+    pg.className = "lect-pg-page"; pg.style.width = vp.width + "px"; pg.style.height = vp.height + "px";
+    pg.appendChild(canvas);
+    boxes.forEach((b, i) => {
+      const d = document.createElement("div"); d.className = "hl"; d.dataset.i = i;
+      Object.assign(d.style, { left: b.x + "px", top: b.y + "px", width: b.w + "px", height: b.h + "px" });
+      pg.appendChild(d);
+    });
+    if (n !== lect.rendu) return;
+    view.innerHTML = ""; view.appendChild(pg);
+    lect.hl = boxes;
+    $("#lect-aide").textContent = boxes.length
+      ? `${boxes.length} passage${boxes.length > 1 ? "s" : ""} sur Genas Azieu / ESGA surligné${boxes.length > 1 ? "s" : ""} sur cette page.`
+      : "Aucune mention de Genas Azieu ni de l'ESGA sur cette page.";
+    if (versHl && boxes.length) montrerHl(Math.max(0, lect.hlIdx + 1));
+  }
+
+  function montrerHl(i) {
+    lect.hlIdx = i;
+    const el = $(`#lect-view .hl[data-i="${i}"]`); if (!el) return;
+    document.querySelectorAll("#lect-view .hl.on").forEach((x) => x.classList.remove("on"));
+    el.classList.add("on");
+    const view = $("#lect-view");
+    view.scrollTo({ top: Math.max(0, el.offsetTop - view.clientHeight / 3), left: Math.max(0, el.offsetLeft - 40), behavior: "smooth" });
+    const r = view.getBoundingClientRect();
+    if (r.top < 100 || r.bottom > window.innerHeight) scrollTo$(view);
+  }
+
+  function passageSuivant() {
+    if (lect.hlIdx + 1 < lect.hl.length) return montrerHl(lect.hlIdx + 1);
+    const pages = lect.pages || lect.pagesPartiel || [];
+    const suiv = pages.find((r) => r.p > lect.page) || pages[0];
+    if (suiv) allerPage(suiv.p, 0);
+  }
+
   document.addEventListener("click", (e) => {
     const a = e.target.closest("a.lire");
     if (!a || e.ctrlKey || e.metaKey) return;
