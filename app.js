@@ -6,7 +6,7 @@
   const JOURS_L = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
   const GRAV_ORDRE = { urgent: 0, attention: 1, info: 2 };
   // équipes du club, toujours affichées en haut même sans mention dans les PV
-  const CATS_CLUB = ["Club","Seniors","Seniors F","U20","U18F","U17","U15","U15F","U13","U13F","Vétérans"];
+  const CATS_CLUB = ["Club","Seniors","Seniors F","U20","U18F","U17","U15","U15F","U13","U13F","U11","U9","U7","Vétérans"];
   const CAT_ORDRE = ["Club","Seniors","Seniors F","U18F","U20","U19","U18","U17","U16","U15","U15F","U14","U13","U13F","U12","U11","U10","U9","U9F","U8","U7","Futsal","Vétérans","Foot loisir"];
 
   const parseD = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
@@ -108,6 +108,7 @@
 
   // vue d'une équipe (catégorie) ou des urgences, ouverte depuis la barre du haut
   function ouvrirEquipe(c, remonter = true) {
+    if (c !== catActive) eqNum = null;
     catActive = c; query = ""; $("#recherche").value = "";
     renderChips(); renderEquipe();
     document.querySelectorAll(".tab").forEach((b) => b.classList.remove("active"));
@@ -337,6 +338,7 @@
     if (act) act.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
+  let eqNum = null;
   function renderEquipe() {
     const c = catActive, its = itemsDe(c);
     const urg = its.filter((i) => i.gravite === "urgent").length;
@@ -360,7 +362,19 @@
     ].filter(([v, , , tjs]) => tjs || v).map(([v, l, k]) => `<div class="eq-stat ${k}"><b>${v}</b><span>${l}</span></div>`).join("")
       + (lastD ? `<p class="eq-last">Dernière mention : PV du ${fmtD(lastD)}</p>` : "");
     const urgView = !!SPECIAL[c], clubView = c === "Club";
-    const ms = matchs.filter((m) => m.categorie === c);
+    // une carte par équipe de la catégorie (Seniors 1, 2, 3…), d'après data/matchs.json
+    const toutes = matchs.filter((m) => m.categorie === c);
+    const nums = [...new Set(toutes.map((m) => m.equipe).filter((n) => n != null))].sort((a, b) => a - b);
+    if (eqNum != null && !nums.includes(eqNum)) eqNum = null;
+    $("#eq-equipes").hidden = urgView || nums.length < 1;
+    $("#eq-equipes").innerHTML = nums.length ? (nums.length > 1 ? `<button class="eq-team ${eqNum == null ? "on" : ""}" data-n=""><b>Toutes les équipes</b><span>${toutes.length} matchs</span></button>` : "") + nums.map((n) => {
+      const mm = toutes.filter((m) => m.equipe === n), proch = mm.find((m) => joursAvant(m.date) >= 0);
+      const comp = (mm.filter((m) => !/coupe/i.test(m.competition)).pop() || mm[mm.length - 1] || {}).competition || "";
+      return `<button class="eq-team ${eqNum === n ? "on" : ""}" data-n="${n}"><b>${esc(c)} ${n}</b><span>${esc(comp)}</span>
+        <small>${proch ? `Prochain : ${JOURS[(parseD(proch.date).getDay() + 6) % 7]} ${parseD(proch.date).getDate()} ${MOIS_C[parseD(proch.date).getMonth()]} ${hm(proch.heure)} · ${proch.a_domicile ? "reçoit" : "à"} ${esc(advDe(proch))}` : "Aucun match à venir"}</small></button>`;
+    }).join("") : "";
+    $("#eq-equipes").querySelectorAll(".eq-team").forEach((b) => b.onclick = () => { eqNum = b.dataset.n === "" ? null : +b.dataset.n; renderEquipe(); });
+    const ms = eqNum == null ? toutes : toutes.filter((m) => m.equipe === eqNum);
     const avenir = ms.filter((m) => joursAvant(m.date) >= 0), passes = ms.filter((m) => joursAvant(m.date) < 0).slice(-3).reverse();
     $("#eq-matchs-bloc").hidden = urgView || clubView || !ms.length;
     $("#eq-matchs").innerHTML = matchsHTML(avenir.slice(0, 6)) + (ms.length ? `<li><button class="btn btn-link" id="eq-cal">Tous les matchs dans le calendrier ›</button></li>` : "");
