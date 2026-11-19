@@ -308,3 +308,13 @@ button.eq-stat { cursor: pointer; } button.eq-stat:hover { border-color: var(--c
 .extrait-pied { font-size: .78rem; color: var(--muted); margin: 6px 0 0 !important; }
 .chip[data-c="Inscriptions"] { color: var(--match); border-color: color-mix(in srgb, var(--match) 40%, var(--line)); background: var(--match-soft); }
 .chip[data-c="Inscriptions"].active { background: var(--match); border-color: var(--match); color: #fff; }
+
+/* Cartes des équipes d'une catégorie */
+.eq-equipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: -8px 0 22px; }
+.eq-team { text-align: left; background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--match); border-radius: 12px; padding: 10px 14px; color: var(--text); cursor: pointer; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eq-team b { font-size: 1rem; }
+.eq-team span { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.eq-team small { font-size: .76rem; color: var(--text); }
+.eq-team:hover { border-color: var(--club); }
+.eq-team.on { border-color: var(--club); border-top-color: var(--club); background: var(--club-soft); }
+@media (max-width: 560px) { .eq-equipes { grid-template-columns: 1fr 1fr; } .eq-team small { display: none; } }
