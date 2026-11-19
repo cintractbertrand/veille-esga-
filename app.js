@@ -125,6 +125,7 @@
       <h3>${esc(it.titre)}</h3>
       ${match}
       <p>${esc(it.detail)}</p>
+      ${it.page ? `<button class="btn-extrait" type="button" aria-expanded="false">Voir l'extrait du PV ▾</button><div class="extrait" hidden></div>` : ""}
       <p class="src">Source : <a href="${esc(it.pvUrl)}${it.page ? "#page=" + it.page : ""}" class="lire" data-pv="${it.pv}" data-page="${it.page || 1}">PV n°${it.pv}${it.page ? ", page " + it.page : ""}</a>${showPv ? " du " + fmtD(it.pvDate) : ""} · <a href="${esc(it.pvUrl)}" target="_blank" rel="noopener">PDF ↗</a></p>
     </article>`;
   }
@@ -400,6 +401,90 @@
   const lect = { num: null, page: 1, zoom: 1, doc: null, docNum: null, pages: null, hl: [], hlIdx: -1, rendu: 0 };
   if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdfjs/pdf.worker.min.js";
 
+  // ---- Extrait du PV dans une fiche : on découpe la page autour du passage cité
+  const docs = {};
+  function chargerDoc(pv) {
+    if (!docs[pv.numero]) {
+      const opts = { standardFontDataUrl: "vendor/pdfjs/standard_fonts/" };
+      docs[pv.numero] = pdfjsLib.getDocument({ url: localPdf(pv), ...opts }).promise
+        .catch(() => pdfjsLib.getDocument({ url: pv.url, ...opts }).promise)
+        .catch((e) => { delete docs[pv.numero]; throw e; });
+    }
+    return docs[pv.numero];
+  }
+  const norm = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+  async function afficherExtrait(it, box) {
+    const pv = pvById[it.pv];
+    if (!window.pdfjsLib || !pv) { box.innerHTML = `<p class="empty">Extrait indisponible.</p>`; return; }
+    box.innerHTML = `<p class="empty">Chargement de l'extrait…</p>`;
+    try {
+      const doc = await chargerDoc(pv);
+      const page = await doc.getPage(Math.min(it.page, doc.numPages));
+      const largeur = Math.min(900, Math.max(600, box.clientWidth - 18)); // lisible même sur téléphone (défilement horizontal dans l'extrait)
+      const base = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: largeur / base.width });
+      const tc = await page.getTextContent();
+      const rect = (t) => { const tx = pdfjsLib.Util.transform(vp.transform, t.transform); const h = Math.hypot(tx[2], tx[3]); return { x: tx[4] - 3, y: tx[5] - h * 1.05, w: t.width * vp.scale + 6, h: h * 1.35, str: t.str }; };
+      const items = tc.items.filter((t) => t.str.trim()).map(rect);
+      const club = items.filter((b) => RE_CLUB.test(b.str));
+      // point d'ancrage : n° du match, sinon une mention du club proche de l'adversaire ou d'un mot du titre
+      const m = it.match || {};
+      let ancre = m.numero ? items.find((b) => b.str.includes(String(m.numero))) : null;
+      if (!ancre && club.length) {
+        const mots = [m.domicile, m.exterieur, ...(it.titre || "").split(/[\s:,;()–-]+/)].filter((w) => w && w.length > 3 && !/genas|azieu|esga/i.test(w)).map(norm);
+        const score = (c) => items.filter((b) => Math.abs(b.y - c.y) < 60 && mots.some((w) => norm(b.str).includes(w))).length;
+        ancre = club.map((c) => [c, score(c)]).sort((a, b) => b[1] - a[1])[0][0];
+      }
+      if (!ancre) ancre = items[0];
+      if (!ancre) throw new Error("page vide");
+      // la mention du club la plus proche de l'ancre est mise en avant
+      const proche = club.slice().sort((a, b) => Math.abs(a.y - ancre.y) - Math.abs(b.y - ancre.y))[0];
+      const y0 = Math.max(0, ancre.y - 70), y1 = Math.min(vp.height, ancre.y + 230);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const full = document.createElement("canvas");
+      full.width = Math.floor(vp.width * dpr); full.height = Math.floor(vp.height * dpr);
+      await page.render({ canvasContext: full.getContext("2d"), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+      const crop = document.createElement("canvas");
+      crop.width = full.width; crop.height = Math.floor((y1 - y0) * dpr);
+      crop.getContext("2d").drawImage(full, 0, Math.floor(y0 * dpr), full.width, crop.height, 0, 0, full.width, crop.height);
+      crop.style.width = vp.width + "px"; crop.style.height = (y1 - y0) + "px";
+      const wrap = document.createElement("div");
+      wrap.className = "extrait-page"; wrap.style.width = vp.width + "px"; wrap.style.height = (y1 - y0) + "px";
+      wrap.appendChild(crop);
+      club.filter((b) => b.y + b.h > y0 && b.y < y1).forEach((b) => {
+        const d = document.createElement("div"); d.className = "hl" + (b === proche ? " on" : "");
+        Object.assign(d.style, { left: b.x + "px", top: (b.y - y0) + "px", width: b.w + "px", height: b.h + "px" });
+        wrap.appendChild(d);
+      });
+      box.innerHTML = "";
+      const sc = document.createElement("div"); sc.className = "extrait-scroll"; sc.appendChild(wrap);
+      box.appendChild(sc);
+      const a = wrap.querySelector(".hl.on") || wrap.querySelector(".hl"); if (a) sc.scrollLeft = Math.max(0, a.offsetLeft - 40);
+      const pied = document.createElement("p"); pied.className = "extrait-pied";
+      pied.innerHTML = `Extrait du PV n°${it.pv}, page ${it.page} · <a href="#" class="lire" data-pv="${it.pv}" data-page="${it.page}">Voir la page entière dans le lecteur ›</a>`;
+      box.appendChild(pied);
+    } catch (e) {
+      box.innerHTML = `<p class="empty">Ce PV n'est pas encore disponible pour l'extrait. <a href="${esc(pv.url)}${it.page ? "#page=" + it.page : ""}" target="_blank" rel="noopener">Ouvrir le PDF ↗</a></p>`;
+    }
+  }
+
+  document.addEventListener("click", (e) => {
+    const art = e.target.closest("article.item");
+    if (!art || e.target.closest("a, .extrait") || window.getSelection().toString()) return;
+    const btn = art.querySelector(".btn-extrait"), box = art.querySelector(".extrait");
+    if (!btn) return;
+    const ouvrir = box.hidden;
+    box.hidden = !ouvrir; art.classList.toggle("ouvert", ouvrir);
+    btn.setAttribute("aria-expanded", ouvrir);
+    btn.textContent = ouvrir ? "Masquer l'extrait ▴" : "Voir l'extrait du PV ▾";
+    if (ouvrir && !box.dataset.ok) {
+      box.dataset.ok = "1";
+      const it = all.find((i) => i.id === art.dataset.fiche);
+      if (it) afficherExtrait(it, box);
+    }
+  });
+
   function renderLecteur() {
     $("#lect-pv").innerHTML = data.pvs.map((pv) => `<option value="${pv.numero}">PV n°${pv.numero} du ${fmtD(pv.date)} (${pv.items.length} mention${pv.items.length > 1 ? "s" : ""})</option>`).join("");
     $("#lect-pv").onchange = () => lire(+$("#lect-pv").value, 1, false);
@@ -437,9 +522,7 @@
       $("#lect-pages").innerHTML = `<p class="empty">Recherche en cours…</p>`;
       const num = lect.num;
       try {
-        let doc;
-        try { doc = await pdfjsLib.getDocument({ url: localPdf(pv), standardFontDataUrl: "vendor/pdfjs/standard_fonts/" }).promise; }
-        catch (e) { doc = await pdfjsLib.getDocument({ url: pv.url, standardFontDataUrl: "vendor/pdfjs/standard_fonts/" }).promise; }
+        const doc = await chargerDoc(pv);
         if (lect.num !== num) return;
         lect.doc = doc;
         $("#lect-total").textContent = `/ ${doc.numPages}`;
