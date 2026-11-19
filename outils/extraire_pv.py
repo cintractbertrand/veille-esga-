@@ -12,7 +12,7 @@ from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent.parent
 CLUB_NUM = "523341"
-CLUB = re.compile(r"genas\s*azieu", re.I)
+CLUB = re.compile(r"\bgenas\b", re.I)
 JOURS = "Lundi|Mardi|Mercredi|Jeudi|Vendredi|Samedi|Dimanche"
 
 
@@ -49,6 +49,17 @@ def iso(d):
     return f"{a}-{m}-{j}"
 
 
+def separer(txt):
+    """Coupe « Domicile - Extérieur » au tiret qui sépare Genas de son adversaire."""
+    g = CLUB.search(txt)
+    cands = [m for m in re.finditer(r"\s?-\s+(?=\S)", txt)]
+    cands = [c for c in cands if c.end() <= g.start() or c.start() >= g.end()]
+    if not cands:
+        return None
+    c = min(cands, key=lambda c: min(abs(c.end() - g.start()), abs(c.start() - g.end())))
+    return [txt[:c.start()], txt[c.end():]]
+
+
 def matchs(t, pv):
     res, comp, poule, date, heure = [], None, None, None, None
     for l in t.splitlines():
@@ -60,13 +71,14 @@ def matchs(t, pv):
         if d:
             date, heure = iso(d.group(2)), d.group(3).replace("H", ":").ljust(5, "0") if d.group(3).endswith("H") else d.group(3).replace("H", ":")
             continue
-        m = re.match(r"^\s+(\d{8})\s+[\d.]+\s+(.+?)\s{2,}(.+?)\s*$", l)
-        if m and comp and date and CLUB.search(m.group(2)):
-            equipes = re.split(r"(?<=[\d)])\s?-\s?(?=\S)", m.group(2).strip(), maxsplit=1)
-            if len(equipes) != 2:
+        m = re.match(r"^\s*(?:[A-Z]\s+)?(\d{8})\s+[\d.]+\s+(.+?)(?:\s{2,}(.+?))?\s*$", l)
+        if m and comp and date and CLUB.search(m.group(2)) and "non affect" not in m.group(2).lower():
+            equipes = separer(m.group(2).strip())
+            if not equipes:
                 continue
             dom, ext = (e.strip() for e in equipes)
             nous_brut = dom if CLUB.search(dom) else ext
+            niveau = re.search(r"\(([^)]*)\)?\s*$", nous_brut) if nous_brut is ext else re.match(r"^\(([^)]*)\)", m.group(2).strip())
             tag = re.search(r"\(([A-Z0-9 ]+)\)?\s*$", nous_brut)
             nettoie = lambda x: re.sub(r"\s*\([^)]*\)?\s*$", "", re.sub(r"^\([^)]*\)\s*", "", x)).strip()
             dom, ext = nettoie(dom), nettoie(ext)
@@ -79,9 +91,10 @@ def matchs(t, pv):
             res.append({
                 "numero": m.group(1), "date": date, "heure": heure,
                 "competition": comp, "poule": poule, "categorie": cat,
-                "equipe": int(num_eq.group(1)) if num_eq else 1,
+                "equipe": int(num_eq.group(1)) if num_eq else None,
+                "niveau": niveau.group(1).strip() if niveau else None,
                 "domicile": dom, "exterieur": ext, "a_domicile": bool(CLUB.search(dom)),
-                "lieu": m.group(3).strip(), "pv": pv,
+                "lieu": (m.group(3) or "").strip(), "pv": pv,
             })
     return res
 
@@ -142,6 +155,19 @@ def main():
                 tous_m[m["numero"]] = m
         for d in dossiers(t, pv):
             tous_d[d["dossier"]] = d
+    # équipe sans numéro (coupes) : retrouvée grâce au niveau indiqué, ex. « (SE D3) » -> équipe Seniors qui joue en D3
+    def div(txt):
+        txt = (txt or "").upper().replace("REGIONAL ", "R").replace("REG", "R")
+        mm = re.search(r"\b(D\d|R\d)\b", txt)
+        return mm.group(1) if mm else None
+    niveaux = {}
+    for x in tous_m.values():
+        if x["equipe"] and not x["competition"].lower().startswith("coupe"):
+            niveaux.setdefault((x["categorie"], div(x["competition"])), x["equipe"])
+    for x in tous_m.values():
+        if x["equipe"] is None:
+            x["equipe"] = niveaux.get((x["categorie"], div(x.get("niveau")))) or 1
+        x.pop("niveau", None)
     m = sorted(tous_m.values(), key=lambda x: (x["date"], x["heure"] or ""))
     d = sorted(tous_d.values(), key=lambda x: x["date"])
     mpath.write_text(json.dumps(m, ensure_ascii=False, indent=1))

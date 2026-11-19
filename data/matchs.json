@@ -14,6 +14,20 @@
   "pv": 754
  },
  {
+  "numero": "78832809",
+  "date": "2026-09-05",
+  "heure": "15:30",
+  "competition": "Coupe Gambardella Crédit Agricole",
+  "poule": "Laura",
+  "categorie": "U18",
+  "equipe": 21,
+  "domicile": "Saone Mont D Or",
+  "exterieur": "Ev.S. Genas Azieu 21",
+  "a_domicile": false,
+  "lieu": "Stade Municipal à QUINCIEUX",
+  "pv": 755
+ },
+ {
   "numero": "56077594",
   "date": "2026-09-06",
   "heure": "13:00",
@@ -378,6 +392,20 @@
   "pv": 757
  },
  {
+  "numero": "79455995",
+  "date": "2026-09-20",
+  "heure": "14:30",
+  "competition": "Coupe De France Féminine",
+  "poule": "Laura",
+  "categorie": "Seniors F",
+  "equipe": 1,
+  "domicile": "Ev.S. Genas Azieu",
+  "exterieur": "St Cyr Fcf 1",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 757
+ },
+ {
   "numero": "55678085",
   "date": "2026-09-20",
   "heure": "15:00",
@@ -403,6 +431,20 @@
   "exterieur": "Ev.S. Genas Azieu 1",
   "a_domicile": false,
   "lieu": "Stade Florian Maurice à MESSIMY",
+  "pv": 758
+ },
+ {
+  "numero": "55675800",
+  "date": "2026-09-26",
+  "heure": "15:00",
+  "competition": "U15 D3",
+  "poule": "Poule A",
+  "categorie": "U15",
+  "equipe": 2,
+  "domicile": "Et.S. Trinite Lyon 3",
+  "exterieur": "Ev.S. Genas Azieu 2",
+  "a_domicile": false,
+  "lieu": "",
   "pv": 758
  },
  {
@@ -515,6 +557,20 @@
   "exterieur": "Ev.S. Genas Azieu 1",
   "a_domicile": false,
   "lieu": "Complexe Sportif Gil La Forêt à",
+  "pv": 758
+ },
+ {
+  "numero": "56077424",
+  "date": "2026-09-27",
+  "heure": "13:00",
+  "competition": "Feminin Regional 2",
+  "poule": "Poule B",
+  "categorie": "Seniors F",
+  "equipe": 1,
+  "domicile": "Miserieux Trevoux As 1",
+  "exterieur": "Ev.S. Genas Azieu 1",
+  "a_domicile": false,
+  "lieu": "",
   "pv": 758
  },
  {
@@ -812,6 +868,20 @@
   "pv": 760
  },
  {
+  "numero": "79760451",
+  "date": "2026-10-10",
+  "heure": "20:00",
+  "competition": "Coupe Laurafoot",
+  "poule": "Poule Unique",
+  "categorie": "Seniors",
+  "equipe": 1,
+  "domicile": "Ev.S. Genas",
+  "exterieur": "Mos3r Fc 1",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 760
+ },
+ {
   "numero": "55684443",
   "date": "2026-10-11",
   "heure": "10:00",
@@ -1078,6 +1148,20 @@
   "pv": 761
  },
  {
+  "numero": "80419612",
+  "date": "2026-10-24",
+  "heure": "14:00",
+  "competition": "Coupe Gvr U15 Mejean",
+  "poule": "Poule Unique",
+  "categorie": "U15",
+  "equipe": 2,
+  "domicile": "Cs Vienne",
+  "exterieur": "Ev.S. Genas Azieu 2",
+  "a_domicile": false,
+  "lieu": "Stade Saint Ignace De Malissol 1 à",
+  "pv": 762
+ },
+ {
   "numero": "79932397",
   "date": "2026-10-24",
   "heure": "15:30",
@@ -1106,6 +1190,20 @@
   "pv": 762
  },
  {
+  "numero": "79994214",
+  "date": "2026-10-24",
+  "heure": "19:00",
+  "competition": "Coupe Gvr Seniors",
+  "poule": "Poule Unique",
+  "categorie": "Seniors",
+  "equipe": 3,
+  "domicile": "Ev.S. Genas Azieu",
+  "exterieur": "Pt De Cheruy 2",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 762
+ },
+ {
   "numero": "56129602",
   "date": "2026-10-24",
   "heure": "19:30",
@@ -1117,6 +1215,20 @@
   "exterieur": "Ev.S. Genas Azieu 1",
   "a_domicile": false,
   "lieu": "Stade Des Fins 2 à DRUMETTAZ",
+  "pv": 762
+ },
+ {
+  "numero": "79927927",
+  "date": "2026-10-25",
+  "heure": "10:00",
+  "competition": "Coupe De Lyon Et Du Rhone U17",
+  "poule": "Poule Unique",
+  "categorie": "U17",
+  "equipe": 1,
+  "domicile": "F. C. Mont Brouilly",
+  "exterieur": "Ev.S. Genas Azieu 1",
+  "a_domicile": false,
+  "lieu": "Stade Municipal à CHARENTAY",
   "pv": 762
  },
  {
@@ -1229,6 +1341,34 @@
   "exterieur": "Ev.S. Genas Azieu 3",
   "a_domicile": false,
   "lieu": "Stade Du Clos Layat 2 à LYON",
+  "pv": 763
+ },
+ {
+  "numero": "80662557",
+  "date": "2026-10-31",
+  "heure": "18:30",
+  "competition": "Coupe Laurafoot",
+  "poule": "Poule Unique",
+  "categorie": "Seniors",
+  "equipe": 1,
+  "domicile": "Ev.S. Genas",
+  "exterieur": "Venissieux Fc 1",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 763
+ },
+ {
+  "numero": "80666574",
+  "date": "2026-11-01",
+  "heure": "13:00",
+  "competition": "Coupe Nike Féminine U18",
+  "poule": "Laura",
+  "categorie": "U18F",
+  "equipe": 1,
+  "domicile": "Ev.S. Genas",
+  "exterieur": "Rcf 07 1",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
   "pv": 763
  },
  {

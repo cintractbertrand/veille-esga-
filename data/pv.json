@@ -86,6 +86,39 @@
             }
           ],
           "page": 2
+        },
+        {
+          "id": "766-5",
+          "categorie": "Seniors F",
+          "commission": "Futsal",
+          "type": "inscription",
+          "gravite": "attention",
+          "titre": "Coupe DLR Futsal Seniors féminine : inscriptions ouvertes",
+          "detail": "Les inscriptions sont closes en U15 et U18, mais restent ouvertes pour la Coupe DLR Futsal Seniors féminine, sur Footclubs ou par mail à futsal@lyon-rhone.fff.fr. La coupe se joue le week-end du 10 janvier 2027.",
+          "echeances": [
+            {
+              "date": "2027-01-10",
+              "libelle": "Coupe DLR Futsal féminine (s'inscrire avant)"
+            }
+          ],
+          "page": 21
+        },
+        {
+          "id": "766-6",
+          "categorie": "Club",
+          "commission": "Foot Ensemble",
+          "type": "inscription",
+          "gravite": "info",
+          "titre": "Formation Para Foot Adapté le 16 janvier",
+          "detail": "Le District organise une session de l'Attestation fédérale Para Foot Adapté le samedi 16 janvier 2027 au siège, de 8h à 18h. Les 65 € (repas compris) sont remboursés si le stagiaire est présent.",
+          "echeances": [
+            {
+              "date": "2027-01-16",
+              "heure": "08:00",
+              "libelle": "Formation Para Foot Adapté (siège du District)"
+            }
+          ],
+          "page": 22
         }
       ]
     },
@@ -348,6 +381,22 @@
             "domicile": "GENAS 3",
             "exterieur": "PONT DE CHERUY 2"
           }
+        },
+        {
+          "id": "762-4",
+          "categorie": "Foot loisir",
+          "commission": "Compétitions",
+          "type": "inscription",
+          "gravite": "info",
+          "titre": "Coupe Loisir à 11 : inscriptions avant le 3 novembre",
+          "detail": "Les équipes loisir à 11, et les équipes à 8 qui veulent jouer la coupe à 11, doivent s'inscrire au plus tard le 3 novembre 2026.",
+          "echeances": [
+            {
+              "date": "2026-11-03",
+              "libelle": "Date limite d'inscription Coupe Loisir à 11"
+            }
+          ],
+          "page": 18
         }
       ]
     },
@@ -513,6 +562,33 @@
           "detail": "L'arbitre Anaïs Rambaud quitte Genas pour l'AS Saint-Martin-en-Haut en 2026-2027. La décision relève de la CRSA.",
           "echeances": [],
           "page": 13
+        },
+        {
+          "id": "758-3",
+          "categorie": "Club",
+          "commission": "Féminines",
+          "type": "inscription",
+          "gravite": "info",
+          "titre": "Coupes féminines DLR ouvertes aux équipes à 8",
+          "detail": "Les clubs qui ont une équipe engagée en championnat à 8 peuvent l'inscrire aux coupes féminines DLR à 11 de sa catégorie (Coupe Vial, U18F et U15F).",
+          "echeances": [],
+          "page": 15
+        },
+        {
+          "id": "758-4",
+          "categorie": "U13",
+          "commission": "Futsal",
+          "type": "inscription",
+          "gravite": "info",
+          "titre": "Championnat futsal U13 : engagement avant le 9 octobre",
+          "detail": "Les engagements sont à confirmer auprès de la commission futsal (futsal@lyon-rhone.fff.fr) avant le vendredi 9 octobre 2026.",
+          "echeances": [
+            {
+              "date": "2026-10-09",
+              "libelle": "Date limite d'engagement Futsal U13"
+            }
+          ],
+          "page": 18
         }
       ]
     },
@@ -549,7 +625,7 @@
           "id": "757-3",
           "categorie": "Club",
           "commission": "Groupement Vallée du Rhône",
-          "type": "info",
+          "type": "inscription",
           "gravite": "info",
           "titre": "Inscrits à la Coupe GVR à 11 : Seniors, U17 et U15",
           "detail": "Les équipes inscrites sont Genas 2 et Genas 3 en Seniors, Genas 1 et 2 en U17, et Genas 1 et 2 en U15. Le tirage a lieu le 6 octobre à 17h30, et le 1er tour le 25 octobre.",
@@ -609,6 +685,17 @@
           "detail": "L'équipe 1 figure sur la liste des engagés de la Coupe DLR U20.",
           "echeances": [],
           "page": 12
+        },
+        {
+          "id": "756-4",
+          "categorie": "Club",
+          "commission": "Futsal",
+          "type": "inscription",
+          "gravite": "info",
+          "titre": "Appel à candidatures : accueillir les coupes futsal féminines",
+          "detail": "La Commission Futsal cherche des clubs pour accueillir les Coupes féminines Seniors, U18 et U15 le week-end du 10 janvier 2027. Candidatures à futsal@lyon-rhone.fff.fr.",
+          "echeances": [],
+          "page": 16
         }
       ]
     },
@@ -728,6 +815,49 @@
           "gravite": "info",
           "titre": "Inscrit au Groupement Vallée du Rhône",
           "detail": "Le club est inscrit en Seniors, U17, U15 et U13. Les poules U13 sont programmées à partir du 25 août. L'AG obligatoire a lieu le 4 septembre à 19h à Diémoz.",
+          "echeances": [],
+          "page": 12
+        },
+        {
+          "id": "753-2",
+          "categorie": "Club",
+          "commission": "Compétitions",
+          "type": "inscription",
+          "gravite": "info",
+          "titre": "Engagements des équipes avant le 23 août",
+          "detail": "Les engagements se font sur Footclubs, avec les désidératas (stades, jours, horaires). La date limite est le dimanche 23 août 2026 pour les divisions Seniors D4, Vétérans, U20 D2, U17 D3, U15 D4, Futsal D3 et les féminines.",
+          "echeances": [
+            {
+              "date": "2026-08-23",
+              "libelle": "Date limite d'engagement des équipes (Footclubs)"
+            }
+          ],
+          "page": 6
+        },
+        {
+          "id": "753-3",
+          "categorie": "Futsal",
+          "commission": "Futsal",
+          "type": "inscription",
+          "gravite": "info",
+          "titre": "Futsal : engagements avant le 23 et le 30 août",
+          "detail": "La date limite est le 23 août pour le Futsal Seniors D3 (début le 13 septembre) et le 30 août pour le Futsal féminin (début le 4 octobre).",
+          "echeances": [
+            {
+              "date": "2026-08-30",
+              "libelle": "Date limite d'engagement Futsal féminin"
+            }
+          ],
+          "page": 8
+        },
+        {
+          "id": "753-4",
+          "categorie": "Club",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "inscription",
+          "gravite": "info",
+          "titre": "Coupes du Groupement Vallée du Rhône : penser à s'inscrire",
+          "detail": "Le groupement rappelle d'inscrire les équipes à ses coupes. Les frais ne sont comptés qu'en cas de participation réelle.",
           "echeances": [],
           "page": 12
         }
