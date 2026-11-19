@@ -520,8 +520,8 @@
       "numero": 757,
       "date": "2026-09-17",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/8154887a78414c9a1b0641c5fb22f835.pdf",
-      "pages": 46,
-      "resume": "L'équipe 1 Seniors et l'équipe 1 U15 sont engagées en Coupe de Lyon et du Rhône.",
+      "pages": 129,
+      "resume": "L'équipe 1 Seniors et l'équipe 1 U15 sont engagées en Coupe de Lyon et du Rhône. Le club inscrit aussi des équipes Seniors, U17 et U15 à la Coupe du Groupement Vallée du Rhône.",
       "items": [
         {
           "id": "757-1",
@@ -544,6 +544,23 @@
           "detail": "L'équipe 1 figure sur la liste des engagés de la Coupe DLR U15.",
           "echeances": [],
           "page": 14
+        },
+        {
+          "id": "757-3",
+          "categorie": "Club",
+          "commission": "Groupement Vallée du Rhône",
+          "type": "info",
+          "gravite": "info",
+          "titre": "Inscrits à la Coupe GVR à 11 : Seniors, U17 et U15",
+          "detail": "Les équipes inscrites sont Genas 2 et Genas 3 en Seniors, Genas 1 et 2 en U17, et Genas 1 et 2 en U15. Le tirage a lieu le 6 octobre à 17h30, et le 1er tour le 25 octobre.",
+          "echeances": [
+            {
+              "date": "2026-10-06",
+              "heure": "17:30",
+              "libelle": "Tirage de la Coupe GVR à 11"
+            }
+          ],
+          "page": 38
         }
       ]
     },

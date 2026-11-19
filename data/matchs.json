@@ -207,7 +207,35 @@
   "exterieur": "Ev.S. Genas Azieu 35",
   "a_domicile": false,
   "lieu": "Stade Léon Desvignes à PONT DE",
-  "pv": 756
+  "pv": 757
+ },
+ {
+  "numero": "55675795",
+  "date": "2026-09-19",
+  "heure": "14:00",
+  "competition": "U15 D3",
+  "poule": "Poule A",
+  "categorie": "U15",
+  "equipe": 2,
+  "domicile": "Ev.S. Genas Azieu 2",
+  "exterieur": "Cs Vienne Football 1",
+  "a_domicile": true,
+  "lieu": "Stade Léon Garaud à GENAS",
+  "pv": 757
+ },
+ {
+  "numero": "79463259",
+  "date": "2026-09-19",
+  "heure": "14:00",
+  "competition": "Féminines U15 D1 À 11",
+  "poule": "Poule C",
+  "categorie": "U15F",
+  "equipe": 2,
+  "domicile": "Ev.S. Genas Azieu 2",
+  "exterieur": "Ent. Ols Charly 1",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 757
  },
  {
   "numero": "55681280",
@@ -221,21 +249,7 @@
   "exterieur": "F.C. Ste Foy Les Lyo 1",
   "a_domicile": true,
   "lieu": "Stade Edmond Pouzet 1 à GENAS",
-  "pv": 756
- },
- {
-  "numero": "55675795",
-  "date": "2026-09-19",
-  "heure": "15:30",
-  "competition": "U15 D3",
-  "poule": "Poule A",
-  "categorie": "U15",
-  "equipe": 2,
-  "domicile": "Ev.S. Genas Azieu 2",
-  "exterieur": "Cs Vienne Football 1",
-  "a_domicile": true,
-  "lieu": "Stade Léon Garaud à GENAS",
-  "pv": 756
+  "pv": 757
  },
  {
   "numero": "79457772",
@@ -252,18 +266,18 @@
   "pv": 756
  },
  {
-  "numero": "79463259",
+  "numero": "79546510",
   "date": "2026-09-19",
   "heure": "15:30",
-  "competition": "Féminines U15 D1 À 11",
-  "poule": "Poule C",
-  "categorie": "U15F",
-  "equipe": 2,
-  "domicile": "Ev.S. Genas Azieu 2",
-  "exterieur": "Ent. Ols Charly 1",
-  "a_domicile": true,
-  "lieu": "Stade Edmond Pouzet 1 à GENAS",
-  "pv": 756
+  "competition": "U15 D4",
+  "poule": "Poule G",
+  "categorie": "U15",
+  "equipe": 4,
+  "domicile": "Ent St Alban.Vauxois 1",
+  "exterieur": "Ev.S. Genas Azieu 4",
+  "a_domicile": false,
+  "lieu": "Stade Maximin Roybet 1 à ST",
+  "pv": 757
  },
  {
   "numero": "55680649",
@@ -277,7 +291,7 @@
   "exterieur": "Hauts Lyonnais 3",
   "a_domicile": true,
   "lieu": "Stade Edmond Pouzet 1 à GENAS",
-  "pv": 756
+  "pv": 757
  },
  {
   "numero": "56129585",
@@ -291,7 +305,7 @@
   "exterieur": "O. Villefontaine 2",
   "a_domicile": true,
   "lieu": "Stade Edmond Pouzet 1 à GENAS",
-  "pv": 756
+  "pv": 757
  },
  {
   "numero": "55684439",
@@ -305,7 +319,7 @@
   "exterieur": "Craponne As 1",
   "a_domicile": true,
   "lieu": "Stade Marcel Gonzales à GENAS",
-  "pv": 756
+  "pv": 757
  },
  {
   "numero": "79376786",
@@ -319,7 +333,7 @@
   "exterieur": "Pt De Cheruy 2",
   "a_domicile": true,
   "lieu": "Stade Edmond Pouzet 1 à GENAS",
-  "pv": 756
+  "pv": 757
  },
  {
   "numero": "79448031",
@@ -336,9 +350,23 @@
   "pv": 756
  },
  {
+  "numero": "79546645",
+  "date": "2026-09-20",
+  "heure": "10:00",
+  "competition": "U15 D4",
+  "poule": "Poule I",
+  "categorie": "U15",
+  "equipe": 3,
+  "domicile": "Meyzieu 4",
+  "exterieur": "Ev.S. Genas Azieu 3",
+  "a_domicile": false,
+  "lieu": "Stade Des Servizières 1 à MEYZIEU",
+  "pv": 757
+ },
+ {
   "numero": "56077605",
   "date": "2026-09-20",
-  "heure": "13:00",
+  "heure": "12:30",
   "competition": "U18 Feminin Regional 1",
   "poule": "Poule Unique",
   "categorie": "U18F",
@@ -347,7 +375,7 @@
   "exterieur": "Fbbp 1",
   "a_domicile": true,
   "lieu": "Stade Edmond Pouzet 1 à GENAS",
-  "pv": 756
+  "pv": 757
  },
  {
   "numero": "55678085",
@@ -361,7 +389,7 @@
   "exterieur": "Am.Laiq. Mions 1",
   "a_domicile": true,
   "lieu": "Stade Edmond Pouzet 1 à GENAS",
-  "pv": 756
+  "pv": 757
  },
  {
   "numero": "55796856",
