@@ -7,7 +7,12 @@ $depot = Split-Path -Parent $PSScriptRoot
 $dossier = Join-Path $depot "pv-pdf"
 New-Item -ItemType Directory -Force -Path $dossier | Out-Null
 Set-Location $depot
-git pull --quiet
+git fetch --quiet
+# Un PDF déposé à la main peut déjà être sur GitHub : on garde la version GitHub pour que la mise à jour passe.
+git ls-tree --name-only origin/main pv-pdf/ | ForEach-Object {
+  if ((Test-Path $_) -and -not (git ls-files $_)) { Remove-Item $_ }
+}
+git merge --ff-only --quiet origin/main
 
 # 1. PDF du District présents dans Téléchargements (nom = 32 caractères hexadécimaux, comme sur le site)
 $telechargements = (New-Object -ComObject Shell.Application).NameSpace('shell:Downloads').Self.Path
