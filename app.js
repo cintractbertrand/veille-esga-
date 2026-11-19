@@ -3,6 +3,7 @@
   const MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
   const MOIS_C = ["janv","févr","mars","avr","mai","juin","juil","août","sept","oct","nov","déc"];
   const JOURS = ["lun","mar","mer","jeu","ven","sam","dim"];
+  const JOURS_L = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
   const GRAV_ORDRE = { urgent: 0, attention: 1, info: 2 };
   // équipes du club, toujours affichées en haut même sans mention dans les PV
   const CATS_CLUB = ["Club","Seniors","Seniors F","U20","U18F","U17","U15","U15F","U13","U13F","Vétérans"];
@@ -133,10 +134,11 @@
     if (!last) return;
     $("#resume").innerHTML = `<strong>En bref, PV n°${last.numero} :</strong> ${esc(last.resume)}`;
     const items = all.filter((i) => i.pv === last.numero).sort(sortItems);
+    $("#semaine-note").textContent = `PV n°${last.numero} du ${fmtD(last.date)} · ${items.length} fiche${items.length > 1 ? "s" : ""}`;
     $("#items-semaine").innerHTML = items.map((i) => itemHTML(i)).join("") || `<p class="empty">Aucune mention du club cette semaine 🎉</p>`;
     const ev = prochaines(all);
     const mw = matchs.filter((m) => joursAvant(m.date) >= 0 && joursAvant(m.date) <= 7);
-    $("#matchs-semaine").innerHTML = matchsHTML(mw, true);
+    $("#matchs-semaine").innerHTML = matchsHTML(mw.slice(0, 8), true) + (mw.length > 8 ? `<li class="empty">… et ${mw.length - 8} autres matchs</li>` : "");
     $("#matchs-semaine-bloc").hidden = !matchs.length;
     $("#a-venir").innerHTML = echeancesHTML(ev);
     $("#a-venir").querySelectorAll("[data-id]").forEach((li) => li.onclick = () => ouvrirFiche(li.dataset.id));
@@ -190,19 +192,45 @@
     }).join("") || `<li class="empty">Rien à prévoir pour l'instant.</li>`;
   }
 
-  function eventsByDay() {
+  const advDe = (m) => (m.a_domicile ? m.exterieur : m.domicile);
+  const eqDe = (m) => (m.a_domicile ? m.domicile : m.exterieur).replace(/^.*?genas azieu\s*/i, "");
+
+  // tous les événements du calendrier, par jour : matchs du club et échéances des PV
+  function eventsByDay(filtre) {
     const map = {};
+    const ok = (c) => !filtre || c === filtre;
     const add = (d, o) => (map[d] = map[d] || []).push(o);
-    all.forEach((it) => {
-      (it.echeances || []).forEach((e) => add(e.date, { kind: it.gravite, label: `${e.heure ? e.heure.replace(":", "h") + " · " : ""}${e.libelle}`, it }));
-      if (it.match && it.match.date) add(it.match.date, { kind: "match", label: `${it.match.domicile} – ${it.match.exterieur} (${it.categorie}) : ${it.titre}`, it });
+    const numeros = new Set(matchs.map((m) => String(m.numero)));
+    matchs.filter((m) => ok(m.categorie)).forEach((m) => add(m.date, {
+      kind: "match", heure: m.heure || "", cat: m.categorie,
+      court: `${m.categorie}${eqDe(m) ? " " + eqDe(m) : ""} ${m.a_domicile ? "vs" : "@"} ${advDe(m)}`,
+      label: `${m.categorie}${eqDe(m) ? " " + eqDe(m) : ""} · ${m.domicile} – ${m.exterieur}`,
+      sous: `${m.competition || ""}${m.lieu ? " · " + m.lieu : ""}`, dom: m.a_domicile,
+    }));
+    all.filter((it) => ok(it.categorie)).forEach((it) => {
+      (it.echeances || []).forEach((e) => add(e.date, { kind: it.gravite, heure: e.heure || "", cat: it.categorie, court: e.libelle, label: e.libelle, sous: `${it.categorie} · ${it.commission}`, it }));
+      if (it.match && it.match.date && !numeros.has(String(it.match.numero || ""))) add(it.match.date, { kind: "match", heure: "", cat: it.categorie, court: `${it.categorie} · ${it.titre}`, label: `${it.match.domicile} – ${it.match.exterieur}`, sous: `${it.categorie} · ${it.titre}`, it });
     });
-    matchs.forEach((m) => add(m.date, { kind: "match", label: `${hm(m.heure)} · ${m.categorie} · ${m.domicile} – ${m.exterieur}${m.lieu ? " (" + m.lieu + ")" : ""}` }));
+    Object.values(map).forEach((l) => l.sort((a, b) => (a.kind === "match") - (b.kind === "match") || a.heure.localeCompare(b.heure)));
     return map;
   }
 
+  let calFiltre = "";
+  function evHTML(e) {
+    return `<li class="ag-ev ${e.kind} ${e.it ? "lien" : ""}" ${e.it ? `data-id="${esc(e.it.id)}"` : ""}>
+      <span class="ag-h">${e.heure ? hm(e.heure) : e.kind === "match" ? "" : "📅"}</span>
+      <span class="ag-t"><b>${e.kind === "match" ? (e.dom ? "🏠 " : e.dom === false ? "🚌 " : "⚽ ") : ""}${esc(e.label)}</b><small>${esc(e.sous || "")}${e.it ? " · voir la fiche ›" : ""}</small></span></li>`;
+  }
+  const lierFiches = (root) => root.querySelectorAll("[data-id]").forEach((li) => li.onclick = () => ouvrirFiche(li.dataset.id));
+
   function renderCal() {
-    const map = eventsByDay();
+    const sel = $("#cal-filtre");
+    if (!sel.options.length) {
+      sel.innerHTML = `<option value="">Toutes les équipes</option>` + catList().map((c) => `<option>${esc(c)}</option>`).join("");
+      sel.onchange = () => { calFiltre = sel.value; $("#cal-jour").hidden = true; renderCal(); };
+    }
+    sel.value = calFiltre;
+    const map = eventsByDay(calFiltre);
     const y = calMonth.getFullYear(), m = calMonth.getMonth();
     $("#cal-titre").textContent = `${MOIS[m]} ${y}`;
     const first = new Date(y, m, 1);
@@ -211,23 +239,43 @@
     for (let i = 0; i < 42; i++) {
       const d = new Date(start); d.setDate(start.getDate() + i);
       const k = isoD(d), ev = map[k] || [];
-      const cls = ["day", d.getMonth() !== m && "out", k === isoD(today) && "today", ev.length && "has"].filter(Boolean).join(" ");
-      html += `<div class="${cls}" data-d="${k}"><span class="n">${d.getDate()}</span><div class="dots">${ev.map((e) => `<i class="dot ${e.kind}"></i>`).join("")}</div></div>`;
+      const cls = ["day", d.getMonth() !== m && "out", k === isoD(today) && "today", ev.length && "has", d < today && "past"].filter(Boolean).join(" ");
+      const pills = ev.slice(0, 3).map((e) => `<span class="pill ${e.kind}" title="${esc(e.label)}">${e.heure ? `<b>${hm(e.heure)}</b> ` : ""}${esc(e.court)}</span>`).join("");
+      html += `<div class="${cls}" data-d="${k}"><span class="n">${d.getDate()}</span>
+        <div class="pills">${pills}${ev.length > 3 ? `<span class="more">+${ev.length - 3}</span>` : ""}</div>
+        <div class="dots">${ev.slice(0, 6).map((e) => `<i class="dot ${e.kind}"></i>`).join("")}</div></div>`;
       if (i >= 34 && d.getMonth() !== m) break;
     }
     $("#cal").innerHTML = html;
     $("#cal").querySelectorAll(".day.has").forEach((el) => el.addEventListener("click", () => {
       $("#cal").querySelectorAll(".sel").forEach((x) => x.classList.remove("sel"));
       el.classList.add("sel");
-      const ev = map[el.dataset.d];
       const box = $("#cal-jour");
       box.hidden = false;
-      box.innerHTML = `<strong>${fmtD(el.dataset.d)}</strong><ul>${ev.map((e) => e.it ? `<li class="lien" data-id="${esc(e.it.id)}"><i class="dot ${e.kind}"></i>${esc(e.label)} <small>(PV n°${e.it.pv}) · voir la fiche ›</small></li>` : `<li><i class="dot ${e.kind}"></i>${esc(e.label)}</li>`).join("")}</ul>`;
-      box.querySelectorAll("[data-id]").forEach((li) => li.onclick = () => ouvrirFiche(li.dataset.id));
+      box.innerHTML = `<h3>${JOURS_L[(parseD(el.dataset.d).getDay() + 6) % 7]} ${fmtD(el.dataset.d)}</h3><ul class="ag-list">${map[el.dataset.d].map(evHTML).join("")}</ul>`;
+      lierFiches(box);
+      scrollTo$(box);
     }));
+    // agenda du mois, jour par jour
+    const jours = Object.keys(map).filter((k) => { const d = parseD(k); return d.getFullYear() === y && d.getMonth() === m; }).sort();
+    const n = jours.reduce((t, k) => t + map[k].length, 0);
+    $("#agenda-titre").textContent = `Agenda de ${MOIS[m]}${calFiltre ? " · " + calFiltre : ""} (${n} événement${n > 1 ? "s" : ""})`;
+    const jourHTML = (k) => {
+      const d = parseD(k);
+      return `<div class="ag-jour ${d < today ? "past" : ""} ${k === isoD(today) ? "today" : ""}"><div class="date-pill"><b>${d.getDate()}</b><span>${JOURS[(d.getDay() + 6) % 7]}</span></div>
+        <ul class="ag-list">${map[k].map(evHTML).join("")}</ul></div>`;
+    };
+    // les jours passés sont repliés pour aller droit à ce qui arrive
+    const passes = jours.filter((k) => parseD(k) < today), avenir = jours.filter((k) => parseD(k) >= today);
+    $("#cal-agenda").innerHTML = (passes.length && avenir.length
+      ? `<details class="ag-passes"><summary>Jours passés (${passes.length})</summary><div class="agenda">${passes.map(jourHTML).join("")}</div></details>` + avenir.map(jourHTML).join("")
+      : jours.map(jourHTML).join("")) || `<p class="empty">Rien ce mois-ci${calFiltre ? " pour " + esc(calFiltre) : ""}.</p>`;
+    lierFiches($("#cal-agenda"));
   }
   $("#cal-prev").onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); $("#cal-jour").hidden = true; renderCal(); };
   $("#cal-next").onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); $("#cal-jour").hidden = true; renderCal(); };
+  $("#cal-auj").onclick = () => { calMonth = new Date(today.getFullYear(), today.getMonth(), 1); $("#cal-jour").hidden = true; renderCal(); };
+  $("#voir-cal").onclick = () => { calFiltre = ""; renderCal(); showTab("calendrier"); window.scrollTo({ top: 0 }); };
 
   $("#ics").onclick = () => {
     const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//veille-esga//FR", "CALSCALE:GREGORIAN"];
@@ -290,7 +338,8 @@
     const disc = its.filter((i) => i.type === "discipline" || i.type === "sanction").length;
     const ev = prochaines(its);
     const lastD = its.map((i) => i.pvDate).sort().pop();
-    $("#eq-titre").textContent = c === "Urgentes" ? "Toutes les urgences du club" : c === "Club" ? "Club (administratif, général)" : `Équipe ${c}`;
+    $("#eq-titre").textContent = c === "Urgentes" ? "Urgences en cours" : c === "Club" ? "Vie du club" : c;
+    $("#eq-kicker").textContent = c === "Urgentes" ? "Toutes équipes" : c === "Club" ? "Administratif · arbitrage · général" : "Équipe";
     const nAm = (c === "Club" ? dossiers : dossiers.filter((d) => d.categorie === c)).reduce((t, d) => t + (+d.montant || 0), 0);
     const nMa = c === "Urgentes" || c === "Club" ? 0 : matchs.filter((m) => m.categorie === c && joursAvant(m.date) >= 0).length;
     // on n'affiche que les chiffres utiles (la mention reste toujours visible)
@@ -308,7 +357,8 @@
     const ms = matchs.filter((m) => m.categorie === c);
     const avenir = ms.filter((m) => joursAvant(m.date) >= 0), passes = ms.filter((m) => joursAvant(m.date) < 0).slice(-3).reverse();
     $("#eq-matchs-bloc").hidden = urgView || clubView || !ms.length;
-    $("#eq-matchs").innerHTML = matchsHTML(avenir.slice(0, 6));
+    $("#eq-matchs").innerHTML = matchsHTML(avenir.slice(0, 6)) + (ms.length ? `<li><button class="btn btn-link" id="eq-cal">Tous les matchs dans le calendrier ›</button></li>` : "");
+    const bc = $("#eq-cal"); if (bc) bc.onclick = () => { calFiltre = c; calMonth = new Date(today.getFullYear(), today.getMonth(), 1); renderCal(); showTab("calendrier"); window.scrollTo({ top: 0 }); };
     $("#eq-matchs-passes").innerHTML = passes.length ? `<details><summary>Derniers matchs joués (${passes.length})</summary><ul class="echeances">${matchsHTML(passes)}</ul></details>` : "";
     const ds = clubView ? dossiers : dossiers.filter((d) => d.categorie === c);
     $("#eq-amendes-bloc").hidden = urgView || (!ds.length && !dossiers.length);
@@ -349,12 +399,28 @@
     $("#lect-page").onchange = () => lire(+$("#lect-pv").value, +$("#lect-page").value || 1, false);
     if (data.pvs[0]) lire(data.pvs[0].numero, 1, false);
   }
+  const pdfCache = {};
+  function pdfDe(pv) {
+    if (!pdfCache[pv.numero]) {
+      const local = "pv-pdf/" + pv.url.split("/").pop();
+      pdfCache[pv.numero] = fetch(local, { method: "HEAD" }).then((r) => r.ok ? local : pv.url).catch(() => pv.url);
+    }
+    return pdfCache[pv.numero];
+  }
   function lire(num, page, ouvrir = true) {
     const pv = pvById[num]; if (!pv) return;
     $("#lect-pv").value = num; $("#lect-page").value = page;
-    const fr = $("#lect-iframe"), cible = `${pv.url}#page=${page}`;
-    if (fr.src !== cible) { fr.src = "about:blank"; setTimeout(() => { fr.src = cible; }, 30); }
-    $("#lect-ext").href = `${pv.url}#page=${page}`;
+    // le site du District interdit l'affichage de ses PDF dans une autre page :
+    // on lit la copie publiée avec le site (pv-pdf/), sinon on renvoie vers le District
+    const fr = $("#lect-iframe");
+    pdfDe(pv).then((base) => {
+      const cible = new URL(`${base}#page=${page}`, location.href).href;
+      if (fr.src !== cible) { fr.src = "about:blank"; setTimeout(() => { fr.src = cible; }, 30); }
+      $("#lect-ext").href = cible;
+      $("#lect-aide").textContent = base === pv.url
+        ? "Ce PV n'est pas encore copié sur le site : s'il ne s'affiche pas, utilise « Ouvrir dans un onglet »."
+        : "Sur téléphone, si le PV ne s'affiche pas, utilise « Ouvrir dans un onglet ».";
+    });
     const its = all.filter((i) => i.pv === num).sort((a, b) => (a.page || 0) - (b.page || 0));
     $("#lect-fiches").innerHTML = `<h3>Mentions du club</h3>` + (its.map((i) => `<button class="lect-fiche ${esc(i.gravite)} ${i.page === page ? "on" : ""}" data-page="${i.page || 1}"><b>p. ${i.page || "?"}</b> · ${esc(i.categorie)}<br>${esc(i.titre)}</button>`).join("") || `<p class="empty">Aucune mention.</p>`);
     $("#lect-fiches").querySelectorAll(".lect-fiche").forEach((b) => b.onclick = () => lire(num, +b.dataset.page, false));

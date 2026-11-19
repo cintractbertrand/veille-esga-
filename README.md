@@ -10,8 +10,10 @@ En haut du site, la barre « Mon équipe » donne accès directement à chaque c
 
 Les onglets proposent ensuite les vues de tout le club :
 - Cette semaine : le résumé, les échéances à venir et toutes les mentions du club.
-- Calendrier : la vue par mois, avec un export `.ics` pour l'agenda.
+- Calendrier : les matchs du club et les échéances des PV, mois par mois, avec un filtre par équipe, l'agenda du mois et un export `.ics`.
 - Historique : tous les PV, semaine par semaine.
-- Lecteur PV : le PDF du PV, avec la liste des pages qui concernent le club.
+- Lecteur PV : le PDF du PV (copie de `pv-pdf/`, car le District interdit l'affichage de ses PDF dans une autre page), avec la liste des pages qui concernent le club.
 
 Pour tester le site en local : `python3 -m http.server`, puis ouvrir http://localhost:8000.
+
+À chaque modification de `app.js` ou `style.css`, changer le numéro `?v=` dans `index.html` pour que les navigateurs rechargent les fichiers.
