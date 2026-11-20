@@ -213,7 +213,8 @@
       else if (m.type === "absence") corps = carteAbsence(m);
       else if (m.type === "convocation") corps = carteConvocMsg(m);
       else if (m.type === "relance") corps = carteRelance(m);
-      html += `<div class="msg${mien ? " mien" : ""}${suite ? " suite" : ""}${m.type !== "texte" ? " riche" : ""}"><div class="bulle">${nom}${corps}<span class="h">${fmtHeure(m.date)}</span></div></div>`;
+      const act = estCoach() && !mien && enfantDe(m.auteur) ? `<button class="msg-act" data-act-joueur="${enfantDe(m.auteur)}" title="Actions pour ${esc(joueur(enfantDe(m.auteur)).nom)}">${IC.absence}<span>Action</span></button>` : "";
+      html += `<div class="msg${mien ? " mien" : ""}${suite ? " suite" : ""}${m.type !== "texte" ? " riche" : ""}"><div class="bulle">${nom}${corps}<span class="h">${fmtHeure(m.date)}</span></div>${act}</div>`;
     });
     fil.innerHTML = html;
     if (enBas || fil.dataset.conv !== c.id) { fil.scrollTop = fil.scrollHeight; fil.dataset.conv = c.id; }
@@ -221,7 +222,34 @@
     $("#menuPlus").innerHTML =
       `<button data-action="sondage">${IC.sondage}<span>Sondage</span></button>` +
       (monEnfant() ? `<button data-action="absence">${IC.absence}<span>Absence à l'entraînement</span></button>` : "") +
-      (estCoach() && c.type === "equipe" ? `<button data-action="sondage-match">${IC.ballon}<span>Sondage du match</span></button><button data-action="convoc">${IC.convoc}<span>Compo et convocation</span></button>` : "");
+      (estCoach() ? actionsCoach(c) : "");
+  }
+
+  // Actions du coach dans n'importe quelle conversation (perso : déjà ciblées sur l'enfant du parent)
+  function enfantConv(c) { if (c.type !== "perso") return null; return enfantDe(c.membres.find((p) => p !== moi.profil)); }
+  function actionsCoach(c) {
+    const j = enfantConv(c), nom = j ? " " + joueur(j).nom : "", conv = derniereConvocation();
+    return `<div class="menu-sep">Coach</div>` +
+      `<button data-action="absence-coach">${IC.absence}<span>Noter une absence${esc(nom)} à l'entraînement</span></button>` +
+      `<button data-action="match-coach">${IC.ballon}<span>Présence${esc(nom)} au match</span></button>` +
+      (c.type === "equipe" ? `<button data-action="sondage-match">${IC.sondage}<span>Sondage du match</span></button>` : "") +
+      (conv && c.type !== "equipe" ? `<button data-action="envoyer-convoc">${IC.convoc}<span>Envoyer la convocation ici</span></button>` : "") +
+      `<button data-action="convoc">${IC.convoc}<span>Compo et convocation</span></button>`;
+  }
+  // Fenêtre d'actions sur un enfant (depuis le menu ou un message d'un parent)
+  function modaleActionsJoueur(jid) {
+    const s = sondageMatch(), r = s ? s.reponses[jid] : undefined, m = prochainMatch(moi.equipe);
+    const c = conv(moi.conv);
+    ouvrirModale(`Actions pour ${joueur(jid).nom}`, `<div class="actions-j">
+      <h3>Entraînement</h3><button class="esga-btn" data-absence-pour="${jid}">${IC.absence} Noter absent${e_()} à un entraînement</button>
+      <h3>Match contre ${esc(m.adversaire)} (${esc(fmtJour(m.date, { weekday: "short", day: "numeric" }))})</h3>
+      ${s ? `<div class="choix3">${OPTIONS_MATCH.map((o, i) => `<button class="rep rep-${CLES_MATCH[i]}${r === i ? " choisi" : ""}" data-match-pour="${jid}|${i}">${o}</button>`).join("")}</div>`
+          : `<p class="discret petit">Le sondage du match n'est pas encore ouvert.</p><button class="esga-btn" data-action="sondage-match">Envoyer le sondage du match</button>`}
+      ${c && c.type !== "perso" ? `<h3>Conversation</h3><button class="esga-btn" data-perso="p-${jid}">Écrire en privé au parent</button>` : ""}
+    </div>`);
+  }
+  function modaleChoixJoueur(action) {
+    ouvrirModale("Pour qui ?", `<div class="liste-pers">${etat.joueurs.map((j) => `<button class="pers" data-${action}="${j.id}"><span class="av" style="background:${couleur(j.nom)}">${esc(initiales(j.nom))}</span>${esc(j.nom)}</button>`).join("")}</div>`);
   }
 
   /* ---------- cartes riches dans la conversation ---------- */
@@ -295,14 +323,14 @@
         <button type="button" class="lien" id="btnAjoutOpt">+ Ajouter une option</button></fieldset>
       <div class="actions large"><button class="esga-btn esga-btn-primaire">Envoyer le sondage</button></div></form>`);
   }
-  function modaleAbsence(convId) {
-    const enfant = monEnfant(), liste = seances(moi.equipe);
+  function modaleAbsence(convId, jid) {
+    const enfant = jid || monEnfant(), liste = seances(moi.equipe);
     const miennes = etat.absences.filter((a) => a.joueur === enfant && liste.some((s) => s.id === a.seance));
-    ouvrirModale(`Absence de ${joueur(enfant).nom}`, `<form id="formAbsence" class="form" data-conv="${convId}">
+    ouvrirModale(`Absence de ${joueur(enfant).nom}`, `<form id="formAbsence" class="form" data-conv="${convId}" data-joueur="${enfant}">
       <label class="large">Entraînement<select name="seance">${liste.map((s) => { const d = miennes.some((a) => a.seance === s.id); return `<option value="${s.id}"${d ? " disabled" : ""}>${esc(libSeance(s))}${d ? " (déjà signalé)" : ""}</option>`; }).join("")}</select></label>
       <label>Motif<select name="motif">${MOTIFS.map((m) => `<option>${m}</option>`).join("")}</select></label>
       <label>Précision (facultatif)<input name="precision" maxlength="140" placeholder="Ex. : rendez-vous médical"></label>
-      <div class="actions large"><button class="esga-btn esga-btn-primaire">Prévenir le coach</button></div></form>
+      <div class="actions large"><button class="esga-btn esga-btn-primaire">${estCoach() ? "Noter l'absence" : "Prévenir le coach"}</button></div></form>
       ${miennes.length ? `<h3>Déjà signalées</h3><ul class="liste">${miennes.map((a) => `<li><span><b>${esc(libSeance(seance(a.seance)))}</b> · ${esc(a.motif)}</span><button class="lien rouge" data-annuler-absence="${a.id}">Annuler</button></li>`).join("")}</ul>` : ""}`);
   }
   function modaleVotes(id) {
@@ -520,8 +548,12 @@
       $("#menuPlus").hidden = true;
       if (d.action === "sondage") return modaleSondage(moi.conv);
       if (d.action === "absence") return modaleAbsence(moi.conv);
+      if (d.action === "absence-coach") { const j = enfantConv(conv(moi.conv)); return j ? modaleAbsence(moi.conv, j) : modaleChoixJoueur("absence-pour"); }
+      if (d.action === "match-coach") { const j = enfantConv(conv(moi.conv)); return j ? modaleActionsJoueur(j) : modaleChoixJoueur("act-joueur"); }
+      if (d.action === "envoyer-convoc") { const c = derniereConvocation(); poster(moi.conv, { type: "convocation", convoc: c.id }); toast("Convocation envoyée dans la conversation."); return sauver(); }
       if (d.action === "convoc") { moi.coachOnglet = "convoc"; moi.espace = "coach"; ecrireMoi(); return rendre(); }
       if (d.action === "sondage-match") {
+        fermerModale();
         const ex = sondageMatch();
         if (ex) { toast("Le sondage de ce match est déjà ouvert."); return ouvrirConv(ex.conv); }
         const m = prochainMatch(moi.equipe);
@@ -543,6 +575,14 @@
     }
     if (d.pour) { const [sid, jid, i] = d.pour.split("|"), s = sondage(sid); if (s.reponses[jid] === +i) delete s.reponses[jid]; else s.reponses[jid] = +i; return sauver(); }
     if (d.votes) return modaleVotes(d.votes);
+    if (d.actJoueur) return modaleActionsJoueur(d.actJoueur);
+    if (d.absencePour) return modaleAbsence(moi.conv, d.absencePour);
+    if (d.matchPour) {
+      const [jid, i] = d.matchPour.split("|"), s = sondageMatch(); if (!s) return;
+      s.reponses[jid] = +i;
+      poster(moi.conv, { type: "info", texte: `Coach : ${joueur(jid).nom} · ${OPTIONS_MATCH[+i].toLowerCase()} au match` });
+      fermerModale(); toast(`${joueur(jid).nom} : ${OPTIONS_MATCH[+i]} au match.`); return sauver();
+    }
     if (d.relancer) {
       const s = sondage(d.relancer);
       const sans = (s.type === "match" ? etat.joueurs.map((j) => j.id) : conv(s.conv).membres).filter((k) => s.reponses[k] === undefined);
@@ -628,12 +668,13 @@
       etat.sondages.push(s); poster(s.conv, { type: "sondage", sondage: s.id }); fermerModale(); return sauver();
     }
     if (f.id === "formAbsence") {
-      const a = { id: uid(), seance: d.get("seance"), joueur: monEnfant(), motif: d.get("motif"), precision: (d.get("precision") || "").trim(), par: moi.profil, date: maintenant() };
+      const a = { id: uid(), seance: d.get("seance"), joueur: f.dataset.joueur, motif: d.get("motif"), precision: (d.get("precision") || "").trim(), par: moi.profil, date: maintenant() };
       if (!a.seance || etat.absences.some((x) => x.joueur === a.joueur && x.seance === a.seance)) return toast("Absence déjà signalée pour cette séance.");
       etat.absences.push(a);
-      const cible = convPourCoach(f.dataset.conv);
+      if (estCoach()) (etat.appel[a.seance] = etat.appel[a.seance] || {})[a.joueur] = "absent"; // noté directement par le coach
+      const cible = estCoach() ? f.dataset.conv : convPourCoach(f.dataset.conv);
       poster(cible, { type: "absence", joueur: a.joueur, seance: a.seance, motif: a.motif });
-      fermerModale(); toast("Le coach est prévenu."); sauver(); if (cible !== moi.conv) ouvrirConv(cible); return;
+      fermerModale(); toast(estCoach() ? `${joueur(a.joueur).nom} noté${e_()} absent${e_()}.` : "Le coach est prévenu."); sauver(); if (cible !== moi.conv) ouvrirConv(cible); return;
     }
     if (f.id === "formConvoc") {
       lireChampsBrouillon();
