@@ -2,60 +2,75 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b2a6f">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230b2a6f%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
   <title>Messagerie d'équipe · ESGA</title>
-  <meta name="description" content="ES Genas Azieu : discussion d'équipe, absences aux entraînements, sondage du match et convocation">
+  <meta name="description" content="ES Genas Azieu : messagerie d'équipe, groupes, sondages, absences et convocations">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="../commun/charte.css?v=2026-11-20d">
-  <link rel="stylesheet" href="style.css?v=2026-11-20a">
+  <link rel="stylesheet" href="style.css?v=2026-11-20b">
   <script src="../commun/modules.js?v=2026-11-20d" data-module="messagerie" defer></script>
 </head>
-<body class="chargement">
+<body class="chargement" data-espace="discussions">
   <div class="demo-bandeau">
-    <div class="wrap">
-      <span><b>Démo</b> · rien n'est envoyé, tout reste dans ce navigateur. Astuce : ouvrez un 2<sup>e</sup> onglet, choisissez « Parent de… » d'un côté et « Le coach » de l'autre.</span>
-      <button class="lien" id="btnReinitialiser">Remettre la démo à zéro</button>
+    <span><b>Démo</b> · rien n'est envoyé, tout reste dans ce navigateur. Ouvrez un 2<sup>e</sup> onglet : « Le coach » d'un côté, « Parent de… » de l'autre.</span>
+    <label>Équipe <select id="choixEquipe"></select></label>
+    <label>Je suis <select id="choixProfil"></select></label>
+    <button class="lien" id="btnReinitialiser">Remettre à zéro</button>
+  </div>
+
+  <div class="appli">
+    <nav class="espaces" aria-label="Espaces">
+      <button class="espace-btn" data-espace="discussions">Discussions <span class="badge" id="badgeTotal" hidden></span></button>
+      <button class="espace-btn" data-espace="coach" id="ongletCoach" hidden>Espace coach</button>
+    </nav>
+
+    <!-- Discussions -->
+    <div class="discussions">
+      <aside class="panneau">
+        <div class="liste-tete">
+          <b>Discussions</b>
+          <span class="outils">
+            <button class="mini-btn clair" id="btnPerso" title="Écrire à une personne">Nouvelle</button>
+            <button class="mini-btn clair" id="btnGroupe" title="Créer un groupe">Groupe</button>
+          </span>
+        </div>
+        <input id="recherche" type="search" placeholder="Rechercher une conversation" aria-label="Rechercher">
+        <div id="listeConvs" class="convs"></div>
+      </aside>
+
+      <section class="chat-zone">
+        <div id="chatVide" class="chat-vide">Choisissez une conversation.</div>
+        <div id="chat" class="chat" hidden>
+          <header id="chatTete" class="chat-tete"></header>
+          <div id="fil" class="fil" aria-live="polite"></div>
+          <div id="menuPlus" class="menu-plus" hidden></div>
+          <form id="formEnvoi" class="envoi">
+            <button type="button" class="rond-btn plus" id="btnPlus" aria-label="Sondage, absence…"></button>
+            <textarea id="saisie" rows="1" placeholder="Message" aria-label="Message"></textarea>
+            <button class="rond-btn envoyer" id="btnEnvoyer" aria-label="Envoyer"></button>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- Espace coach -->
+    <div class="coach-zone">
+      <nav class="c-onglets" aria-label="Espace coach">
+        <button class="c-onglet" data-coach="match">Sondage du match</button>
+        <button class="c-onglet" data-coach="convoc">Compo et convocation</button>
+        <button class="c-onglet" data-coach="entrainements">Entraînements et absences</button>
+      </nav>
+      <div id="coachContenu" class="coach-contenu"></div>
     </div>
   </div>
 
-  <header class="tete">
-    <div class="wrap tete-in">
-      <div class="titre">
-        <p class="esga-kicker">ES Genas Azieu · Messagerie</p>
-        <h1>Vie de l'équipe</h1>
-      </div>
-      <div class="qui">
-        <label>Équipe<select id="choixEquipe"></select></label>
-        <label>Je suis<select id="choixProfil"></select></label>
-      </div>
-    </div>
-    <nav class="wrap onglets" role="tablist" aria-label="Rubriques">
-      <button class="onglet" role="tab" data-onglet="discussion">Discussion <span class="badge" id="badgeDiscussion" hidden></span></button>
-      <button class="onglet" role="tab" data-onglet="absences">Absences</button>
-      <button class="onglet" role="tab" data-onglet="match">Match du week-end</button>
-      <button class="onglet" role="tab" data-onglet="convocation">Compo et convoc <span class="badge point" id="badgeConvoc" hidden>!</span></button>
-    </nav>
-  </header>
-
-  <main class="wrap">
-    <section class="vue vue-discussion" id="vue-discussion">
-      <div class="fil" id="fil" aria-live="polite"></div>
-      <form class="envoi" id="formEnvoi">
-        <textarea id="saisie" rows="1" placeholder="Écrire à l'équipe…" aria-label="Message"></textarea>
-        <button class="esga-btn esga-btn-primaire" aria-label="Envoyer">Envoyer</button>
-      </form>
-    </section>
-    <div class="vue" id="vue-absences" hidden></div>
-    <div class="vue" id="vue-match" hidden></div>
-    <div class="vue" id="vue-convocation" hidden></div>
-  </main>
-
+  <div id="modale" class="modale" hidden></div>
   <div class="toast" id="toast" role="status" hidden></div>
 
   <script src="stockage.js?v=2026-11-20a"></script>
-  <script src="app.js?v=2026-11-20a"></script>
+  <script src="app.js?v=2026-11-20b"></script>
 </body>
 </html>
