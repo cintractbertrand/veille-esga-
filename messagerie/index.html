@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="../commun/charte.css?v=2026-11-20d">
-  <link rel="stylesheet" href="style.css?v=2026-11-20c">
+  <link rel="stylesheet" href="style.css?v=2026-11-20d">
   <script src="../commun/modules.js?v=2026-11-20d" data-module="messagerie" defer></script>
 </head>
 <body class="chargement" data-espace="discussions">
@@ -38,6 +38,7 @@
           </span>
         </div>
         <input id="recherche" type="search" placeholder="Rechercher une conversation" aria-label="Rechercher">
+        <div id="semaine" class="semaine"></div>
         <div id="listeConvs" class="convs"></div>
       </aside>
 
@@ -45,11 +46,20 @@
         <div id="chatVide" class="chat-vide">Choisissez une conversation.</div>
         <div id="chat" class="chat" hidden>
           <header id="chatTete" class="chat-tete"></header>
+          <button id="epingle" class="epingle" hidden></button>
           <div id="fil" class="fil" aria-live="polite"></div>
+          <button id="versBas" class="vers-bas" hidden aria-label="Aller aux derniers messages"></button>
           <div id="menuPlus" class="menu-plus" hidden></div>
+          <div id="ctx" class="ctx" hidden></div>
+          <div id="reponseBarre" class="reponse-barre" hidden></div>
+          <div id="lectureSeule" class="lecture-seule" hidden>Seul le coach peut écrire dans ce groupe. Pour lui répondre, utilisez une conversation privée.</div>
           <form id="formEnvoi" class="envoi">
             <button type="button" class="rond-btn plus" id="btnPlus" aria-label="Sondage, absence…"></button>
-            <textarea id="saisie" rows="1" placeholder="Message" aria-label="Message"></textarea>
+            <div class="saisie-boite">
+              <textarea id="saisie" rows="1" placeholder="Message" aria-label="Message"></textarea>
+              <button type="button" class="icone photo-btn" id="btnPhoto" aria-label="Envoyer une photo"></button>
+              <input type="file" id="fichierPhoto" accept="image/*" hidden>
+            </div>
             <button class="rond-btn envoyer" id="btnEnvoyer" aria-label="Envoyer"></button>
           </form>
         </div>
@@ -71,6 +81,6 @@
   <div class="toast" id="toast" role="status" hidden></div>
 
   <script src="stockage.js?v=2026-11-20a"></script>
-  <script src="app.js?v=2026-11-20c"></script>
+  <script src="app.js?v=2026-11-20d"></script>
 </body>
 </html>
