@@ -8,7 +8,7 @@
   <title>Lecture des PV · ESGA</title>
   <meta name="description" content="Synthèse hebdomadaire des PV du District de Lyon et du Rhône pour l'ES Genas Azieu">
   <link rel="stylesheet" href="commun/charte.css?v=2026-11-20a">
-  <link rel="stylesheet" href="style.css?v=2026-11-20a">
+  <link rel="stylesheet" href="style.css?v=2026-11-20b">
   <script src="commun/modules.js?v=2026-11-20d" data-module="pv" defer></script>
 </head>
 <body>
@@ -42,13 +42,14 @@
   <main class="wrap">
     <section id="tab-semaine" class="panel active">
       <div class="resume" id="resume"></div>
-      <div class="cols">
+      <div class="bord" id="bord"></div>
+      <div class="cols cols-semaine">
         <div class="col-main">
           <div class="sec-head"><h2>Mentions du club</h2><span class="sec-note" id="semaine-note"></span></div>
           <div id="items-semaine" class="items"></div>
         </div>
         <aside class="col-side">
-          <div class="side-card">
+          <div class="side-card side-echeances">
             <h2>À ne pas manquer</h2>
             <ul class="echeances" id="a-venir"></ul>
           </div>
@@ -92,7 +93,10 @@
           <p class="kicker-dark" id="eq-kicker">Équipe</p>
           <h2 id="eq-titre"></h2>
         </div>
-        <button class="btn" id="eq-fermer">‹ Tout le club</button>
+        <div class="eq-actions">
+          <button class="btn btn-fav" id="eq-fav" aria-pressed="false">☆ Suivre cette équipe</button>
+          <button class="btn" id="eq-fermer">‹ Tout le club</button>
+        </div>
       </div>
       <div class="eq-stats" id="eq-stats"></div>
       <div class="eq-equipes" id="eq-equipes" hidden></div>
@@ -162,6 +166,10 @@
     </section>
 
     <section id="tab-historique" class="panel">
+      <div class="histo-head">
+        <input id="histo-q" class="search" type="search" placeholder="Rechercher dans tous les PV : adversaire, joueur, commission, amende…" aria-label="Rechercher dans tous les PV">
+      </div>
+      <div id="histo-res" hidden></div>
       <ol class="timeline" id="timeline"></ol>
     </section>
   </main>
@@ -171,6 +179,6 @@
   </footer>
 
   <script src="vendor/pdfjs/pdf.min.js"></script>
-  <script src="app.js?v=2026-11-20a"></script>
+  <script src="app.js?v=2026-11-20b"></script>
 </body>
 </html>

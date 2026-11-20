@@ -412,3 +412,64 @@ html { scrollbar-gutter: stable; }
 .extrait-pdf.annexe { margin-bottom: 6px; }
 .extrait-pdf.annexe header { padding: 4px 10px; }
 .suivie-ann-corps { margin-top: 10px; }
+
+/* ---- Version pro : suivi des actions, partage, équipes suivies, recherche, impression */
+.bord { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: space-between; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; box-shadow: var(--shadow); margin: 0 0 18px; }
+.bord-suivi { display: flex; align-items: center; gap: 16px; flex: 1 1 320px; min-width: 0; }
+.bord-suivi > div:first-child { display: grid; gap: 2px; min-width: 0; }
+.bord-suivi b { font-size: 1rem; }
+.bord-suivi span { font-size: .82rem; color: var(--muted); }
+.bord-suivi em { font-style: normal; color: var(--club); font-weight: 600; }
+.bord-jauge { flex: 0 0 140px; height: 8px; border-radius: 99px; background: var(--card-2); border: 1px solid var(--line); overflow: hidden; margin-left: auto; }
+.bord-jauge i { display: block; height: 100%; background: linear-gradient(90deg, var(--match), color-mix(in srgb, var(--match) 70%, var(--or))); border-radius: 99px; transition: width .3s; }
+.bord-outils { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.act { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 999px; padding: 4px 11px; font: 600 .78rem/1.3 inherit; font-family: inherit; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+.act:hover { border-color: var(--club); color: var(--club); }
+.act-fait { color: var(--match); border-color: color-mix(in srgb, var(--match) 35%, var(--line)); }
+.act-fait:hover { background: var(--match); color: #fff; border-color: var(--match); }
+.item .btn-extrait { margin-right: 4px; }
+.item:has(.actions) .btn-extrait + .extrait + .src, .item .actions + .src { margin-top: 10px !important; }
+.badge.nouveau { background: var(--or); border-color: var(--or); color: #1b1400; }
+.badge.fait { background: var(--match-soft); border-color: transparent; color: var(--match); }
+.item.traite { opacity: .62; box-shadow: none; }
+.item.traite::before { background: var(--match) !important; }
+.item.traite:hover { opacity: 1; }
+.echeances .plus { list-style: none; padding: 4px 0 0; }
+.echeances .plus summary { cursor: pointer; color: var(--club); font-weight: 600; font-size: .85rem; padding: 6px 2px; }
+.echeances .plus .echeances { margin-top: 8px; padding: 0; }
+.eq-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-fav[aria-pressed="true"] { background: color-mix(in srgb, var(--or) 22%, var(--card)); border-color: var(--or); color: var(--text); }
+.chip .etoile { color: var(--or); margin-right: 3px; }
+.chip.active .etoile { color: var(--or); }
+.histo-head { margin: 0 0 14px; }
+#histo-res .sec-note { margin: 0 0 10px; }
+#toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px); background: var(--club-900); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: .88rem; font-weight: 600; box-shadow: var(--shadow-l); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 200; max-width: calc(100vw - 32px); border-bottom: 2px solid var(--or); }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+/* Sur téléphone : les échéances d'abord, puis les fiches, puis les matchs */
+@media (max-width: 960px) {
+  .cols-semaine { display: flex; flex-direction: column; }
+  .cols-semaine .col-side { display: contents; }
+  .cols-semaine .side-echeances { order: -1; }
+  .cols-semaine .col-main { order: 0; }
+  .cols-semaine #matchs-semaine-bloc { order: 1; }
+}
+@media (max-width: 560px) {
+  .bord { padding: 12px; }
+  .bord-jauge { flex-basis: 70px; }
+  .bord-outils { width: 100%; }
+  .bord-outils .btn { flex: 1; justify-content: center; }
+}
+/* Impression : la synthèse de la semaine, propre, pour une réunion */
+@media print {
+  .barre, .bord-outils, .actions, .btn-extrait, .extrait, #matchs-semaine-bloc, .foot, #toast, .hero .stats { display: none !important; }
+  body { background: #fff; }
+  .hero { background: none !important; color: #000; padding: 0 0 8px; }
+  .hero * { color: #000 !important; }
+  .panel:not(.active) { display: none !important; }
+  .cols, .cols-semaine { display: block; }
+  .col-side { position: static; margin-top: 16px; }
+  .item, .side-card, .bord, .resume { box-shadow: none; break-inside: avoid; border-color: #bbb; }
+  .item.traite { opacity: 1; }
+  a { color: #000; }
+}
