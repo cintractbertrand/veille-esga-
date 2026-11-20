@@ -2,7 +2,7 @@
 // fantôme, ligne de formation, zone, texte, main levée, chrono. Option « Sol » : 4 coins de la surface
 // de réparation suffisent pour coucher les dessins en perspective sur la pelouse.
 import { E, $, $$, on, emit, uid, sauver, api, toast, dialogue, fmt, esc } from './etat.js';
-import { video, W, H, t, pause, pret, Z, versVideo, enGel, fixerZoom } from './lecteur.js';
+import { video, W, H, t, pause, pret, Z, versVideo, enGel, fixerZoom, pinceEnCours as L_pince } from './lecteur.js';
 
 const cv = $('#calque');
 const COULEURS = ['#ffd43b', '#ff4d4f', '#ffffff', '#4dabf7', '#51cf66', '#111111'];
@@ -530,7 +530,10 @@ $('#btnSol').onclick = async () => {
 
 // ---- souris / stylet
 cv.addEventListener('pointerdown', (e) => {
-  if (!edit || e.button !== 0) return;
+  if (!edit) return;
+  // deuxième doigt : c'est un zoom, pas un trait
+  if (!e.isPrimary) { if (enCours && !MULTI.has(enCours.type)) enCours = null; glisse = null; rafraichir(); return; }
+  if (e.button !== 0) return;
   e.preventDefault();
   cv.setPointerCapture(e.pointerId);
   const p = versVideo(e.clientX, e.clientY);
@@ -568,7 +571,7 @@ cv.addEventListener('pointerdown', (e) => {
   rafraichir();
 });
 cv.addEventListener('pointermove', (e) => {
-  if (!edit) return;
+  if (!edit || !e.isPrimary || L_pince()) return;
   const p = versVideo(e.clientX, e.clientY);
   souris = p;
   if (glisse && sel) {

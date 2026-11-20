@@ -128,10 +128,35 @@ on('lireSeq', (id) => { const s = sequence(id); if (s) { choisirSeq(id); L.lireS
 
 const themesPerso = () => [...new Set((E.match?.sequences || []).flatMap((s) => s.themes || []))];
 const titreSeq = (s) => s.nom || (s.joueuses || []).map((id) => joueuse(id)?.nom).filter(Boolean).join(', ') || 'Séquence';
+// filtre de la liste (joueuse, bien / à corriger) : la présentation suit le filtre
+const F = { j: '', g: '' };
+const seqsFiltrees = () => (E.match?.sequences || []).filter((s) => (!F.j || (s.joueuses || []).includes(F.j)) && (!F.g || s.genre === F.g));
+function filtreSeq() {
+  const sel = $('#fsJoueuse'), ids = new Set((E.match?.sequences || []).flatMap((s) => s.joueuses || []));
+  if (F.j && !ids.has(F.j)) F.j = '';
+  sel.innerHTML = '<option value="">Toutes les joueuses</option>' + E.effectif.filter((j) => ids.has(j.id))
+    .map((j) => `<option value="${j.id}">${esc(nomJoueuse(j))}</option>`).join('');
+  sel.value = F.j;
+  $$('#fsGenre button').forEach((b) => b.classList.toggle('actif', b.dataset.g === F.g));
+  $('#filtreSeq').classList.toggle('filtre-actif', !!(F.j || F.g));
+}
+$('#fsJoueuse').onchange = (e) => { F.j = e.target.value; listes(); };
+$('#fsGenre').addEventListener('click', (e) => { const b = e.target.closest('[data-g]'); if (!b) return; F.g = b.dataset.g; listes(); });
+$('#fsPresenter').onclick = () => presenter(seqsFiltrees());
+function filtrer(j = '', g = '') {
+  F.j = j; F.g = g;
+  $('.onglets [data-onglet="seq"]').click();
+  listes();
+}
+
 function listeSeq() {
-  const seqs = E.match?.sequences || [];
-  $('#nSeq').textContent = seqs.length ? `(${seqs.length})` : '';
-  $('#listeSeq').innerHTML = seqs.length ? seqs.map((s) => {
+  const tout = E.match?.sequences || [], seqs = seqsFiltrees();
+  $('#nSeq').textContent = tout.length ? (seqs.length < tout.length ? `(${seqs.length}/${tout.length})` : `(${tout.length})`) : '';
+  filtreSeq();
+  $('#filtreSeq').hidden = !tout.length;
+  $('#listeSeq').innerHTML = !seqs.length && tout.length
+    ? `<p class="astuce">Aucune séquence avec ce filtre. <button class="discret petit" data-a="sansfiltre">Tout afficher</button></p>`
+    : seqs.length ? seqs.map((s) => {
     const nd = E.match.dessins.filter((d) => d.t >= s.debut && d.t < s.fin).length;
     return `<div class="carte ${s.id === E.selSeq ? 'sel' : ''}" data-id="${s.id}">
       <div class="l1"><input class="nom" value="${esc(s.nom)}" placeholder="${esc(titreSeq(s))}" title="Nom de la séquence (apparaît dans la liste)">
@@ -144,6 +169,11 @@ function listeSeq() {
         <select class="ajout-theme" title="Thème (pour retrouver la séquence dans la bibliothèque)"><option value="">＋ thème</option>
           ${[...new Set([...THEMES, ...themesPerso()])].filter((th) => !(s.themes || []).includes(th)).map((th) => `<option>${esc(th)}</option>`).join('')}
           <option value="__autre">Autre…</option></select></div>
+      <textarea class="note" rows="${s.note ? 2 : 1}" placeholder="Consigne pour la joueuse…" title="Consigne écrite : elle s’affiche pendant la présentation">${esc(s.note || '')}</textarea>
+      ${s.id === E.selSeq ? `<div class="bornes" title="Ajuster le début et la fin de la séquence">
+        <span class="petit discret">Début</span><button class="bt" data-a="d-1" title="Début 1 s plus tôt">−1</button><button class="bt" data-a="d+1" title="Début 1 s plus tard">+1</button><button class="bt" data-a="dici" title="Le début à l’instant de la vidéo">Ici</button>
+        <span class="espace"></span>
+        <span class="petit discret">Fin</span><button class="bt" data-a="fici" title="La fin à l’instant de la vidéo">Ici</button><button class="bt" data-a="f-1" title="Fin 1 s plus tôt">−1</button><button class="bt" data-a="f+1" title="Fin 1 s plus tard">+1</button></div>` : ''}
       <div class="l1" style="margin-top:3px">
         <button class="bt k-bien ${s.genre === 'bien' ? 'on' : ''}" data-a="bien" title="À valoriser">${ic('bien', 14)} Bien</button>
         <button class="bt k-corriger ${s.genre === 'corriger' ? 'on' : ''}" data-a="corriger" title="À corriger">${ic('corriger', 14)} À corriger</button>
@@ -155,7 +185,21 @@ function listeSeq() {
     (${E.match?.reglages.avant ?? 6} s avant, ${E.match?.reglages.apres ?? 4} s après).<br><br>
     Ou posez <kbd>I</kbd> entrée et <kbd>O</kbd> sortie, puis <kbd>Entrée</kbd>.</p>`;
 }
+function borner(s, a) {
+  const tt = L.t(), dur = video.duration || Infinity;
+  if (a === 'd-1') s.debut = Math.max(0, s.debut - 1);
+  if (a === 'd+1') s.debut = Math.min(s.fin - 0.5, s.debut + 1);
+  if (a === 'dici') { if (tt >= s.fin - 0.5) { toast('Le début doit être avant la fin', { erreur: true }); return; } s.debut = tt; }
+  if (a === 'f-1') s.fin = Math.max(s.debut + 0.5, s.fin - 1);
+  if (a === 'f+1') s.fin = Math.min(dur, s.fin + 1);
+  if (a === 'fici') { if (tt <= s.debut + 0.5) { toast('La fin doit être après le début', { erreur: true }); return; } s.fin = tt; }
+  s.debut = +s.debut.toFixed(2); s.fin = +s.fin.toFixed(2);
+  E.match.sequences.sort((x, y) => x.debut - y.debut);
+  L.aller(a[0] === 'd' ? s.debut : Math.max(s.debut, s.fin - 0.05));
+  sauver(); listes();
+}
 $('#listeSeq').addEventListener('click', (e) => {
+  if (e.target.closest('[data-a="sansfiltre"]')) { filtrer(); return; }
   const c = e.target.closest('.carte'); if (!c) return;
   const s = sequence(c.dataset.id); if (!s) return;
   const a = e.target.closest('[data-a]')?.dataset.a;
@@ -173,8 +217,9 @@ $('#listeSeq').addEventListener('click', (e) => {
   }
   const th = e.target.closest('[data-th]');
   if (th) { s.themes = (s.themes || []).filter((x) => x !== th.dataset.th); sauver(); listes(); return; }
+  if (a && /^[df]/.test(a) && a !== 'suppr') { borner(s, a); return; }
   if (a === 'bien' || a === 'corriger') { s.genre = s.genre === a ? null : a; sauver(); listes(); return; }
-  if (!e.target.closest('input,select') && s.id !== E.selSeq) choisirSeq(s.id, true);
+  if (!e.target.closest('input,select,textarea') && s.id !== E.selSeq) choisirSeq(s.id, true);
 });
 $('#listeSeq').addEventListener('change', async (e) => {
   if (!e.target.classList.contains('ajout-theme')) return;
@@ -185,12 +230,15 @@ $('#listeSeq').addEventListener('change', async (e) => {
   listes();
 });
 $('#listeSeq').addEventListener('input', (e) => {
-  if (!e.target.classList.contains('nom')) return;
-  const s = sequence(e.target.closest('.carte').dataset.id);
-  if (s) { s.nom = e.target.value; sauver(); }
+  const s = sequence(e.target.closest('.carte')?.dataset.id); if (!s) return;
+  if (e.target.classList.contains('nom')) { s.nom = e.target.value; sauver(); }
+  if (e.target.classList.contains('note')) {
+    s.note = e.target.value; sauver();
+    e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 2 + 'px';
+  }
 });
-$('#listeSeq').addEventListener('focusin', (e) => { const c = e.target.closest('.carte'); if (c && e.target.classList.contains('nom') && c.dataset.id !== E.selSeq) { E.selSeq = c.dataset.id; effectif(); redessiner(); $$('#listeSeq .carte').forEach((x) => x.classList.toggle('sel', x === c)); } });
-$('#listeSeq').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+$('#listeSeq').addEventListener('focusin', (e) => { const c = e.target.closest('.carte'); if (c && e.target.matches('.nom,.note') && c.dataset.id !== E.selSeq) { E.selSeq = c.dataset.id; effectif(); redessiner(); $$('#listeSeq .carte').forEach((x) => x.classList.toggle('sel', x === c)); } });
+$('#listeSeq').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.target.classList.contains('note')) e.target.blur(); if (e.key === 'Escape') e.target.blur(); });
 
 // ================= commentaire au micro
 let rec = null;
@@ -300,11 +348,48 @@ $('#listeRep').addEventListener('input', (e) => {
 });
 $$('.onglets button').forEach((b) => b.addEventListener('click', () => {
   $$('.onglets button').forEach((x) => x.classList.toggle('actif', x === b));
-  $('#listeSeq').hidden = b.dataset.onglet !== 'seq';
-  $('#listeRep').hidden = b.dataset.onglet !== 'rep';
+  $$('[data-panneau]').forEach((p) => { p.hidden = p.dataset.panneau !== b.dataset.onglet; });
+  $('#filtreSeq').classList.toggle('cache', b.dataset.onglet !== 'seq');
+  if (b.dataset.onglet === 'bilan') listeBilan();
 }));
 
-function listes() { effectif(); listeSeq(); listeRep(); redessiner(); }
+// ================= bilan : par joueuse, pour préparer un entretien individuel
+function listeBilan() {
+  const el = $('#listeBilan'), seqs = E.match?.sequences || [];
+  if (!seqs.length) { el.innerHTML = '<p class="astuce">Le bilan se remplit avec les séquences : qui est vue, combien de « Bien », combien « À corriger », sur quels thèmes.</p>'; return; }
+  const parJ = E.effectif.map((j) => {
+    const ss = seqs.filter((s) => (s.joueuses || []).includes(j.id));
+    const th = {}; ss.forEach((s) => (s.themes || []).forEach((t) => { th[t] = (th[t] || 0) + 1; }));
+    return { j, ss, bien: ss.filter((s) => s.genre === 'bien').length, corr: ss.filter((s) => s.genre === 'corriger').length,
+      duree: ss.reduce((a, s) => a + s.fin - s.debut, 0), th: Object.entries(th).sort((a, b) => b[1] - a[1]) };
+  });
+  const vues = parJ.filter((x) => x.ss.length).sort((a, b) => b.ss.length - a.ss.length), oubliees = parJ.filter((x) => !x.ss.length);
+  const themes = {}; seqs.forEach((s) => (s.themes || []).forEach((t) => { themes[t] = (themes[t] || 0) + 1; }));
+  const tb = seqs.filter((s) => s.genre === 'bien').length, tc = seqs.filter((s) => s.genre === 'corriger').length;
+  el.innerHTML = `<div class="bilan-equipe">
+      <div><b>${seqs.length}</b><span>séquences</span></div>
+      <div class="k-bien"><b>${tb}</b><span>bien</span></div>
+      <div class="k-corriger"><b>${tc}</b><span>à corriger</span></div>
+      <div><b>${vues.length}/${E.effectif.length}</b><span>joueuses vues</span></div></div>
+    ${Object.keys(themes).length ? `<div class="puces bilan-themes">${Object.entries(themes).sort((a, b) => b[1] - a[1]).map(([t, n]) => `<span class="puce theme">${esc(t)} · ${n}</span>`).join('')}</div>` : ''}
+    ${vues.map((x) => `<div class="carte bilan-j" data-j="${x.j.id}">
+      <div class="l1"><b class="bilan-num">${esc(x.j.num || '')}</b><b class="bilan-nom">${esc(x.j.nom || '')}</b><span class="espace"></span>
+        <button class="bt" data-a="voir" title="N’afficher que ses séquences">${x.ss.length} séq.</button>
+        <button class="bt principal" data-a="pres" title="Présenter ses séquences (entretien individuel)">${ic('presenter', 14)}</button></div>
+      <div class="bilan-barre" title="${x.bien} bien · ${x.corr} à corriger · ${x.ss.length - x.bien - x.corr} sans avis">
+        <i class="b" style="flex:${x.bien}"></i><i class="c" style="flex:${x.corr}"></i><i class="n" style="flex:${x.ss.length - x.bien - x.corr}"></i></div>
+      <div class="l2 petit"><span class="k-bien">${ic('bien', 12)} ${x.bien}</span><span class="k-corriger">${ic('corriger', 12)} ${x.corr}</span>
+        <span class="discret mono">${Math.round(x.duree)} s</span>${x.ss.some((s) => s.voix) ? `<span class="discret">${ic('micro', 12)}</span>` : ''}
+        <span class="discret">${x.th.slice(0, 3).map(([t]) => esc(t)).join(', ')}</span></div></div>`).join('')}
+    ${oubliees.length ? `<p class="astuce">${ic('joueuse', 13)} Pas encore de séquence : ${oubliees.map((x) => esc(nomJoueuse(x.j))).join(', ')}.</p>` : ''}`;
+}
+$('#listeBilan').addEventListener('click', (e) => {
+  const c = e.target.closest('[data-j]'), a = e.target.closest('[data-a]')?.dataset.a; if (!c || !a) return;
+  if (a === 'voir') filtrer(c.dataset.j);
+  if (a === 'pres') presenter((E.match?.sequences || []).filter((s) => (s.joueuses || []).includes(c.dataset.j)));
+});
+
+function listes() { effectif(); listeSeq(); listeRep(); if (!$('#listeBilan').hidden) listeBilan(); redessiner(); }
 
 // ================= boutons du transport
 $('#tRepere').onclick = poserRepere;
@@ -347,46 +432,139 @@ $('#btnEnvoyer').onclick = async () => {
 };
 $('#btnDossier').onclick = () => api('POST', '/api/ouvrir').catch((e) => toast(e.message, { erreur: true }));
 
-// ================= présentation (séance au club)
-let pres = null;
+// ================= présentation (séance au club) : pilotable au clavier, à la souris et au doigt
+let pres = null, masquePres = 0;
 function presenter(liste) {
   if (!liste.length) { toast('Aucune séquence à présenter', { erreur: true }); return; }
   if (D.actif()) D.terminer();
   pres = { liste, i: 0 };
   document.body.classList.add('presente');
+  $('#pres').hidden = false;
   $('#cadre').requestFullscreen?.().catch(() => {});
   setTimeout(L.miseEnPage, 300);
   jouerPres();
 }
+function montrerCommandes() {
+  $('#pres').classList.remove('discret-pres');
+  clearTimeout(masquePres);
+  masquePres = setTimeout(() => { if (pres && !L.enPauseDouce()) $('#pres').classList.add('discret-pres'); }, 3500);
+}
+function majPres() {
+  const s = pres.liste[pres.i];
+  $('#prCompte').textContent = `${pres.i + 1} / ${pres.liste.length}`;
+  $('#prGenre').innerHTML = s.genre === 'bien' ? `<span class="pr-badge k-bien">${ic('bien', 14)} Bien</span>` : s.genre === 'corriger' ? `<span class="pr-badge k-corriger">${ic('corriger', 14)} À corriger</span>` : '';
+  $('#prTitre').textContent = titreSeq(s);
+  $('#prJoueuses').textContent = s.nom ? (s.joueuses || []).map((id) => joueuse(id)).filter(Boolean).map(nomJoueuse).join(' · ') : '';
+  $('#prNote').textContent = s.note || '';
+  $('#prNote').hidden = !s.note;
+  $('#prPrec').disabled = pres.i === 0;
+  $('#prSuiv').disabled = pres.i === pres.liste.length - 1;
+  $('#prPoints').innerHTML = pres.liste.map((x, i) => `<button data-i="${i}" class="${i === pres.i ? 'actif' : ''} ${x.genre ? 'g-' + x.genre : ''}" title="${esc(titreSeq(x))}"></button>`).join('');
+  $('#prLecture').innerHTML = ic(L.enPauseDouce() ? 'lecture' : 'pause', 26);
+}
 function jouerPres() {
   if (!pres) return;
   const s = pres.liste[pres.i];
-  let lg = $('#legende');
-  if (!lg) { lg = document.createElement('div'); lg.id = 'legende'; $('#cadre').append(lg); }
-  lg.textContent = `${pres.i + 1}/${pres.liste.length} · ${titreSeq(s)}`;
-  lg.hidden = false;
-  lireAvecVoix(s, () => { if (!pres) return; if (pres.i + 1 < pres.liste.length) { pres.i++; setTimeout(jouerPres, 600); } else finPres(); });
+  majPres(); montrerCommandes();
+  lireAvecVoix(s, () => {
+    if (!pres) return;
+    if (pres.i + 1 < pres.liste.length) { pres.i++; setTimeout(jouerPres, 600); }
+    else { majPres(); $('#prLecture').innerHTML = ic('revoir', 24); pres.fini = true; montrerCommandes(); }
+  });
+  pres.fini = false;
+  setTimeout(() => pres && majPres(), 50);
+}
+function allerPres(n) { if (!pres || n < 0 || n >= pres.liste.length) return; pres.i = n; jouerPres(); }
+function basculerPres() {
+  if (!pres) return;
+  if (pres.fini) { allerPres(0); return; }
+  if (L.enPauseDouce()) { L.reprendre(); voixEnCours?.play().catch(() => {}); } else { L.pauseDouce(); voixEnCours?.pause(); }
+  setTimeout(majPres, 30); montrerCommandes();
 }
 function finPres() {
   if (!pres) return;
   pres = null;
+  clearTimeout(masquePres);
   arreterVoix();
   document.body.classList.remove('presente');
-  $('#legende')?.remove();
+  $('#pres').hidden = true;
   L.pause();
   L.fixerZoom(null, false);
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   setTimeout(L.miseEnPage, 300);
 }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && pres) finPres(); });
+$('#prQuitter').onclick = finPres;
+$('#prPrec').onclick = () => allerPres(pres.i - 1);
+$('#prSuiv').onclick = () => allerPres(pres.i + 1);
+$('#prRevoir').onclick = () => allerPres(pres.i);
+$('#prLecture').onclick = basculerPres;
+$('#prPoints').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) allerPres(+b.dataset.i); });
+on('tapPres', () => { if ($('#pres').classList.contains('discret-pres')) montrerCommandes(); else basculerPres(); });
+$('#cadre').addEventListener('pointermove', () => { if (pres) montrerCommandes(); });
 $('#btnPresenter').onclick = () => {
-  const s = sequence(E.selSeq);
-  presenter(E.match ? [...E.match.sequences] : []);
-  if (s && pres) { pres.i = Math.max(0, pres.liste.indexOf(s)); jouerPres(); }
+  const s = sequence(E.selSeq), liste = seqsFiltrees();
+  presenter(E.match ? liste : []);
+  if (s && pres && liste.includes(s)) allerPres(liste.indexOf(s));
+};
+
+// ================= export / import de l'analyse (sauvegarde sur l'ordinateur ou le téléphone)
+function exporter() {
+  if (!E.match) return;
+  const d = { format: 'monteur-esga', version: 1, date: new Date().toISOString(), match: E.match, effectif: E.effectif };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 1)], { type: 'application/json' }));
+  const nom = (E.match.nom || 'match').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w() -]+/g, '-').replace(/-+/g, '-');
+  a.download = `analyse ${nom} ${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.json`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('Analyse exportée : gardez le fichier, il se réimporte ici', { duree: 3500 });
+}
+function importer() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json,application/json';
+  inp.onchange = async () => {
+    try {
+      const d = JSON.parse(await inp.files[0].text());
+      if (d.format !== 'monteur-esga' || !d.match) throw new Error('Ce fichier n’est pas une analyse du Monteur');
+      const avant = { match: structuredClone(E.match), effectif: structuredClone(E.effectif) };
+      Object.assign(E.match, { ...d.match, id: E.match.id });
+      if (Array.isArray(d.effectif) && d.effectif.length) { E.effectif = d.effectif; await sauverEffectif(); }
+      E.selSeq = null; sauver(); listes();
+      toast(`Analyse importée : ${E.match.sequences.length} séquences`, { duree: 5000, action: { label: 'Annuler', fn: async () => {
+        Object.assign(E.match, avant.match); E.effectif = avant.effectif; await sauverEffectif(); sauver(); listes(); } } });
+    } catch (e) { toast(e.message.startsWith('Ce fichier') ? e.message : 'Fichier illisible', { erreur: true, duree: 5000 }); }
+  };
+  inp.click();
+}
+$('#btnMenu').onclick = async () => {
+  const p = dialogue({ titre: 'Plus', ok: '', corps: `<div class="menu-liste">
+    <button type="button" data-m="exp">${ic('exporter', 18)}<span><b>Exporter l’analyse</b><small>Séquences, consignes, dessins et effectif dans un fichier</small></span></button>
+    <button type="button" data-m="imp">${ic('importer', 18)}<span><b>Importer une analyse</b><small>Reprendre un fichier exporté (sur ce match)</small></span></button>
+    <button type="button" data-m="aide">${ic('aide', 18)}<span><b>Aide</b><small>${TACTILE ? 'Gestes et astuces' : 'Raccourcis clavier'}</small></span></button>
+    ${window.DEMO ? `<button type="button" data-m="raz">${ic('annuler', 18)}<span><b>Remettre la démo à zéro</b><small>Efface ce que vous avez fait ici</small></span></button>` : ''}</div>` });
+  $('#dlgCorps .menu-liste').onclick = (e) => {
+    const m = e.target.closest('[data-m]')?.dataset.m; if (!m) return;
+    $('#dlg').close();
+    setTimeout(() => { if (m === 'exp') exporter(); if (m === 'imp') importer(); if (m === 'aide') aide(); if (m === 'raz') DEMO.reinitialiser(); }, 50);
+  };
+  await p;
 };
 
 // ================= aide
-$('#btnAide').onclick = () => dialogue({ titre: 'Raccourcis clavier', ok: '', corps: `<div id="aide"><table>
+const TACTILE = matchMedia('(hover: none)').matches;
+const AIDE_TACTILE = `<div id="aide"><table>
+  <tr><td>▶ ou toucher la vidéo</td><td>Lecture / pause</td></tr>
+  <tr><td>Toucher une joueuse</td><td>Crée sa séquence à l’instant (6 s avant, 4 s après), ou l’ajoute à la séquence choisie</td></tr>
+  <tr><td>Pincer la vidéo</td><td>Zoomer ; glisser à deux doigts pour se déplacer, toucher 1× pour revenir</td></tr>
+  <tr><td>Un outil sous la vidéo</td><td>Dessiner sur l’image arrêtée, puis « Terminer »</td></tr>
+  <tr><td>Séquence choisie</td><td>Début / Fin : −1 s, +1 s ou « Ici » pour caler les bords</td></tr>
+  <tr><td>Consigne</td><td>Le texte sous la séquence s’affiche pendant la présentation</td></tr>
+  <tr><td>Bilan</td><td>Par joueuse : séquences bien / à corriger, et « Présenter » pour un entretien individuel</td></tr>
+</table></div>`;
+function aide() { return TACTILE ? dialogue({ titre: 'Aide', ok: '', corps: AIDE_TACTILE }) : aideClavier(); }
+$('#btnAide').onclick = aide;
+const aideClavier = () => dialogue({ titre: 'Raccourcis clavier', ok: '', corps: `<div id="aide"><table>
   <tr><td><kbd>Espace</kbd> / <kbd>K</kbd></td><td>Lecture / pause</td></tr>
   <tr><td><kbd>L</kbd> (répété)</td><td>Lecture avant 1×, 2×, 4×</td></tr>
   <tr><td><kbd>J</kbd> (répété)</td><td>Lecture arrière 1×, 2×, 4×</td></tr>
@@ -398,6 +576,7 @@ $('#btnAide').onclick = () => dialogue({ titre: 'Raccourcis clavier', ok: '', co
   <tr><td><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></td><td>Zoom dans l’image (aussi : molette, double-clic) ; clic droit pour se déplacer</td></tr>
   <tr><td><kbd>D</kbd></td><td>Dessiner ici (dernier outil) ; <kbd>Échap</kbd> terminer ; <kbd>Ctrl</kbd>+<kbd>Z</kbd> annuler ; <kbd>Suppr</kbd> effacer la forme choisie</td></tr>
   <tr><td><kbd>P</kbd></td><td>Lire la séquence sélectionnée</td></tr>
+  <tr><td>Présentation</td><td><kbd>Espace</kbd> pause, <kbd>←</kbd> <kbd>→</kbd> séquence précédente / suivante, <kbd>R</kbd> revoir, <kbd>Échap</kbd> quitter</td></tr>
 </table></div>` });
 
 // ================= clavier
@@ -406,12 +585,9 @@ window.addEventListener('keydown', (e) => {
   const k = e.code, ctrl = e.ctrlKey || e.metaKey;
   if (pres) {
     if (k === 'Escape') { e.preventDefault(); finPres(); }
-    else if (k === 'Space') { e.preventDefault(); L.basculer(); }
-    else if (k === 'ArrowRight' || k === 'ArrowLeft') {
-      e.preventDefault();
-      const n = pres.i + (k === 'ArrowRight' ? 1 : -1);
-      if (n >= 0 && n < pres.liste.length) { pres.i = n; jouerPres(); }
-    }
+    else if (k === 'Space' || k === 'KeyK') { e.preventDefault(); basculerPres(); }
+    else if (k === 'KeyR') { e.preventDefault(); allerPres(pres.i); }
+    else if (k === 'ArrowRight' || k === 'ArrowLeft') { e.preventDefault(); allerPres(pres.i + (k === 'ArrowRight' ? 1 : -1)); }
     return;
   }
   if (D.actif()) {

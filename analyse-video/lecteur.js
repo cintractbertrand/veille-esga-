@@ -80,12 +80,43 @@ cadre.addEventListener('pointermove', (e) => {
   appliquerZoom(false);
 });
 cadre.addEventListener('pointerup', () => { aGlisse = !!glisse?.bouge; if (aGlisse) emit('zoom'); glisse = null; });
+// téléphone : pincer à deux doigts pour zoomer, glisser à deux doigts pour se déplacer
+const doigts = new Map();
+let pince = null;
+cadre.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch') return;
+  doigts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (doigts.size === 2 && pret()) {
+    const [a, b] = [...doigts.values()];
+    pince = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), cx: (a[0] + b[0]) / 2, cy: (a[1] + b[1]) / 2, s: Z.s };
+    glisse = null;
+  }
+}, true);
+cadre.addEventListener('pointermove', (e) => {
+  if (!doigts.has(e.pointerId)) return;
+  doigts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (!pince || doigts.size < 2) return;
+  e.stopPropagation(); e.preventDefault();
+  const [a, b] = [...doigts.values()];
+  const d = Math.hypot(a[0] - b[0], a[1] - b[1]), cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+  // déplacement du centre, puis zoom autour de lui
+  Z.x -= (cx - pince.cx) / (k * Z.s); Z.y -= (cy - pince.cy) / (k * Z.s);
+  pince.cx = cx; pince.cy = cy;
+  zoomer((pince.s * d / pince.d) / Z.s, cx, cy);
+}, true);
+const lacher = (e) => { doigts.delete(e.pointerId); if (doigts.size < 2 && pince) { pince = null; aGlisse = true; emit('zoom'); } };
+cadre.addEventListener('pointerup', lacher, true);
+cadre.addEventListener('pointercancel', lacher, true);
+export const pinceEnCours = () => !!pince;
 cadre.addEventListener('contextmenu', (e) => e.preventDefault());
 cadre.addEventListener('dblclick', (e) => {
   if (document.body.classList.contains('dessin') || !pret()) return;
   if (Z.s > 1.01) fixerZoom(null); else zoomer(2.5, e.clientX, e.clientY);
 });
-video.addEventListener('click', () => { if (!document.body.classList.contains('dessin') && !aGlisse) basculer(); aGlisse = false; });
+video.addEventListener('click', () => {
+  if (document.body.classList.contains('presente')) { if (!aGlisse) emit('tapPres'); aGlisse = false; return; }
+  if (!document.body.classList.contains('dessin') && !aGlisse) basculer(); aGlisse = false;
+});
 $('#zPlus').onclick = () => zoomer(1.4);
 $('#zMoins').onclick = () => zoomer(1 / 1.4);
 $('#zNiveau').onclick = () => fixerZoom(null);
@@ -150,6 +181,20 @@ export function J() {
   afficherVitesse();
 }
 function stopArriere() { if (arriere) { arriere = 0; clearInterval(minArriere); afficherVitesse(); } }
+
+/** Pause qui garde la séquence en cours (présentation) ; reprendre() repart du même point. */
+let gelSuspendu = null;
+export function pauseDouce() {
+  if (gel) { clearTimeout(gel.minuterie); gelSuspendu = gel; return; }
+  video.pause();
+}
+export function reprendre() {
+  if (gelSuspendu && gel === gelSuspendu) { gelSuspendu = null; finGel(true); return; }
+  gelSuspendu = null;
+  if (!pret()) return;
+  video.playbackRate = vitesse; tPrec = video.currentTime; video.play();
+}
+export const enPauseDouce = () => !!gelSuspendu || (video.paused && !gel);
 
 /** Lit [a, b] puis appelle suite() (ou s'arrête). */
 export function lireSegment(a, b, suite = null) {
