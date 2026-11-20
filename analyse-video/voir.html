@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="../commun/charte.css?v=2026-11-20c">
 <script src="../commun/modules.js?v=2026-11-20g" data-module="video" defer></script>
-<script src="../commun/club.js?v=2026-11-20m"></script>
+<script src="../commun/club.js?v=2026-11-20n"></script>
 <style>
   body { margin: 0; background: var(--esga-fond); color: var(--esga-texte); font-family: var(--esga-police); }
   main { max-width: 860px; margin: 0 auto; padding: 16px; }
@@ -48,6 +48,7 @@
     <h1>${esc(x.nom || "Séquence du match")}</h1>
     <p class="sous">${m ? esc(m.titre) + " · " + new Date(m.date + "T12:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : ""} · ${mmss(x.debut)} à ${mmss(x.fin)} · pour ${esc(pour)}</p>
     ${lecteur ? `<div class="ecran">${lecteur}</div>` : `<p class="vide">La vidéo est sur un autre site.</p>`}
+    ${x.voix ? '<p class="note" id="voixBloc">🎙 <b>Commentaire de ' + esc(x.de || "ton coach") + '</b> : il démarre avec la séquence.<br><audio id="son" controls preload="auto" style="width:100%;margin-top:8px"></audio></p>' : ""}
     ${x.note ? `<p class="note ${x.genre || ""}"><b>${esc(x.de || "Le coach")} :</b> ${esc(x.note)}</p>` : ""}
     <div class="actions">${fichier ? '<button class="btn prim" id="revoir">↺ Revoir la séquence</button>' : ""}${url && !fichier ? `<a class="btn prim" href="${esc(url)}" target="_blank" rel="noopener">Ouvrir la vidéo ↗</a><span class="sous" style="align-self:center;margin:0">Aller à ${mmss(x.debut)}</span>` : ""}<a class="btn" href="../#moi">Mon espace</a></div>`;
   const vid = $("#vid");
@@ -58,6 +59,20 @@
     if (vid.readyState >= 1) caler(); else vid.addEventListener("loadedmetadata", caler, { once: true });
     vid.addEventListener("play", caler);
     $("#revoir").onclick = revoir;
+  }
+  // Voix du coach : lancée et arrêtée avec la vidéo (ou seule si la vidéo est sur un autre site)
+  if (x.voix) {
+    const son = $("#son"), src = await C.voixEnvoi(x.id);
+    if (!src) $("#voixBloc").innerHTML = "🎙 Le commentaire du coach n'est pas encore arrivé sur cet appareil.";
+    else {
+      son.src = src;
+      if (vid) {
+        const caleSon = () => { const t = vid.currentTime - x.debut; if (t >= 0 && Math.abs(son.currentTime - t) > 0.6) try { son.currentTime = t; } catch (e) {} };
+        vid.addEventListener("play", () => { caleSon(); son.play().catch(() => {}); });
+        vid.addEventListener("pause", () => son.pause());
+        vid.addEventListener("seeked", caleSon);
+      }
+    }
   }
   if (p && p.joueur && (x.a === "equipe" ? (C.personne(p.joueur) || {}).equipe === x.equipe : x.a.includes(p.joueur))) C.vuEnvoi(x.id, p.joueur);
 })();

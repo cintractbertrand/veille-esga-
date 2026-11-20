@@ -189,7 +189,7 @@
   const destEnvoi = (x) => x.a === "equipe" ? "Toute l'équipe" : x.a.map((id) => (C.personne(id) || {}).prenom).filter(Boolean).join(", ");
   function ligneEnvoi(x, jid) {
     const vu = jid ? !!x.vus[jid] : null, nVus = Object.keys(x.vus).length, nDest = x.a === "equipe" ? C.joueurs(x.equipe).length : x.a.length;
-    return `<li class="envoi"><a class="vign ${x.genre || ""}" href="${C.lienEnvoi(x.id)}">▶</a><span class="q"><b>${esc(x.nom || "Séquence")}</b>${jid && !vu ? ' <span class="etiq or">Nouveau</span>' : ""}
+    return `<li class="envoi"><a class="vign ${x.genre || ""}" href="${C.lienEnvoi(x.id)}">▶</a><span class="q"><b>${esc(x.nom || "Séquence")}</b>${x.voix ? ' <span title="Commentaire au micro">🎙</span>' : ""}${jid && !vu ? ' <span class="etiq or">Nouveau</span>' : ""}
       <small>${jid ? `${esc(x.de || "Le coach")} · ${x.a === "equipe" ? "pour toute l'équipe" : "rien que pour " + (C.personne(jid) || {}).prenom}` : `${esc(destEnvoi(x))} · vu par ${nVus}/${nDest}`} · ${mmss(x.debut)}–${mmss(x.fin)}</small>${x.note && jid ? `<small class="nt">« ${esc(x.note)} »</small>` : ""}</span>
       ${jid ? `<a class="btn mini prim" href="${C.lienEnvoi(x.id)}">Regarder</a>` : `<button class="btn mini lien" data-a="envoi-retirer" data-id="${esc(x.id)}">Retirer</button>`}</li>`;
   }
