@@ -1,0 +1,71 @@
+/* Charte graphique commune ESGA — partagée par tous les modules
+   (accueil, Lecture des PV, Analyse vidéo, Atelier entraînements).
+   Usage dans un module :
+     <link rel="stylesheet" href="https://cintractbertrand.github.io/veille-esga-/commun/charte.css">
+     <script src="https://cintractbertrand.github.io/veille-esga-/commun/modules.js" data-module="atelier" defer></script>
+   Les variables --esga-* sont la référence : chaque module y relie ses propres couleurs.
+   Les classes sont préfixées esga- pour ne rien casser dans les modules. */
+:root {
+  --esga-bleu: #1d4ed8;
+  --esga-bleu-600: #1e40af;
+  --esga-marine: #0b2a6f;
+  --esga-or: #e8b923;
+  --esga-or-fonce: #b88a00;
+  --esga-vert: #16935f;
+  --esga-rouge: #d42f26;
+  --esga-fond: #f3f5f9;
+  --esga-carte: #ffffff;
+  --esga-carte-2: #f8f9fc;
+  --esga-texte: #121826;
+  --esga-gris: #5b6475;
+  --esga-ligne: #e3e7ef;
+  --esga-doux: #e8eefc;
+  --esga-police: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --esga-rayon: 14px;
+  --esga-ombre: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .06);
+  --esga-ombre-l: 0 10px 28px rgba(16, 24, 40, .12);
+  --esga-degrade: radial-gradient(1200px 400px at 85% -50%, rgba(255,255,255,.18), transparent 60%), linear-gradient(135deg, var(--esga-bleu) 0%, var(--esga-marine) 100%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --esga-fond: #0c111c; --esga-carte: #151b29; --esga-carte-2: #1a2132; --esga-texte: #e9edf5;
+    --esga-gris: #98a2b6; --esga-ligne: #263046; --esga-doux: #1a2747;
+    --esga-ombre: 0 1px 2px rgba(0, 0, 0, .3); --esga-ombre-l: 0 10px 28px rgba(0, 0, 0, .4);
+  }
+}
+:root[data-theme="dark"] {
+  --esga-fond: #0c111c; --esga-carte: #151b29; --esga-carte-2: #1a2132; --esga-texte: #e9edf5;
+  --esga-gris: #98a2b6; --esga-ligne: #263046; --esga-doux: #1a2747;
+  --esga-ombre: 0 1px 2px rgba(0, 0, 0, .3); --esga-ombre-l: 0 10px 28px rgba(0, 0, 0, .4);
+}
+
+/* Bandeau commun : en haut de chaque module, inséré par modules.js */
+.esga-bar { position: relative; z-index: 60; background: var(--esga-marine); border-bottom: 3px solid var(--esga-or); color: #fff; font: 500 13px/1.2 var(--esga-police); -webkit-font-smoothing: antialiased; }
+.esga-bar * { box-sizing: border-box; }
+.esga-bar-in { max-width: 1180px; margin: 0 auto; padding: 0 16px; height: 42px; display: flex; align-items: center; gap: 14px; }
+.esga-bar a { color: #fff; text-decoration: none; }
+.esga-accueil { display: flex; align-items: center; gap: 9px; font-weight: 700; white-space: nowrap; flex: 0 0 auto; }
+.esga-accueil:hover .esga-nom { text-decoration: underline; text-underline-offset: 3px; }
+.esga-blason { width: 24px; height: 27px; border-radius: 6px 6px 12px 12px; background: #fff; color: var(--esga-marine); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; line-height: 1; letter-spacing: .02em; }
+.esga-blason small { font-size: 6.5px; letter-spacing: .15em; color: var(--esga-bleu); margin-top: 1px; }
+.esga-nom small { font-weight: 500; opacity: .7; margin-left: 4px; }
+.esga-mods { display: flex; gap: 2px; margin-left: auto; overflow-x: auto; scrollbar-width: none; }
+.esga-mods::-webkit-scrollbar { display: none; }
+.esga-mods a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; white-space: nowrap; opacity: .82; transition: background .15s, opacity .15s; }
+.esga-mods a:hover { background: rgba(255,255,255,.12); opacity: 1; }
+.esga-mods a[aria-current="page"] { background: rgba(255,255,255,.16); opacity: 1; box-shadow: inset 0 -2px 0 var(--esga-or); }
+.esga-mods svg { width: 16px; height: 16px; flex: 0 0 auto; }
+@media (max-width: 720px) {
+  .esga-nom small { display: none; }
+  .esga-mods a:not([aria-current="page"]) span { display: none; }
+}
+@media print { .esga-bar { display: none !important; } }
+
+/* Composants communs (facultatifs) */
+.esga-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px/1 var(--esga-police); padding: 11px 16px; border-radius: 10px; border: 1px solid var(--esga-ligne); background: var(--esga-carte); color: var(--esga-texte); text-decoration: none; cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
+.esga-btn:hover { border-color: var(--esga-bleu); }
+.esga-btn-primaire { background: var(--esga-bleu); border-color: var(--esga-bleu); color: #fff; }
+.esga-btn-primaire:hover { background: var(--esga-bleu-600); border-color: var(--esga-bleu-600); }
+.esga-btn-or { background: var(--esga-or); border-color: var(--esga-or); color: #1b1400; }
+.esga-btn-or:hover { background: #f1c63a; border-color: #f1c63a; }
+.esga-kicker { margin: 0; font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; font-weight: 600; opacity: .8; }
