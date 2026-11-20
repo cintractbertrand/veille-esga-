@@ -20,6 +20,8 @@
   const MOTIFS = ["Malade", "Blessure", "École / devoirs", "Raison familiale", "Transport", "Autre"];
   const OPTIONS_MATCH = ["Présent", "Incertain", "Absent"]; // index 0, 1, 2
   const CLES_MATCH = ["oui", "incertain", "non"];
+  const REACTIONS = ["👍", "❤️", "😂", "👏", "⚽", "🙏"];
+  const VERSION = 3;
   const COULEURS = ["#1d4ed8", "#0f766e", "#b45309", "#7c3aed", "#be185d", "#15803d", "#c2410c", "#0369a1"];
   const IC = {
     groupe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/></svg>',
@@ -30,6 +32,14 @@
     sondage: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>',
     absence: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M10 14l4 4M14 14l-4 4"/></svg>',
     convoc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 14l2 2 4-4"/></svg>',
+    photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+    chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+    epingle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3zM12 15v6"/></svg>',
+    repondre: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/></svg>',
+    corbeille: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+    copier: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>',
+    oeil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    megaphone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 9a3 3 0 0 1 0 6M18 6a7 7 0 0 1 0 12"/></svg>',
     crayon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   };
 
@@ -38,6 +48,9 @@
   let moi = lireMoi();
   let etat = null;
   let brouillon = null; // convocation en cours d'écriture (onglet du coach)
+  let reponseA = null;  // message auquel on répond (onglet courant)
+  let sep = { conv: null, idx: 0 }; // séparateur « nouveaux messages »
+  let enBasPrec = { conv: null, n: 0 }, nouveauxEnBas = 0;
 
   /* ---------- profil de l'onglet (chaque onglet peut jouer quelqu'un d'autre) ---------- */
   function lireMoi() { try { return JSON.parse(sessionStorage.getItem("esga-messagerie-moi")) || {}; } catch (e) { return {}; } }
@@ -85,17 +98,22 @@
     const match = prochainMatch(equipe), s = seances(equipe);
     const il = (h) => new Date(Date.now() - h * 3600e3).toISOString();
     const tous = ["coach", ...joueurs.map((j) => "p-" + j.id)];
-    const e = { version: 2, joueurs, convs: [], messages: [], sondages: [], absences: [], appel: {}, convocations: [], lus: {} };
+    const e = { version: VERSION, joueurs, convs: [], messages: [], sondages: [], absences: [], appel: {}, convocations: [], lus: {} };
     e.convs.push({ id: "equipe", type: "equipe", nom: nomEquipe(equipe), membres: tous, creePar: "coach", date: il(80) });
+    e.convs.push({ id: "annonces", type: "groupe", annonces: true, nom: "Annonces de l'équipe", membres: tous, creePar: "coach", date: il(90) });
     e.convs.push({ id: "c-covoit", type: "groupe", nom: "Covoiturage du samedi", membres: ["p-j3", "p-j1", "p-j6", "p-j8", "p-j11"], creePar: "p-j3", date: il(60) });
     e.convs.push({ id: "c-staff", type: "groupe", nom: "Parents référents", membres: ["coach", "p-j2", "p-j10"], creePar: "coach", date: il(70) });
     e.convs.push({ id: "c-perso-j3", type: "perso", membres: ["coach", "p-j3"], creePar: "p-j3", date: il(30) });
     const m = (conv, auteur, h, o) => e.messages.push(Object.assign({ id: uid(), conv, auteur, date: il(h) }, o));
     m("equipe", "coach", 50, { type: "texte", texte: "Bonjour à tous ! Bienvenue sur la messagerie de l'équipe 👋 Pour une absence à l'entraînement, touchez le + en bas puis « Absence »." });
+    m("annonces", "coach", 49, { type: "texte", texte: "📣 Ici, seulement les informations importantes du coach : horaires, changements de terrain, convocations. Pour échanger, utilisez le groupe de l'équipe." });
+    m("annonces", "coach", 6, { type: "texte", texte: "Rappel : pensez aux licences 2026-2027, à rendre avant le 30 novembre au secrétariat du club." });
     m("c-staff", "coach", 48, { type: "texte", texte: "Merci à vous deux d'être référents cette saison. Je vous mets ici l'organisation des goûters." });
     m("c-staff", "p-j2", 47, { type: "texte", texte: "Parfait, on s'en occupe !" });
     m("equipe", "p-j3", 26, { type: "texte", texte: "Bonjour, l'entraînement est maintenu s'il pleut ?" });
     m("equipe", "coach", 25, { type: "texte", texte: "Oui, on s'entraîne sauf si la mairie ferme le terrain. Je préviens ici dans ce cas." });
+    const q = e.messages[e.messages.length - 2], r = e.messages[e.messages.length - 1];
+    r.reponseA = q.id; r.reactions = { "p-j3": "🙏", "p-j1": "👍", "p-j8": "👍" };
     m("c-covoit", "p-j3", 24, { type: "texte", texte: "Qui peut emmener samedi ? J'ai 2 places." });
     m("c-covoit", "p-j6", 23, { type: "texte", texte: "Moi aussi, 3 places au départ de Genas centre." });
     e.absences.push({ id: uid(), seance: s[0].id, joueur: "j5", motif: "Malade", precision: "Fièvre depuis hier", par: "p-j5", date: il(5) });
@@ -107,6 +125,7 @@
     Object.assign(sm.reponses, rep);
     e.sondages.push(sm);
     m("equipe", "coach", 4, { type: "sondage", sondage: sm.id });
+    e.convs[0].epingle = e.messages[e.messages.length - 1].id;
     m("c-perso-j3", "p-j3", 3, { type: "texte", texte: "Bonjour coach, Jade aura 15 minutes de retard mardi (dentiste). Désolé !" });
     m("c-perso-j3", "coach", 2.5, { type: "texte", texte: "Pas de souci, merci de prévenir." });
     const sl = { id: "s-repas", conv: "equipe", auteur: "coach", date: il(2.2), type: "libre", question: "Repas de fin d'année : quelle date vous arrange ?", options: ["Samedi 12 décembre", "Dimanche 13 décembre", "Samedi 19 décembre"], reponses: { "p-j1": 0, "p-j2": 0, "p-j4": 1, "p-j6": 0, "p-j9": 2 } };
@@ -120,7 +139,7 @@
   }
   function charger() {
     etat = S.lire(moi.equipe);
-    if (!etat || etat.version !== 2) etat = etatInitial(moi.equipe);
+    if (!etat || etat.version !== VERSION) etat = etatInitial(moi.equipe);
     S.ecrire(moi.equipe, etat);
   }
   function sauver() { S.ecrire(moi.equipe, etat); rendre(); }
@@ -135,12 +154,27 @@
   function marquerLu(id) { const l = (etat.lus[moi.profil] = etat.lus[moi.profil] || {}); const n = msgsDe(id).length; if (l[id] !== n) { l[id] = n; return true; } return false; }
   function avatar(c) {
     if (c.type === "equipe") return `<span class="av av-equipe">${IC.ballon}</span>`;
+    if (c.annonces) return `<span class="av av-annonces">${IC.megaphone}</span>`;
     if (c.type === "groupe") return `<span class="av" style="background:${couleur(c.nom)}">${IC.groupe}</span>`;
     const n = nomConv(c); return `<span class="av" style="background:${couleur(n)}">${esc(initiales(n))}</span>`;
   }
+  function extrait(m) {
+    if (!m) return "";
+    if (m.supprime) return "Message supprimé";
+    if (m.type === "texte" || m.type === "info") return m.texte;
+    if (m.type === "photo") return "📷 Photo" + (m.texte ? " · " + m.texte : "");
+    if (m.type === "sondage") { const so = sondage(m.sondage); return "📊 " + (so ? so.question : "Sondage"); }
+    if (m.type === "convocation") { const c = etat.convocations.find((x) => x.id === m.convoc); return c ? `📋 Convocation · ${c.domicile ? "ESGA – " + c.adversaire : c.adversaire + " – ESGA"}, RDV ${c.rdvHeure.replace(":", "h")}` : "📋 Convocation"; }
+    if (m.type === "absence") return `🚫 Absence de ${joueur(m.joueur).nom}`;
+    if (m.type === "empechement") return `⚠️ Empêchement de ${joueur(m.joueur).nom}`;
+    return "🔔 Rappel";
+  }
   function apercu(m) {
     if (!m) return "Aucun message";
-    const qui = m.auteur === moi.profil ? "Vous : " : conv(m.conv).type !== "perso" ? nomProfil(m.auteur).replace("Parent de ", "") + " : " : "";
+    if (m.supprime) return "🚫 Message supprimé";
+    if (m.type === "photo") return (m.auteur === moi.profil ? "Vous : " : "") + "📷 Photo" + (m.texte ? " · " + m.texte : "");
+    if (m.type === "empechement") return `⚠️ Empêchement de ${joueur(m.joueur).nom}`;
+    const qui = m.auteur === moi.profil ? "Vous : " : (conv(m.conv) || {}).type !== "perso" ? nomProfil(m.auteur).replace("Parent de ", "") + " : " : "";
     if (m.type === "texte") return qui + m.texte;
     if (m.type === "info") return m.texte;
     if (m.type === "sondage") { const s = sondage(m.sondage); return "📊 " + (s ? s.question : "Sondage"); }
@@ -165,8 +199,10 @@
     else {
       // La conversation affichée est lue (sur téléphone, seulement si elle est ouverte en plein écran)
       const c = conv(moi.conv);
-      if (c && c.membres.includes(moi.profil) && (moi.mobileChat || matchMedia("(min-width: 761px)").matches) && marquerLu(c.id)) S.ecrire(moi.equipe, etat);
-      rendreListe(); rendreChat();
+      const visible = c && c.membres.includes(moi.profil) && (moi.mobileChat || matchMedia("(min-width: 761px)").matches);
+      if (visible && sep.conv !== c.id) sep = { conv: c.id, idx: (etat.lus[moi.profil] || {})[c.id] || 0, vu: false };
+      if (visible && marquerLu(c.id)) S.ecrire(moi.equipe, etat);
+      rendreSemaine(); rendreListe(); rendreChat();
     }
   }
   function rendreTete() {
@@ -199,30 +235,163 @@
       <button class="chat-titre" data-infos="${c.id}"><b>${esc(nomConv(c))}</b><small>${c.type === "perso" ? "Conversation privée" : esc(c.membres.map((p) => (p === moi.profil ? "Vous" : nomProfil(p).replace("Parent de ", ""))).slice(0, 6).join(", ") + (n > 6 ? ` et ${n - 6} autres` : ""))}</small></button>`;
     const fil = $("#fil");
     const enBas = fil.scrollHeight - fil.scrollTop - fil.clientHeight < 90;
+    const msgs = msgsDe(c.id);
     let html = "", jourPrec = "", auteurPrec = "";
-    msgsDe(c.id).forEach((m) => {
+    msgs.forEach((m, idx) => {
       const j = m.date.slice(0, 10);
       if (j !== jourPrec) { html += `<div class="jour"><span>${esc(j === jourISO(new Date()) ? "Aujourd'hui" : maj1(fmtJour(m.date)))}</span></div>`; jourPrec = j; auteurPrec = ""; }
+      if (sep.conv === c.id && idx === sep.idx && msgs.slice(idx).some((x) => x.auteur !== moi.profil)) {
+        html += `<div class="separateur" id="separateur"><span>${pluriel(msgs.slice(idx).filter((x) => x.auteur !== moi.profil).length, "nouveau message").replace("nouveau messages", "nouveaux messages")}</span></div>`; auteurPrec = "";
+      }
       if (m.type === "info") { html += `<div class="jour info"><span>${esc(m.texte)}</span></div>`; auteurPrec = ""; return; }
       const mien = m.auteur === moi.profil, suite = auteurPrec === m.auteur;
       auteurPrec = m.auteur;
       const nom = !mien && c.type !== "perso" && !suite ? `<div class="auteur" style="color:${couleur(nomProfil(m.auteur))}">${esc(nomProfil(m.auteur))}</div>` : "";
-      let corps = "";
-      if (m.type === "texte") corps = `<div class="txt">${esc(m.texte).replace(/\n/g, "<br>")}</div>`;
-      else if (m.type === "sondage") corps = carteSondage(sondage(m.sondage));
-      else if (m.type === "absence") corps = carteAbsence(m);
-      else if (m.type === "convocation") corps = carteConvocMsg(m);
-      else if (m.type === "relance") corps = carteRelance(m);
-      const act = estCoach() && !mien && enfantDe(m.auteur) ? `<button class="msg-act" data-act-joueur="${enfantDe(m.auteur)}" title="Actions pour ${esc(joueur(enfantDe(m.auteur)).nom)}">${IC.absence}<span>Action</span></button>` : "";
-      html += `<div class="msg${mien ? " mien" : ""}${suite ? " suite" : ""}${m.type !== "texte" ? " riche" : ""}"><div class="bulle">${nom}${corps}<span class="h">${fmtHeure(m.date)}</span></div>${act}</div>`;
+      html += `<div class="msg${mien ? " mien" : ""}${suite ? " suite" : ""}${m.type !== "texte" && m.type !== "photo" ? " riche" : ""}${m.supprime ? " supprime" : ""}" id="m-${m.id}">
+        <div class="bulle">${m.supprime ? "" : `<button class="m-plus" data-ctx="${m.id}" aria-label="Options du message">${IC.chevron}</button>`}${nom}${corpsMessage(m)}<span class="h">${fmtHeure(m.date)}${mien && !m.supprime ? coches(c, idx) : ""}</span></div>
+        ${reactions(m)}${!m.supprime && estCoach() && !mien && enfantDe(m.auteur) ? `<button class="msg-act" data-act-joueur="${enfantDe(m.auteur)}" title="Actions pour ${esc(joueur(enfantDe(m.auteur)).nom)}">${IC.absence}<span>Action</span></button>` : ""}</div>`;
     });
     fil.innerHTML = html;
-    if (enBas || fil.dataset.conv !== c.id) { fil.scrollTop = fil.scrollHeight; fil.dataset.conv = c.id; }
+    // Message épinglé
+    const ep = c.epingle && msgs.find((m) => m.id === c.epingle && !m.supprime);
+    $("#epingle").hidden = !ep;
+    if (ep) $("#epingle").innerHTML = `${IC.epingle}<span><b>Épinglé</b> ${esc(extrait(ep))}</span>`, ($("#epingle").dataset.allerMsg = ep.id);
+    // Lecture seule (groupe d'annonces) et réponse en cours
+    const peutEcrire = !c.annonces || estCoach() || c.creePar === moi.profil;
+    $("#formEnvoi").hidden = !peutEcrire; $("#lectureSeule").hidden = peutEcrire;
+    const ra = reponseA && msgs.find((m) => m.id === reponseA);
+    $("#reponseBarre").hidden = !ra;
+    if (ra) $("#reponseBarre").innerHTML = `<div class="citation"><b>${esc(ra.auteur === moi.profil ? "Vous" : nomProfil(ra.auteur))}</b><span>${esc(extrait(ra))}</span></div><button class="icone" id="btnAnnulerReponse" aria-label="Annuler la réponse">✕</button>`;
+    // Défilement : à la première arrivée, sur le séparateur ; ensuite, en bas si on y était
+    if (fil.dataset.conv !== c.id) {
+      const sp = $("#separateur");
+      fil.scrollTop = sp ? sp.offsetTop - 60 : fil.scrollHeight;
+      fil.dataset.conv = c.id; enBasPrec = { conv: c.id, n: msgs.length }; nouveauxEnBas = 0;
+    } else if (enBas) { fil.scrollTop = fil.scrollHeight; nouveauxEnBas = 0; }
+    else if (enBasPrec.conv === c.id && msgs.length > enBasPrec.n) nouveauxEnBas += msgs.slice(enBasPrec.n).filter((m) => m.auteur !== moi.profil).length;
+    enBasPrec = { conv: c.id, n: msgs.length };
+    majVersBas();
     // Menu « + » selon le profil
     $("#menuPlus").innerHTML =
       `<button data-action="sondage">${IC.sondage}<span>Sondage</span></button>` +
       (monEnfant() ? `<button data-action="absence">${IC.absence}<span>Absence à l'entraînement</span></button>` : "") +
       (estCoach() ? actionsCoach(c) : "");
+  }
+
+  function corpsMessage(m) {
+    if (m.supprime) return `<div class="txt discret"><i>🚫 Ce message a été supprimé</i></div>`;
+    let cit = "";
+    if (m.reponseA) {
+      const o = etat.messages.find((x) => x.id === m.reponseA);
+      if (o) cit = `<button class="citation" data-aller-msg="${o.id}"><b style="color:${couleur(nomProfil(o.auteur))}">${esc(o.auteur === moi.profil ? "Vous" : nomProfil(o.auteur))}</b><span>${esc(extrait(o))}</span></button>`;
+    }
+    if (m.type === "texte") return cit + `<div class="txt">${lienner(esc(m.texte)).replace(/\n/g, "<br>")}</div>`;
+    if (m.type === "photo") return cit + `<button class="photo" data-zoom="${m.id}"><img src="${m.src}" alt="Photo envoyée par ${esc(nomProfil(m.auteur))}"></button>${m.texte ? `<div class="txt">${esc(m.texte)}</div>` : ""}`;
+    if (m.type === "sondage") return carteSondage(sondage(m.sondage));
+    if (m.type === "absence") return carteAbsence(m);
+    if (m.type === "convocation") return carteConvocMsg(m);
+    if (m.type === "relance") return carteRelance(m);
+    if (m.type === "empechement") return carteEmpechement(m);
+    return "";
+  }
+  const lienner = (t) => t.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  // ✓ envoyé, ✓✓ gris lu par certains, ✓✓ bleu lu par tous
+  function lecteurs(c, idx) { return c.membres.filter((p) => p !== moi.profil && ((etat.lus[p] || {})[c.id] || 0) > idx); }
+  function coches(c, idx) {
+    const n = lecteurs(c, idx).length, total = c.membres.length - 1;
+    return `<i class="coches${n && n === total ? " tous" : ""}" title="${n === total ? "Lu par tous" : `Lu par ${n} sur ${total}`}">${n ? "✓✓" : "✓"}</i>`;
+  }
+  function reactions(m) {
+    const r = m.reactions || {}, compte = {};
+    Object.values(r).forEach((e) => (compte[e] = (compte[e] || 0) + 1));
+    const k = Object.keys(compte);
+    if (!k.length || m.supprime) return "";
+    return `<div class="reacs">${k.map((e) => `<button class="reac${r[moi.profil] === e ? " mienne" : ""}" data-reagir="${m.id}|${e}" title="${esc(Object.keys(r).filter((p) => r[p] === e).map((p) => (p === moi.profil ? "Vous" : nomProfil(p))).join(", "))}">${e}<span>${compte[e]}</span></button>`).join("")}</div>`;
+  }
+  function majVersBas() {
+    const fil = $("#fil"), b = $("#versBas");
+    const loin = fil.scrollHeight - fil.scrollTop - fil.clientHeight > 220;
+    b.hidden = !loin;
+    b.innerHTML = `${IC.chevron}${nouveauxEnBas ? `<span class="badge">${nouveauxEnBas}</span>` : ""}`;
+    if (!loin) nouveauxEnBas = 0;
+  }
+  function ouvrirCtx(id, bouton) {
+    const m = etat.messages.find((x) => x.id === id), c = conv(m.conv), mien = m.auteur === moi.profil;
+    const peutEpingler = estCoach() || c.creePar === moi.profil;
+    const el = $("#ctx");
+    el.innerHTML = `<div class="ctx-reacs">${REACTIONS.map((e) => `<button data-reagir="${id}|${e}" class="${(m.reactions || {})[moi.profil] === e ? "mienne" : ""}">${e}</button>`).join("")}</div>
+      <button data-repondre-a="${id}">${IC.repondre}<span>Répondre</span></button>
+      ${m.type === "texte" ? `<button data-copier-msg="${id}">${IC.copier}<span>Copier</span></button>` : ""}
+      ${!mien && c.type !== "perso" && m.auteur !== "coach" || (!mien && m.auteur === "coach" && c.type !== "perso") ? `<button data-perso="${m.auteur}">${IC.groupe}<span>Répondre en privé</span></button>` : ""}
+      ${peutEpingler ? `<button data-epingler="${id}">${IC.epingle}<span>${c.epingle === id ? "Désépingler" : "Épingler"}</span></button>` : ""}
+      ${mien && c.type !== "perso" ? `<button data-vu="${id}">${IC.oeil}<span>Lu par…</span></button>` : ""}
+      ${mien || (estCoach() && c.type !== "perso") ? `<button data-supprimer="${id}" class="rouge">${IC.corbeille}<span>Supprimer</span></button>` : ""}`;
+    el.hidden = false;
+    const r = bouton.getBoundingClientRect(), z = $("#chat").getBoundingClientRect();
+    const h = el.offsetHeight, w = el.offsetWidth;
+    let top = r.bottom - z.top + 4; if (top + h > z.height - 70) top = Math.max(8, r.top - z.top - h - 4);
+    let left = r.right - z.left - w; if (left < 8) left = 8;
+    el.style.top = top + "px"; el.style.left = left + "px";
+  }
+  function fermerCtx() { $("#ctx").hidden = true; }
+  function allerMsg(id) {
+    const el = document.getElementById("m-" + id); if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+  }
+  function modaleLu(id) {
+    const m = etat.messages.find((x) => x.id === id), c = conv(m.conv), idx = msgsDe(c.id).indexOf(m);
+    const lus = lecteurs(c, idx), pas = c.membres.filter((p) => p !== moi.profil && !lus.includes(p));
+    ouvrirModale("Infos du message", `<p class="discret">${esc(extrait(m))}</p>
+      <div class="votes"><div class="votes-t"><b>Lu par</b><span>${lus.length}</span></div><div class="discret">${lus.map((p) => esc(nomProfil(p))).join(", ") || "—"}</div></div>
+      <div class="votes"><div class="votes-t"><b>Pas encore lu</b><span>${pas.length}</span></div><div class="discret">${pas.map((p) => esc(nomProfil(p))).join(", ") || "—"}</div></div>`);
+  }
+  // Toast quand un message arrive d'un autre onglet dans une conversation qu'on ne regarde pas
+  function notifierNouveaux(ancien, nouveau) {
+    if (!ancien) return;
+    const vus = new Set(ancien.messages.map((m) => m.id));
+    const n = nouveau.messages.filter((m) => !vus.has(m.id) && m.auteur !== moi.profil && m.type !== "info");
+    const pourMoi = n.filter((m) => { const c = nouveau.convs.find((x) => x.id === m.conv); return c && c.membres.includes(moi.profil) && (m.conv !== moi.conv || moi.espace !== "discussions"); });
+    if (!pourMoi.length) return;
+    const m = pourMoi[pourMoi.length - 1], c = nouveau.convs.find((x) => x.id === m.conv);
+    const nomC = c.type === "perso" ? nomProfil(m.auteur) : c.nom;
+    toast(`💬 ${nomC} · ${apercu(m)}`.slice(0, 110));
+  }
+
+  /* ---------- panneau « Cette semaine » (parent) / « À faire » (coach) ---------- */
+  function rendreSemaine() {
+    const el = $("#semaine"), ferme = moi.semaineFerme;
+    const s0 = seances(moi.equipe)[0], match = prochainMatch(moi.equipe), sm = sondageMatch(), cv = derniereConvocation();
+    let titre, lignes = [];
+    if (estCoach()) {
+      const aNoter = etat.absences.filter((a) => seances(moi.equipe).some((s) => s.id === a.seance) && !((etat.appel[a.seance] || {})[a.joueur] === "absent")).length;
+      const sans = sm ? etat.joueurs.filter((j) => sm.reponses[j.id] === undefined).length : null;
+      const emp = cv ? Object.keys(cv.empechements || {}).filter((j) => cv.joueurs.includes(j)) : [];
+      titre = "À faire";
+      lignes.push(aNoter ? `<button class="sem-l alerte-l" data-coach="entrainements">${IC.absence}<span><b>${pluriel(aNoter, "absence")} à noter</b><small>sur les feuilles de présence</small></span></button>`
+        : `<div class="sem-l ok-l">${IC.absence}<span><b>Absences à jour</b><small>${esc(libSeance(s0))}</small></span></div>`);
+      lignes.push(!sm ? `<button class="sem-l alerte-l" data-action="sondage-match">${IC.ballon}<span><b>Sondage du match à envoyer</b><small>contre ${esc(match.adversaire)}</small></span></button>`
+        : sans ? `<button class="sem-l" data-relancer="${sm.id}">${IC.ballon}<span><b>${pluriel(sans, "famille")} sans réponse</b><small>Relancer dans le groupe</small></span></button>`
+        : `<div class="sem-l ok-l">${IC.ballon}<span><b>Tout le monde a répondu</b><small>au sondage du match</small></span></div>`);
+      lignes.push(!cv ? `<button class="sem-l alerte-l" data-coach="convoc">${IC.convoc}<span><b>Convocation à faire</b><small>${esc(maj1(fmtJour(match.date, { weekday: "long", day: "numeric" })))}</small></span></button>`
+        : `<button class="sem-l${emp.length ? " alerte-l" : ""}" data-coach="convoc">${IC.convoc}<span><b>${emp.length ? pluriel(emp.length, "empêchement") + " signalé" + (emp.length > 1 ? "s" : "") : `Convocation lue par ${cv.vus.length}/${cv.joueurs.length}`}</b><small>${emp.length ? esc(emp.map((j) => joueur(j).nom).join(", ")) + " · revoir la compo" : "Voir la convocation"}</small></span></button>`);
+    } else {
+      const j = monEnfant(), nom = joueur(j).nom;
+      const absS = etat.absences.find((a) => a.joueur === j && a.seance === s0.id);
+      const r = sm ? sm.reponses[j] : undefined;
+      titre = `Cette semaine · ${nom}`;
+      lignes.push(absS ? `<div class="sem-l">${IC.absence}<span><b>${esc(libSeance(s0))}</b><small>Absence signalée (${esc(absS.motif)})</small></span></div>`
+        : `<button class="sem-l" data-action="absence">${IC.absence}<span><b>Entraînement ${esc(libSeance(s0))}</b><small>Absent${e_()} ? Prévenir le coach</small></span></button>`);
+      lignes.push(sm ? `<div class="sem-l sem-match">${IC.ballon}<span><b>Match ${esc(fmtJour(match.date, { weekday: "long", day: "numeric" }))}</b><small>contre ${esc(match.adversaire)}</small>
+          <span class="sem-choix">${OPTIONS_MATCH.map((o, i) => `<button class="pastille p-${CLES_MATCH[i]}${r === i ? " choisi" : ""}" data-voter="${sm.id}|${i}">${o}</button>`).join("")}</span></span></div>`
+        : `<div class="sem-l">${IC.ballon}<span><b>Match ${esc(fmtJour(match.date, { weekday: "long", day: "numeric" }))}</b><small>Le sondage n'est pas encore ouvert</small></span></div>`);
+      if (cv) {
+        const ret = cv.joueurs.includes(j), emp = (cv.empechements || {})[j];
+        lignes.push(`<button class="sem-l${ret && !cv.vus.includes(j) && !emp ? " alerte-l" : ""}" data-voir-convoc="${cv.id}">${IC.convoc}<span><b>${emp ? "Empêchement signalé" : ret ? `Convoqué${e_()} · RDV ${esc(cv.rdvHeure.replace(":", "h"))}` : "Non retenu" + e_() + " ce week-end"}</b><small>${ret && !cv.vus.includes(j) && !emp ? "À lire et confirmer" : "Voir la convocation"}</small></span></button>`);
+      } else lignes.push(`<div class="sem-l">${IC.convoc}<span><b>Convocation</b><small>Pas encore publiée</small></span></div>`);
+    }
+    el.innerHTML = `<button class="sem-titre" data-replier aria-expanded="${!ferme}"><span>${esc(titre)}</span>${IC.chevron}</button>${ferme ? "" : `<div class="sem-lignes">${lignes.join("")}</div>`}`;
+    el.classList.toggle("ferme", !!ferme);
   }
 
   // Actions du coach dans n'importe quelle conversation (perso : déjà ciblées sur l'enfant du parent)
@@ -288,6 +457,19 @@
       ${enfant ? `<div class="verdict-mini ${retenu ? "ok" : "non"}">${retenu ? `${esc(joueur(enfant).nom)} est convoqué${e_()}` : `${esc(joueur(enfant).nom)} n'est pas retenu${e_()}`}</div>` : `<div class="discret">${pluriel(c.joueurs.length, "convoqué" + e_())} · lue par ${c.vus.length}</div>`}
       <button class="mini-btn" data-voir-convoc="${c.id}">Voir la convocation</button></div>`;
   }
+  function carteEmpechement(m) {
+    return `<div class="carte-msg c-absence"><div class="c-tete">⚠️ <b>Empêchement pour le match</b></div>
+      <div><b>${esc(joueur(m.joueur).nom)}</b> · ${esc(m.motif)}</div>${m.precision ? `<div class="discret">« ${esc(m.precision)} »</div>` : ""}
+      ${estCoach() ? `<button class="mini-btn" data-coach="convoc" data-revoir="1">Revoir la compo</button>` : ""}</div>`;
+  }
+  function modaleEmpechement(cid) {
+    const j = monEnfant();
+    ouvrirModale(`Empêchement de ${joueur(j).nom}`, `<form id="formEmpechement" class="form" data-convoc="${cid}">
+      <p class="large discret petit">Le coach sera prévenu en privé et pourra revoir la composition.</p>
+      <label>Motif<select name="motif">${MOTIFS.map((m) => `<option>${m}</option>`).join("")}</select></label>
+      <label>Précision (facultatif)<input name="precision" maxlength="140" placeholder="Ex. : fièvre depuis ce matin"></label>
+      <div class="actions large"><button class="esga-btn esga-btn-primaire">Prévenir le coach</button></div></form>`);
+  }
   function carteRelance(m) {
     const s = sondage(m.sondage);
     return `<div class="carte-msg c-relance"><div class="c-tete">🔔 <b>Rappel du coach</b></div>
@@ -345,10 +527,10 @@
   }
   function modaleInfos(id) {
     const c = conv(id);
-    ouvrirModale(nomConv(c), `<p class="discret">${c.type === "equipe" ? "Groupe de toute l'équipe, créé par le coach." : c.type === "groupe" ? `Groupe créé par ${esc(c.creePar === moi.profil ? "vous" : nomProfil(c.creePar))}.` : "Conversation privée."}</p>
+    ouvrirModale(nomConv(c), `${c.annonces ? `<p class="alerte">${IC.megaphone} Groupe d'annonces : seul le coach y écrit.</p>` : ""}<p class="discret">${c.type === "equipe" ? "Groupe de toute l'équipe, créé par le coach." : c.type === "groupe" ? `Groupe créé par ${esc(c.creePar === moi.profil ? "vous" : nomProfil(c.creePar))}.` : "Conversation privée."}</p>
       ${c.type === "perso" ? "" : `<h3>${pluriel(c.membres.length, "membre")}</h3><ul class="liste">${c.membres.map((p) => `<li><span>${esc(p === moi.profil ? "Vous" : nomProfil(p))}</span>${p === "coach" ? '<span class="etiquette e-oui">Coach</span>' : ""}</li>`).join("")}</ul>`}
-      ${c.type === "groupe" && (c.creePar === moi.profil || estCoach()) ? `<div class="actions"><button class="esga-btn" data-modifier-groupe="${c.id}">Modifier les membres</button></div>` : ""}
-      ${c.type === "groupe" && c.creePar !== moi.profil ? `<div class="actions"><button class="lien rouge" data-quitter="${c.id}">Quitter le groupe</button></div>` : ""}`);
+      ${c.type !== "perso" && (c.creePar === moi.profil || estCoach()) ? `<div class="actions">${c.type === "groupe" ? `<button class="esga-btn" data-modifier-groupe="${c.id}">Modifier les membres</button>` : ""}<button class="esga-btn" data-annonces="${c.id}">${IC.megaphone} ${c.annonces ? "Permettre à tous d'écrire" : "Seul le coach écrit"}</button></div>` : ""}
+      ${c.type === "groupe" && !c.annonces && c.creePar !== moi.profil ? `<div class="actions"><button class="lien rouge" data-quitter="${c.id}">Quitter le groupe</button></div>` : ""}`);
   }
   function modaleMembres(id) {
     const c = conv(id);
@@ -398,6 +580,7 @@
     return `<div class="convoc">
       ${derniere ? "" : `<p class="alerte">Cette convocation a été remplacée par une version plus récente.</p>`}
       ${carteMatch(c)}
+      ${estCoach() && Object.keys(c.empechements || {}).some((j) => c.joueurs.includes(j)) ? `<p class="alerte">⚠️ Empêchement${Object.keys(c.empechements).length > 1 ? "s" : ""} : ${Object.entries(c.empechements).filter(([j]) => c.joueurs.includes(j)).map(([j, x]) => esc(joueur(j).nom) + " (" + esc(x.motif) + ")").join(", ")}. Modifiez la compo pour en tenir compte.</p>` : ""}
       ${enfant ? `<div class="verdict ${retenu ? "ok" : "non"}">${retenu ? `<b>${esc(joueur(enfant).nom)} est convoqué${e_()}</b>${compo ? (titulaire ? " et commence le match." : ", sur le banc au coup d'envoi.") : "."}` : `<b>${esc(joueur(enfant).nom)} n'est pas retenu${e_()} pour ce match.</b> Il y en aura d'autres !`}</div>` : ""}
       <dl class="rdv"><div><dt>Rendez-vous</dt><dd><b>${esc(c.rdvHeure.replace(":", "h"))}</b> · ${esc(c.rdvLieu)}</dd></div>
         <div><dt>Tenue</dt><dd>${esc(c.tenue)}</dd></div>${c.mot ? `<div><dt>Mot du coach</dt><dd>${esc(c.mot)}</dd></div>` : ""}</dl>
@@ -406,6 +589,7 @@
       <ul class="convoques">${c.joueurs.map((id) => `<li class="${id === enfant ? "moi" : ""}">${esc(joueur(id).nom)}${estCoach() && c.vus.includes(id) ? ' <span class="lu">✓ lu</span>' : ""}</li>`).join("")}</ul>
       <div class="actions">
         ${enfant && derniere ? (c.vus.includes(enfant) ? `<span class="discret">✓ Vous avez confirmé la lecture</span>` : `<button class="esga-btn esga-btn-primaire" data-lu="${c.id}">J'ai bien lu</button>`) : ""}
+        ${enfant && derniere && retenu ? ((c.empechements || {})[enfant] ? `<span class="discret">⚠️ Empêchement signalé au coach</span>` : `<button class="esga-btn" data-empechement="${c.id}">Signaler un empêchement</button>`) : ""}
         ${estCoach() ? `<span class="discret">Lue par ${c.vus.length} famille${c.vus.length > 1 ? "s" : ""} sur ${etat.joueurs.length}</span>` : ""}
         <button class="esga-btn" data-diffuser="${c.id}">${estCoach() ? "Diffuser (WhatsApp, SMS…)" : "Copier le texte"}</button>
       </div></div>`;
@@ -450,7 +634,12 @@
   function moinsMinutes(h, min) { const [a, b] = h.split(":").map(Number); const t = (a * 60 + b - min + 1440) % 1440; return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`; }
   function nouveauBrouillon() {
     const match = prochainMatch(moi.equipe), c = derniereConvocation();
-    if (c) return JSON.parse(JSON.stringify({ joueurs: c.joueurs, formation: c.formation, postes: c.postes, rdvHeure: c.rdvHeure, rdvLieu: c.rdvLieu, tenue: c.tenue, mot: c.mot }));
+    if (c) {
+      const b = JSON.parse(JSON.stringify({ joueurs: c.joueurs, formation: c.formation, postes: c.postes, rdvHeure: c.rdvHeure, rdvLieu: c.rdvLieu, tenue: c.tenue, mot: c.mot }));
+      const emp = Object.keys(c.empechements || {});
+      b.joueurs = b.joueurs.filter((j) => !emp.includes(j)); b.postes = b.postes.map((p) => (emp.includes(p) ? null : p));
+      return b;
+    }
     const formation = FORMATIONS[match.format][match.format === 11 ? 1 : 0];
     const b = { joueurs: etat.joueurs.filter((j) => reponseMatch(j.id) === "oui").map((j) => j.id), formation, postes: places(formation).map(() => null),
       rdvHeure: moinsMinutes(match.heure, match.domicile ? 60 : 90), rdvLieu: match.domicile ? match.lieu + ", vestiaires" : "Parking du stade Léon Garaud (covoiturage)",
@@ -532,17 +721,38 @@
     const t = ev.target.closest("button, [data-fermer]");
     if (ev.target.id === "modale") return fermerModale();
     if (!$("#menuPlus").hidden && !ev.target.closest("#menuPlus, #btnPlus")) $("#menuPlus").hidden = true;
+    if (!$("#ctx").hidden && !ev.target.closest("#ctx, .m-plus")) fermerCtx();
     if (!t) return;
     const d = t.dataset;
+    if (d.ctx) { ev.stopPropagation(); return $("#ctx").hidden || $("#ctx").dataset.id !== d.ctx ? (ouvrirCtx(d.ctx, t), ($("#ctx").dataset.id = d.ctx)) : fermerCtx(); }
+    if (d.reagir) {
+      const [id, e] = d.reagir.split("|"), m = etat.messages.find((x) => x.id === id);
+      m.reactions = m.reactions || {};
+      if (m.reactions[moi.profil] === e) delete m.reactions[moi.profil]; else m.reactions[moi.profil] = e;
+      fermerCtx(); return sauver();
+    }
+    if (d.repondreA) { reponseA = d.repondreA; fermerCtx(); rendreChat(); return $("#saisie").focus(); }
+    if (t.id === "btnAnnulerReponse") { reponseA = null; return rendreChat(); }
+    if (d.copierMsg) { const m = etat.messages.find((x) => x.id === d.copierMsg); fermerCtx(); const ok = () => toast("Message copié."); return navigator.clipboard ? navigator.clipboard.writeText(m.texte).then(ok, ok) : ok(); }
+    if (d.epingler) { const m = etat.messages.find((x) => x.id === d.epingler), c = conv(m.conv); c.epingle = c.epingle === m.id ? null : m.id; fermerCtx(); toast(c.epingle ? "Message épinglé en haut de la conversation." : "Message désépinglé."); return sauver(); }
+    if (d.vu) { fermerCtx(); return modaleLu(d.vu); }
+    if (d.supprimer) { const m = etat.messages.find((x) => x.id === d.supprimer); m.supprime = true; delete m.texte; delete m.src; fermerCtx(); const c = conv(m.conv); if (c.epingle === m.id) c.epingle = null; return sauver(); }
+    if (d.allerMsg) return allerMsg(d.allerMsg);
+    if (t.id === "versBas") { const f = $("#fil"); f.scrollTo({ top: f.scrollHeight, behavior: "smooth" }); nouveauxEnBas = 0; return; }
+    if (d.zoom) { const m = etat.messages.find((x) => x.id === d.zoom); return ouvrirModale("Photo", `<img class="photo-zoom" src="${m.src}" alt="">${m.texte ? `<p>${esc(m.texte)}</p>` : ""}<p class="discret petit">${esc(nomProfil(m.auteur))} · ${esc(fmtJour(m.date, { day: "numeric", month: "long" }))} à ${fmtHeure(m.date)}</p>`, true); }
+    if (t.id === "btnPhoto") return $("#fichierPhoto").click();
+    if (d.replier !== undefined) { moi.semaineFerme = !moi.semaineFerme; ecrireMoi(); return rendreSemaine(); }
+    if (d.empechement) return modaleEmpechement(d.empechement);
+    if (d.annonces) { const c = conv(d.annonces); c.annonces = !c.annonces; poster(c.id, { type: "info", texte: c.annonces ? "Seul le coach peut maintenant écrire dans ce groupe" : "Tout le monde peut de nouveau écrire dans ce groupe" }); fermerModale(); return sauver(); }
     if (d.fermer !== undefined) return fermerModale();
     if (d.espace) { moi.espace = d.espace; ecrireMoi(); return rendre(); }
-    if (d.coach) { moi.coachOnglet = d.coach; moi.espace = "coach"; ecrireMoi(); rendre(); return window.scrollTo(0, 0); }
-    if (d.ouvrir) return ouvrirConv(d.ouvrir);
+    if (d.coach) { if (d.revoir && derniereConvocation()) brouillon = nouveauBrouillon(); moi.coachOnglet = d.coach; moi.espace = "coach"; ecrireMoi(); rendre(); return window.scrollTo(0, 0); }
+    if (d.ouvrir) { reponseA = null; return ouvrirConv(d.ouvrir); }
     if (d.retour !== undefined) { moi.mobileChat = false; ecrireMoi(); return rendre(); }
     if (d.infos) return modaleInfos(d.infos);
     if (t.id === "btnGroupe") return modaleGroupe();
     if (t.id === "btnPerso") return modalePerso();
-    if (d.perso) { const id = convPerso(d.perso); fermerModale(); return ouvrirConv(id); }
+    if (d.perso) { const id = convPerso(d.perso); fermerModale(); fermerCtx(); reponseA = null; return ouvrirConv(id); }
     if (t.id === "btnPlus") { $("#menuPlus").hidden = !$("#menuPlus").hidden; return; }
     if (d.action) {
       $("#menuPlus").hidden = true;
@@ -600,7 +810,7 @@
       poster(convPourCoach(moi.conv), { type: "texte", texte: `Finalement, ${joueur(a.joueur).nom} sera bien là à l'entraînement du ${libSeance(seance(a.seance))}.` });
       fermerModale(); return sauver();
     }
-    if (d.voirConvoc) return modaleConvoc(d.voirConvoc);
+    if (d.voirConvoc) { if (!$("#modale").hidden) fermerModale(); return modaleConvoc(d.voirConvoc); }
     if (d.lu) { const c = etat.convocations.find((x) => x.id === d.lu); if (c && !c.vus.includes(monEnfant())) c.vus.push(monEnfant()); sauver(); if (!$("#modale").hidden) modaleConvoc(c.id); return; }
     if (d.diffuser) return diffuser(texteConvocation(etat.convocations.find((x) => x.id === d.diffuser)));
     if (d.modifierGroupe) return modaleMembres(d.modifierGroupe);
@@ -612,7 +822,7 @@
     if (t.id === "btnReinitialiser") { S.effacer(moi.equipe); charger(); brouillon = null; moi.conv = "equipe"; ecrireMoi(); toast("Démo remise à zéro pour cette équipe."); return rendre(); }
   });
 
-  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { if (!$("#modale").hidden) fermerModale(); $("#menuPlus").hidden = true; } });
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { if (!$("#modale").hidden) fermerModale(); $("#menuPlus").hidden = true; fermerCtx(); if (reponseA) { reponseA = null; rendreChat(); } } });
   $("#recherche").addEventListener("input", rendreListe);
 
   document.addEventListener("change", (ev) => {
@@ -647,7 +857,8 @@
     const f = ev.target, d = new FormData(f);
     if (f.id === "formEnvoi") {
       const texte = $("#saisie").value.trim(); if (!texte) return;
-      poster(moi.conv, { type: "texte", texte }); $("#saisie").value = ""; ajusterSaisie(); return sauver();
+      poster(moi.conv, Object.assign({ type: "texte", texte }, reponseA ? { reponseA } : {})); reponseA = null;
+      $("#saisie").value = ""; ajusterSaisie(); const f = $("#fil"); sauver(); f.scrollTop = f.scrollHeight; return;
     }
     if (f.id === "formGroupe") {
       const membres = [moi.profil, ...d.getAll("m").filter((p) => p !== moi.profil)];
@@ -676,6 +887,15 @@
       poster(cible, { type: "absence", joueur: a.joueur, seance: a.seance, motif: a.motif });
       fermerModale(); toast(estCoach() ? `${joueur(a.joueur).nom} noté${e_()} absent${e_()}.` : "Le coach est prévenu."); sauver(); if (cible !== moi.conv) ouvrirConv(cible); return;
     }
+    if (f.id === "formEmpechement") {
+      const c = etat.convocations.find((x) => x.id === f.dataset.convoc), j = monEnfant();
+      c.empechements = c.empechements || {};
+      c.empechements[j] = { motif: d.get("motif"), precision: (d.get("precision") || "").trim(), date: maintenant() };
+      const sm = sondageMatch(); if (sm) sm.reponses[j] = 2;
+      const pc = convPerso("coach");
+      poster(pc, { type: "empechement", joueur: j, motif: d.get("motif"), precision: (d.get("precision") || "").trim() });
+      fermerModale(); toast("Le coach est prévenu en privé."); return sauver();
+    }
     if (f.id === "formConvoc") {
       lireChampsBrouillon();
       const b = brouillon; if (!b.joueurs.length) return toast(`Cochez au moins un${e_()} ${fem() ? "joueuse" : "joueur"}.`);
@@ -684,6 +904,7 @@
         // Une famille qui avait lu garde son « lu » seulement si son enfant reste dans le même cas
         vus: ancienne ? ancienne.vus.filter((id) => ancienne.joueurs.includes(id) === b.joueurs.includes(id)) : [] });
       etat.convocations.push(c); poster("equipe", { type: "convocation", convoc: c.id });
+      conv("equipe").epingle = etat.messages[etat.messages.length - 1].id;
       brouillon = null; toast(ancienne ? "Convocation mise à jour dans le groupe de l'équipe." : "Convocation publiée dans le groupe de l'équipe.");
       return sauver();
     }
@@ -692,10 +913,32 @@
   function ajusterSaisie() { const s = $("#saisie"); s.style.height = "auto"; s.style.height = Math.min(s.scrollHeight, 140) + "px"; }
   $("#saisie").addEventListener("input", ajusterSaisie);
   $("#saisie").addEventListener("keydown", (ev) => { if (ev.key === "Enter" && !ev.shiftKey && !matchMedia("(pointer: coarse)").matches) { ev.preventDefault(); $("#formEnvoi").requestSubmit(); } });
-  $("#btnPlus").innerHTML = IC.plus; $("#btnEnvoyer").innerHTML = IC.envoyer;
+  $("#btnPlus").innerHTML = IC.plus; $("#btnEnvoyer").innerHTML = IC.envoyer; $("#btnPhoto").innerHTML = IC.photo;
+  $("#fil").addEventListener("scroll", () => majVersBas(), { passive: true });
+  // Photo : réduite à 900 px dans le navigateur avant l'envoi
+  $("#fichierPhoto").addEventListener("change", (ev) => {
+    const f = ev.target.files[0]; ev.target.value = "";
+    if (!f || !f.type.startsWith("image/")) return;
+    const lecteur = new FileReader();
+    lecteur.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 900 / Math.max(img.width, img.height)), cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        const legende = $("#saisie").value.trim();
+        poster(moi.conv, Object.assign({ type: "photo", src: cv.toDataURL("image/jpeg", 0.72), texte: legende }, reponseA ? { reponseA } : {}));
+        reponseA = null; $("#saisie").value = ""; ajusterSaisie();
+        try { sauver(); } catch (e) { toast("Photo trop lourde pour la démo."); }
+        const fl = $("#fil"); fl.scrollTop = fl.scrollHeight;
+      };
+      img.src = lecteur.result;
+    };
+    lecteur.readAsDataURL(f);
+  });
 
   // Un autre onglet a écrit : on relit
-  S.surChangement((equipe) => { if (equipe === moi.equipe) { const e = S.lire(equipe); if (e && e.version === 2) { etat = e; rendre(); } } });
+  S.surChangement((equipe) => { if (equipe === moi.equipe) { const e = S.lire(equipe); if (e && e.version === VERSION) { notifierNouveaux(etat, e); etat = e; rendre(); } } });
 
   /* ---------- démarrage ---------- */
   fetch("../data/matchs.json").then((r) => r.json()).catch(() => []).then((m) => {
