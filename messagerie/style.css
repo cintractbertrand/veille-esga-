@@ -124,6 +124,7 @@ body[data-espace="discussions"] .coach-zone { display: none; }
 .rond-btn.envoyer { background: var(--esga-bleu); color: #fff; }
 .rond-btn.envoyer svg { margin-left: 3px; }
 .menu-plus { position: absolute; left: 10px; bottom: 62px; z-index: 5; background: var(--esga-carte); border: 1px solid var(--esga-ligne); border-radius: 14px; box-shadow: var(--esga-ombre-l); padding: 6px; display: grid; min-width: 240px; }
+.menu-sep { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--esga-or-fonce); padding: 8px 12px 2px; border-top: 1px solid var(--esga-ligne); margin-top: 4px; }
 .menu-plus button { display: flex; gap: 10px; align-items: center; background: none; border: 0; padding: 10px 12px; border-radius: 9px; cursor: pointer; text-align: left; font-weight: 600; }
 .menu-plus button:hover { background: var(--esga-carte-2); }
 .menu-plus svg { width: 20px; height: 20px; color: var(--esga-bleu); }
@@ -151,6 +152,14 @@ body[data-espace="discussions"] .coach-zone { display: none; }
 .mini-btn { background: var(--esga-bleu); color: #fff; border: 0; border-radius: 8px; padding: 6px 11px; font-size: .8rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .mini-btn:hover { background: var(--esga-bleu-600); }
 .mini-btn.clair { background: var(--esga-doux); color: var(--esga-bleu); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mini-btn.clair { color: #a9c1ff; } }
+:root[data-theme="dark"] .mini-btn.clair { color: #a9c1ff; }
+.msg { align-items: flex-end; gap: 6px; }
+.msg-act { align-self: center; display: inline-flex; gap: 4px; align-items: center; border: 1px solid var(--esga-ligne); background: var(--esga-carte); color: var(--esga-bleu); border-radius: 99px; padding: 3px 9px 3px 7px; font-size: .74rem; font-weight: 700; cursor: pointer; box-shadow: var(--esga-ombre); }
+.msg-act svg { width: 14px; height: 14px; }
+.msg-act:hover { border-color: var(--esga-bleu); }
+.actions-j h3:first-child { margin-top: 0; }
+.actions-j .esga-btn svg { width: 18px; height: 18px; }
 .mini-btn.clair:hover { background: color-mix(in srgb, var(--esga-bleu) 20%, transparent); }
 .lien { background: none; border: 0; padding: 0; color: var(--esga-bleu); font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .lien.rouge { color: var(--non); }
