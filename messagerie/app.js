@@ -163,6 +163,19 @@
       etat.absences = etat.absences.filter((a) => !(a.deClub && a.seance === s.id && !d[idClub(a.joueur)]));
     });
     const m = prochainMatch(moi.equipe), cv = CLUB.convocation(m.id);
+    // Sondage lancé (ou relancé) depuis la console : publié dans le groupe de l'équipe
+    const cs = CLUB.sondage(m.id);
+    let sl = etat.sondages.find((x) => x.type === "match" && x.match === m.id);
+    if (cs && !sl) {
+      sl = { id: uid(), conv: "equipe", auteur: "coach", date: cs.lance, type: "match", match: m.id, question: `Match contre ${m.adversaire} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
+      etat.sondages.push(sl); etat.messages.push({ id: uid(), conv: "equipe", auteur: "coach", date: cs.lance, type: "sondage", sondage: sl.id });
+      const eq0 = etat.convs.find((x) => x.id === "equipe"); if (eq0) eq0.epingle = etat.messages[etat.messages.length - 1].id;
+    }
+    if (cs && cs.relance && sl && sl.relanceClub !== cs.relance) {
+      sl.relanceClub = cs.relance;
+      const sans = etat.joueurs.filter((j) => sl.reponses[j.id] === undefined && !CLUB.dispos(m.id)[j.club]);
+      if (sans.length) etat.messages.push({ id: uid(), conv: "equipe", auteur: "coach", date: cs.relance, type: "relance", sondage: sl.id, noms: sans.map((j) => j.nom) });
+    }
     // Réponses données dans l'espace parent : reportées sur le sondage du match et la convocation
     const sm = etat.sondages.find((x) => x.type === "match" && x.match === m.id), cvm = etat.convocations.filter((c) => c.match === m.id).slice(-1)[0];
     Object.entries(CLUB.dispos(m.id)).forEach(([cid, x]) => {
@@ -194,6 +207,7 @@
       });
       etat.absences.forEach((a) => { const cid = idClub(a.joueur); if (cid && !CLUB.dispos(a.seance)[cid]) CLUB.setDispo(a.seance, cid, { statut: "absent", motif: a.motif, precision: a.precision, par: "messagerie", date: a.date }); });
       const m = prochainMatch(moi.equipe), sm = etat.sondages.find((x) => x.type === "match" && x.match === m.id), cv = etat.convocations.filter((c) => c.match === m.id).slice(-1)[0];
+      if (sm && !String(m.id).startsWith("demo-") && !CLUB.sondage(m.id)) CLUB.lancerSondage(m.id);
       etat.joueurs.forEach((j) => {
         const emp = cv && cv.empechements && cv.empechements[j.id], r = sm ? sm.reponses[j.id] : undefined, d = CLUB.dispos(m.id)[j.club];
         const voulu = emp ? { statut: "absent", motif: emp.motif, precision: emp.precision, par: "messagerie" } : r === 2 ? { statut: "absent", motif: "Absent au sondage", par: "sondage" } : r === 1 ? { statut: "incertain", motif: "Incertain au sondage", par: "sondage" } : r === 0 ? { statut: "present", motif: "Disponible", par: "sondage" } : null;

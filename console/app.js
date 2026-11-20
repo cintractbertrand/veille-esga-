@@ -97,8 +97,8 @@
       return;
     }
     const items = dir
-      ? [["accueil", "Tableau de bord", 0, "Accueil"], ["calendrier", "Calendrier"], ["equipes", "Équipes"], ["licencies", "Licenciés"], ["staff", "Éducateurs et bureau", 0, "Staff"], ["convocations", "Convocations", nbConv, "Convoc."], ["parametres", "Réglages"]]
-      : [["accueil", "Aujourd'hui", 0, "Accueil"], ["equipes", mesEquipes().length > 1 ? "Mes équipes" : "Mon équipe", 0, "Équipe"], ["calendrier", "Calendrier"], ["convocations", "Convocations", nbConv, "Convoc."], ["staff", "Contacts du club", 0, "Contacts"]];
+      ? [["accueil", "Tableau de bord", 0, "Accueil"], ["calendrier", "Calendrier"], ["equipes", "Équipes"], ["licencies", "Licenciés"], ["staff", "Éducateurs et bureau", 0, "Staff"], ["convocations", "Matchs", nbConv], ["parametres", "Réglages"]]
+      : [["accueil", "Aujourd'hui", 0, "Accueil"], ["equipes", mesEquipes().length > 1 ? "Mes équipes" : "Mon équipe", 0, "Équipe"], ["calendrier", "Calendrier"], ["convocations", "Matchs", nbConv], ["staff", "Contacts du club", 0, "Contacts"]];
     const ext = [["messagerie", "Messagerie", URL_MOD.messagerie(dir ? "" : mesEquipes()[0])], ["atelier", "Atelier entraînements", URL_MOD.atelier()], ["video", "Monteur vidéo", URL_MOD.video()], ["pv", "PV du District", URL_MOD.pv()], ["equipe", "MyFootSquad", "https://myfootsquad.com/"]];
     $("#menu").innerHTML = `<div class="profil"><b>${dir ? "Console du club" : esc(C.nomComplet(s))}</b><span>${dir ? "Vue dirigeant · tout le club" : esc((s.equipes || []).map(C.nomEquipe).join(", ") || "Aucune équipe")}</span><a class="changer" href="#bienvenue">Changer de profil</a></div>`
       + items.map(([id, l, n, c]) => `<a href="#${id}"${page === id ? ' aria-current="page"' : ""}>${svg(id)}<span class="long">${l}</span><span class="court">${c || l}</span>${n ? `<span class="compte">${n}</span>` : ""}</a>`).join("")
@@ -180,7 +180,11 @@
     return `<h2 class="groupe-titre">${esc(C.nomEquipe(eq))} · <a href="#equipe/${esc(eq)}">fiche de l'équipe ›</a></h2>
       <div class="grille g3">
         <section class="carte"><h2>Prochain match</h2>${m ? `<p style="margin:0 0 4px"><b>${esc(m.titre)}</b></p><p class="discret petit" style="margin:0 0 10px">${fJL(m.date)} · ${hh(m.heure)}<br>${esc(m.lieu)}<br>${esc(m.competition || "")}</p>
-          ${cv ? `<div class="statut-convoc">✅ <span><b>Convocation publiée</b><br><small>${pl(cv.joueurs.length, "convoqué")} · RDV ${hh(cv.rdvHeure)}</small></span></div><a class="btn" href="#convoc/${esc(m.id)}">Voir ou modifier</a>` : `<div class="statut-convoc att">⏳ <span><b>Pas encore de convocation</b></span></div><a class="btn prim" href="#convoc/${esc(m.id)}">Préparer la convocation</a>`}` : '<p class="vide">Aucun match officiel à venir.</p>'}</section>
+          ${cv ? `<div class="statut-convoc">✅ <span><b>Convocation publiée</b><br><small>${pl(cv.joueurs.length, "convoqué")} · RDV ${hh(cv.rdvHeure)}</small></span></div><a class="btn" href="#convoc/${esc(m.id)}">Voir ou modifier</a>`
+            : (() => { const so = etatSondage(m); return so.lance ? `<div class="statut-convoc att">📊 <span><b>Sondage : ${so.oui} oui · ${so.peut} peut-être · ${so.non} non</b><br><small>${so.sans} sans réponse</small></span></div><a class="btn prim" href="#convoc/${esc(m.id)}">Faire la convocation</a>`
+              : `<div class="statut-convoc att">⏳ <span><b>Qui sera disponible ?</b><br><small>Lancez le sondage, les familles répondent en un clic.</small></span></div><p style="margin:0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" data-a="lancer-sondage" data-id="${esc(m.id)}">Lancer le sondage</button><a class="btn" href="#convoc/${esc(m.id)}">Convoquer directement</a></p>`; })()}` : '<p class="vide">Aucun match à venir.</p>'}
+          ${(() => { const d = C.evenements({ equipe: eq, du: C.SAISON.debut, au: ajout(auj(), -1), types: ["match", "amical"] }).filter((x) => x.statut !== "annule").pop(); if (!d) return ""; const f = C.feuille(d.id);
+            return `<p class="dernier petit">Dernier match : <b>${esc(d.adversaire || d.titre)}</b> ${scoreHTML(d, f)} <a href="#feuille/${esc(d.id)}">${f ? "voir" : "saisir le score ›"}</a></p>`; })()}</section>
         <section class="carte"><h2>Prochain entraînement</h2>${prochain ? `<p style="margin:0 0 4px"><b>${fJL(prochain.date)} · ${hh(prochain.heure)}</b></p><p class="discret petit" style="margin:0 0 10px">${esc(prochain.lieu)} · ${prochain.duree} min</p>
           ${abs.length ? `<div class="alerte">${pl(abs.length, "absence signalée", "absences signalées")} : ${abs.map((id) => `<b>${esc((C.personne(id) || {}).prenom)}</b> (${esc(dispo[id].motif || "")})`).join(", ")}</div>` : '<p class="discret petit">Aucune absence signalée par les familles.</p>'}
           <p style="margin:10px 0 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" data-a="appel" data-id="${esc(prochain.id)}">Faire l'appel</button><a class="btn" href="${URL_MOD.atelier()}" target="_blank" rel="noopener">Préparer la séance ↗</a></p>` : '<p class="vide">Pas d\'entraînement prévu (vacances ?).</p>'}</section>
@@ -249,10 +253,10 @@
   let filtres = { q: "", equipe: "", licence: "", certif: "" };
   function tableJoueurs(js, { equipe = true } = {}) {
     if (!js.length) return `<p class="vide">Aucun joueur ne correspond.</p>`;
-    return `<div class="table-wrap"><table class="liste"><thead><tr><th>N°</th><th>Nom</th>${equipe ? "<th>Équipe</th>" : ""}<th class="cache-m">Poste</th><th class="cache-m">Âge</th><th>Licence</th><th>Certificat</th><th class="cache-m">Présence</th><th class="cache-m">Contact</th></tr></thead><tbody>
+    return `<div class="table-wrap"><table class="liste"><thead><tr><th>N°</th><th>Nom</th>${equipe ? "<th>Équipe</th>" : ""}<th class="cache-m">Poste</th><th class="cache-m">Âge</th><th>Licence</th><th>Certificat</th><th class="cache-m">Présence</th><th class="cache-m" title="Buts">⚽</th><th class="cache-m" title="Passes décisives">PD</th><th class="cache-m">Contact</th></tr></thead><tbody>
       ${js.map((p) => { const cat = C.categorieAge(p.naissance, p.genre), e = C.equipe(p.equipe), sur = e && cat && cat !== e.categorie;
         const ct = p.contacts && p.contacts[0]; const tel = p.tel || (ct && ct.tel) || "";
-        return `<tr data-a="fiche" data-id="${esc(p.id)}"><td class="num">${p.numero || ""}</td><td class="nom"><b>${esc(p.prenom)}</b> ${esc(p.nom)}</td>${equipe ? `<td>${esc(C.nomEquipe(p.equipe))}</td>` : ""}<td class="cache-m">${esc(p.poste || "")}</td><td class="cache-m">${age(p.naissance)} ans${sur ? ` <span class="etiq or" title="Catégorie d'âge : ${esc(cat)}">${esc(cat)}</span>` : ""}</td><td>${etiqLicence(p)}</td><td>${etiqCertif(p)}</td><td class="cache-m">${jauge(C.tauxPresence(p.id))}</td><td class="cache-m">${tel ? `<a href="tel:${esc(tel.replace(/\s/g, ""))}" data-stop>${esc(tel)}</a>${ct && !p.tel ? ` <small class="discret">${esc(ct.lien)}</small>` : ""}` : ""}</td></tr>`; }).join("")}
+        return `<tr data-a="fiche" data-id="${esc(p.id)}"><td class="num">${p.numero || ""}</td><td class="nom"><b>${esc(p.prenom)}</b> ${esc(p.nom)}</td>${equipe ? `<td>${esc(C.nomEquipe(p.equipe))}</td>` : ""}<td class="cache-m">${esc(p.poste || "")}</td><td class="cache-m">${age(p.naissance)} ans${sur ? ` <span class="etiq or" title="Catégorie d'âge : ${esc(cat)}">${esc(cat)}</span>` : ""}</td><td>${etiqLicence(p)}</td><td>${etiqCertif(p)}</td><td class="cache-m">${jauge(C.tauxPresence(p.id))}</td>${(() => { const st = C.statsJoueur(p.id) || {}; return `<td class="cache-m num">${st.buts || ""}</td><td class="cache-m num">${st.passes || ""}</td>`; })()}<td class="cache-m">${tel ? `<a href="tel:${esc(tel.replace(/\s/g, ""))}" data-stop>${esc(tel)}</a>${ct && !p.tel ? ` <small class="discret">${esc(ct.lien)}</small>` : ""}` : ""}</td></tr>`; }).join("")}
       </tbody></table></div>`;
   }
   function pageLicencies(params) {
@@ -278,9 +282,9 @@
     const cat = C.categorieAge(p.naissance, p.genre), e = C.equipe(p.equipe);
     const taux = p.id ? C.tauxPresence(p.id) : null;
     const lecture = !estDirigeant(); // le coach modifie le sportif, le bureau l'administratif
-    return `${neuf ? "" : `<div class="fiche-tete">${avatarP(p)}<div><b style="font-size:1.05rem">${esc(C.nomComplet(p))}</b><br><span class="discret petit">${esc(C.nomEquipe(p.equipe))} · ${age(p.naissance)} ans · présence ${taux != null ? taux + " %" : "–"}</span></div></div>`}
+    return `${neuf ? "" : `<div class="fiche-tete">${avatarP(p)}<div><b style="font-size:1.05rem">${esc(C.nomComplet(p))}</b><br><span class="discret petit">${esc(C.nomEquipe(p.equipe))}${p.numero ? " · n°" + p.numero : ""}${p.poste ? " · " + esc(p.poste) : ""} · ${age(p.naissance)} ans</span></div></div>` + bilanJoueur(p)}
       ${!neuf && e && cat && cat !== e.categorie ? `<p class="alerte info">Catégorie d'âge <b>${esc(cat)}</b>, joue en ${esc(e.nom)} (surclassement ou erreur de date ?).</p>` : ""}
-      <form class="form" id="fJoueur">
+      ${neuf ? "" : '<details class="modifier"><summary>Modifier les informations</summary>'}<form class="form" id="fJoueur">
         <div class="ligne"><label>Prénom<input name="prenom" required value="${esc(p.prenom)}"></label><label>Nom<input name="nom" required value="${esc(p.nom)}"></label></div>
         <div class="ligne3"><label>Né(e) le<input type="date" name="naissance" value="${esc(p.naissance)}"></label><label>Genre<select name="genre">${opt("M", "Garçon / homme", p.genre)}${opt("F", "Fille / femme", p.genre)}</select></label><label>Catégorie<input value="${esc(cat || "–")}" disabled></label></div>
         <fieldset><legend>Sportif</legend>
@@ -298,7 +302,19 @@
         </fieldset>
         <label>Notes (visibles du staff)<textarea name="notes" placeholder="Allergie, contre-indication, transport…">${esc(p.notes)}</textarea></label>
         <div class="pied">${!neuf && estDirigeant() ? '<button type="button" class="btn danger gauche" data-a="suppr-joueur">Supprimer</button>' : ""}<button type="button" class="btn" data-a="fermer">Annuler</button><button class="btn prim">${neuf ? "Ajouter" : "Enregistrer"}</button></div>
-      </form>`;
+      </form>${neuf ? "" : "</details>"}`;
+  }
+  // Saison d'un joueur : matchs, buts, passes, présence, dernières convocations et derniers entraînements
+  function bilanJoueur(p) {
+    const st = C.statsJoueur(p.id); if (!st) return "";
+    const ms = C.evenements({ equipe: p.equipe, du: C.SAISON.debut, au: ajout(auj(), 21), types: ["match", "amical"] }).filter((e) => e.statut !== "annule").reverse().slice(0, 6);
+    const ents = C.evenements({ equipe: p.equipe, du: ajout(auj(), -42), au: ajout(auj(), -1), types: ["entrainement"] }).filter((e) => e.statut !== "annule" && Object.keys(C.presences(e.id)).length).slice(-10);
+    return `<div class="bilan"><div><b>${st.joues}</b><span>matchs joués</span></div><div><b>${st.buts}</b><span>buts</span></div><div><b>${st.passes}</b><span>passes déc.</span></div><div><b>${st.presence != null ? st.presence + "%" : "–"}</b><span>présence</span></div></div>
+      <h3>Matchs et convocations</h3>${ms.length ? `<ul class="hist">${ms.map((e) => { const cv = C.convocation(e.id), f = C.feuille(e.id), x = f && f.stats[p.id], d = C.dispos(e.id)[p.id];
+        const etat = e.date >= auj() ? (cv ? (cv.joueurs.includes(p.id) ? '<span class="etiq ok">Convoqué</span>' : '<span class="etiq">Non convoqué</span>') : d ? `<span class="etiq ${d.statut === "present" ? "ok" : d.statut === "absent" ? "ko" : "att"}">${d.statut === "present" ? "Dispo" : d.statut === "absent" ? "Absent" : "Incertain"}</span>` : '<span class="etiq">À venir</span>')
+          : f ? (f.joueurs.includes(p.id) ? `<span class="etiq ok">A joué</span>${x && x.buts ? ` <span class="etiq or">⚽ ${x.buts}</span>` : ""}${x && x.passes ? ` <span class="etiq bleu">PD ${x.passes}</span>` : ""}` : cv && cv.joueurs.includes(p.id) ? '<span class="etiq att">Convoqué, pas joué</span>' : '<span class="etiq">Non convoqué</span>') : cv ? (cv.joueurs.includes(p.id) ? '<span class="etiq">Convoqué</span>' : '<span class="etiq">Non convoqué</span>') : "";
+        return `<li><a href="#${e.date < auj() ? "feuille" : "convoc"}/${esc(e.id)}"><span>${fJ(e.date)} · ${esc(e.adversaire || e.titre)}</span>${e.date < auj() && f ? scoreHTML(e, f) : ""}</a><span class="et">${etat}</span></li>`; }).join("")}</ul>` : '<p class="discret petit">Aucun match.</p>'}
+      <h3>Présence aux entraînements</h3>${ents.length ? `<div class="pastilles">${ents.map((e) => { const s = C.presences(e.id)[p.id]; return `<span class="pres ${s || "vide"}" title="${fJ(e.date)} · ${s ? PRES[s][0] : "non renseigné"}">${s ? PRES[s][2] : "·"}</span>`; }).join("")}</div><p class="aide">P présent · R retard · E excusé · A absent</p>` : '<p class="discret petit">Aucun entraînement.</p>'}`;
   }
   function ouvrirJoueur(id, equipe) {
     const p = id ? JSON.parse(JSON.stringify(C.personne(id))) : { prenom: "", nom: "", genre: equipe && C.equipe(equipe) && C.equipe(equipe).genre === "F" ? "F" : "M", naissance: "", equipe: equipe || (estDirigeant() ? "" : mesEquipes()[0]), numero: "", poste: "", licence: { numero: "", statut: "en_attente" }, certificat: "a_fournir", tel: "", email: "", contacts: [], notes: "" };
@@ -397,8 +413,8 @@
       <div class="form"><div class="pied" style="justify-content:flex-start">${actions}${e.equipe ? `<a class="btn" href="${URL_MOD.messagerie(e.equipe)}">Messagerie</a>` : ""}</div></div>`);
   }
 
-  function ouvrirFormEvt(id, equipe, date) {
-    const e = id ? C.evenement(id) : { type: "entrainement", equipe: equipe || (estDirigeant() ? "" : mesEquipes()[0]), date: date || auj(), heure: "18:30", duree: 90, lieu: C.club.lieux[0], titre: "", notes: "", adversaire: "" };
+  function ouvrirFormEvt(id, equipe, date, type) {
+    const e = id ? C.evenement(id) : { type: type || "entrainement", equipe: equipe || (estDirigeant() ? "" : mesEquipes()[0]), date: date || auj(), heure: "18:30", duree: 90, lieu: C.club.lieux[0], titre: "", notes: "", adversaire: "" };
     const fige = id && e.source !== "manuel"; // séance d'un créneau ou match des PV : seulement horaire et lieu
     const types = estDirigeant() ? ["entrainement", "amical", "plateau", "tournoi", "reunion", "autre"] : ["entrainement", "amical", "plateau", "tournoi", "autre"];
     tiroir(id ? (fige ? "Déplacer" : "Modifier l'événement") : "Nouvel événement", `<form class="form" id="fEvt">
@@ -444,15 +460,65 @@
   }
 
   /* ---------- convocations ---------- */
-  function pageConvocations() {
-    const evs = C.evenements({ du: auj(), au: ajout(auj(), 28), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule");
-    const passes = C.convocations().filter((c) => peutVoir(c.equipe)).filter((c) => { const e = C.evenement(c.evenement); return e && e.date < auj(); });
-    return `<div class="entete"><div><h1>Convocations</h1><p class="sous">Matchs des 4 prochaines semaines. Une convocation publiée ici arrive dans la messagerie de l'équipe.</p></div></div>
-      <div class="table-wrap"><table class="liste"><thead><tr><th>Date</th><th>Équipe</th><th>Match</th><th class="cache-m">Compétition</th><th>Statut</th><th></th></tr></thead><tbody>
-      ${evs.map((e) => { const cv = C.convocation(e.id), urg = !cv && jour(e.date) - jour(auj()) <= 3 * 864e5;
-        return `<tr data-a="lien" data-href="#convoc/${esc(e.id)}"><td>${fJ(e.date)} · ${hh(e.heure)}</td><td><b>${esc(C.nomEquipe(e.equipe))}</b></td><td>${esc(e.titre)}</td><td class="cache-m discret">${esc(e.competition || TYPES[e.type])}</td>
-          <td>${cv ? `<span class="etiq ok">Publiée · ${cv.joueurs.length}</span>` : `<span class="etiq ${urg ? "ko" : "att"}">À faire</span>`}</td><td><a class="btn mini" href="#convoc/${esc(e.id)}">${cv ? "Voir" : "Préparer"}</a></td></tr>`; }).join("") || '<tr><td colspan="6" class="vide">Aucun match à venir.</td></tr>'}
-      </tbody></table></div>${passes.length ? `<p class="compteur">${pl(passes.length, "convocation passée", "convocations passées")} archivée${passes.length > 1 ? "s" : ""}.</p>` : ""}`;
+  /* ---------- matchs : à venir (sondage puis convocation) et joués (score, buts, passes) ---------- */
+  function etatSondage(e) {
+    const js = C.joueurs(e.equipe), d = C.dispos(e.id), n = (k) => js.filter((p) => d[p.id] && d[p.id].statut === k).length;
+    return { lance: !!C.sondage(e.id) || js.some((p) => d[p.id]), oui: n("present"), peut: n("incertain"), non: n("absent"), sans: js.filter((p) => !d[p.id]).length, total: js.length };
+  }
+  function scoreHTML(e, f) {
+    if (!f) return '<span class="etiq att">Score à saisir</span>';
+    const r = f.nous > f.eux ? "ok" : f.nous < f.eux ? "ko" : "";
+    return `<span class="score ${r}">${e.domicile ? `${f.nous} – ${f.eux}` : `${f.eux} – ${f.nous}`}</span>`;
+  }
+  function buteursHTML(f) {
+    const l = Object.entries((f && f.stats) || {}).filter(([, x]) => x.buts).sort((a, b) => b[1].buts - a[1].buts).map(([id, x]) => `${esc((C.personne(id) || {}).prenom || "?")}${x.buts > 1 ? " ×" + x.buts : ""}`);
+    return l.length ? "⚽ " + l.join(", ") : "";
+  }
+  function pageConvocations(onglet) {
+    const joues = onglet === "joues";
+    const tabs = `<nav class="onglets"><a href="#convocations"${joues ? "" : ' aria-current="page"'}>À venir</a><a href="#convocations/joues"${joues ? ' aria-current="page"' : ""}>Joués</a></nav>`;
+    const tete = `<div class="entete"><div><h1>Matchs</h1><p class="sous">${joues ? "Saisissez le score, les buts et les passes décisives : les fiches des joueurs se remplissent toutes seules." : "Pour chaque match : 1. le sondage aux familles, 2. la convocation. Tout arrive dans la messagerie de l'équipe."}</p></div>
+      ${estFamille() ? "" : '<div class="actions"><button class="btn" data-a="nouvel-evt" data-type="amical">+ Match amical</button></div>'}</div>`;
+    if (joues) {
+      const evs = C.evenements({ du: C.SAISON.debut, au: ajout(auj(), -1), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule").reverse();
+      return tete + tabs + `<div class="table-wrap"><table class="liste"><thead><tr><th>Date</th>${estDirigeant() ? "<th>Équipe</th>" : ""}<th>Match</th><th>Score</th><th class="cache-m">Buteurs</th><th></th></tr></thead><tbody>
+        ${evs.map((e) => { const f = C.feuille(e.id);
+          return `<tr data-a="lien" data-href="#feuille/${esc(e.id)}"><td>${fJ(e.date)}</td>${estDirigeant() ? `<td><b>${esc(C.nomEquipe(e.equipe))}</b></td>` : ""}<td>${esc(e.titre)}<br><small class="discret">${esc(e.competition || "")}</small></td><td>${scoreHTML(e, f)}</td><td class="cache-m petit">${buteursHTML(f)}</td><td><a class="btn mini${f ? "" : " prim"}" href="#feuille/${esc(e.id)}">${f ? "Voir" : "Saisir"}</a></td></tr>`; }).join("") || `<tr><td colspan="6" class="vide">Aucun match joué cette saison.</td></tr>`}
+        </tbody></table></div>`;
+    }
+    const evs = C.evenements({ du: auj(), au: ajout(auj(), 35), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule");
+    return tete + tabs + (evs.length ? `<div class="matchs">${evs.map((e) => {
+      const so = etatSondage(e), cv = C.convocation(e.id);
+      const etape1 = so.lance ? `<div class="etape fait"><span class="num">1</span><span class="txt"><b>Sondage</b><small><span class="v">✓ ${so.oui}</span> · <span class="o">? ${so.peut}</span> · <span class="r">✕ ${so.non}</span> · ${so.sans} sans réponse</small></span>${so.sans && !cv ? `<button class="btn mini" data-a="relancer-sondage" data-id="${esc(e.id)}">Relancer</button>` : ""}</div>`
+        : `<div class="etape"><span class="num">1</span><span class="txt"><b>Sondage</b><small>Qui est disponible ? Les familles répondent en un clic.</small></span><button class="btn mini prim" data-a="lancer-sondage" data-id="${esc(e.id)}">Lancer</button></div>`;
+      const etape2 = cv ? `<div class="etape fait"><span class="num">2</span><span class="txt"><b>Convocation publiée</b><small>${pl(cv.joueurs.length, "convoqué")} · RDV ${hh(cv.rdvHeure)}</small></span><a class="btn mini" href="#convoc/${esc(e.id)}">Voir</a></div>`
+        : `<div class="etape"><span class="num">2</span><span class="txt"><b>Convocation</b><small>${so.lance ? `${so.oui} disponible${so.oui > 1 ? "s" : ""} pour l'instant` : "Après le sondage, ou tout de suite"}</small></span><a class="btn mini${so.lance ? " prim" : ""}" href="#convoc/${esc(e.id)}">Faire</a></div>`;
+      return `<section class="carte match-carte"><div class="mc-tete"><span class="date"><b>${fmt(e.date, { weekday: "short" })}</b><span>${jour(e.date).getDate()}</span><small>${fmt(e.date, { month: "short" })}</small></span>
+        <span><b>${esc(e.titre)}</b><small>${estDirigeant() ? esc(C.nomEquipe(e.equipe)) + " · " : ""}${hh(e.heure)} · ${esc(e.lieu)}<br>${esc(e.competition || TYPES[e.type])}</small></span></div>${etape1}${etape2}</section>`; }).join("")}</div>` : '<p class="vide">Aucun match dans les 5 prochaines semaines. Ajoutez un match amical si besoin.</p>');
+  }
+
+  const feuilles = {};
+  function pageFeuille(id) {
+    const e = C.evenement(id);
+    if (!e || !peutVoir(e.equipe)) return `<p class="vide">Match introuvable.</p>`;
+    const cv = C.convocation(id), js = C.joueurs(e.equipe), ex = C.feuille(id);
+    const f = feuilles[id] || (feuilles[id] = ex ? JSON.parse(JSON.stringify(ex)) : { nous: 0, eux: 0, joueurs: cv ? cv.joueurs.slice() : [], stats: {}, notes: "" });
+    const totalButs = Object.values(f.stats).reduce((t, x) => t + (x.buts || 0), 0);
+    const adv = e.adversaire || "Adversaire", futur = e.date > auj();
+    const ligne = (p) => { const st = f.stats[p.id] || { buts: 0, passes: 0 }, joue = f.joueurs.includes(p.id);
+      return `<li class="${joue ? "" : "pas-joue"}"><label class="joue"><input type="checkbox" data-a="f-joue" data-id="${esc(p.id)}"${joue ? " checked" : ""}><span class="num">${p.numero || "–"}</span><span class="n"><b>${esc(p.prenom)} ${esc(p.nom)}</b><small>${cv && !cv.joueurs.includes(p.id) ? "non convoqué" + (p.genre === "F" ? "e" : "") : esc(p.poste || "")}</small></span></label>
+        <span class="compteurs"><span class="cpt"><small>Buts</small><button type="button" data-a="f-moins" data-k="buts" data-id="${esc(p.id)}" aria-label="Un but de moins">−</button><b>${st.buts || 0}</b><button type="button" data-a="f-plus" data-k="buts" data-id="${esc(p.id)}" aria-label="Un but de plus">+</button></span>
+        <span class="cpt"><small>Passes déc.</small><button type="button" data-a="f-moins" data-k="passes" data-id="${esc(p.id)}" aria-label="Une passe de moins">−</button><b>${st.passes || 0}</b><button type="button" data-a="f-plus" data-k="passes" data-id="${esc(p.id)}" aria-label="Une passe de plus">+</button></span></span></li>`; };
+    const ordre = js.slice().sort((a, b) => (f.joueurs.includes(b.id) ? 1 : 0) - (f.joueurs.includes(a.id) ? 1 : 0));
+    const sc = (k) => `<span class="cpt grand"><button type="button" data-a="f-moins" data-k="${k}" aria-label="Moins">−</button><b>${f[k]}</b><button type="button" data-a="f-plus" data-k="${k}" aria-label="Plus">+</button></span>`;
+    return `<div class="entete"><div><p class="fil-ariane"><a href="#convocations/joues">Matchs joués</a> ›</p><h1>${esc(e.titre)}</h1><p class="sous">${esc(C.nomEquipe(e.equipe))} · ${fJL(e.date)} · ${esc(e.competition || "")}</p></div></div>
+      ${futur ? '<p class="alerte info">Ce match n\'est pas encore joué : vous pourrez saisir le score après la rencontre.</p>' : ""}
+      <section class="carte tableau-score"><div class="equipe-score"><b>${e.domicile ? "ESGA" : esc(adv)}</b>${e.domicile ? sc("nous") : sc("eux")}</div><span class="tiret">–</span><div class="equipe-score">${e.domicile ? sc("eux") : sc("nous")}<b>${e.domicile ? esc(adv) : "ESGA"}</b></div></section>
+      ${totalButs !== f.nous ? `<p class="aide" style="text-align:center;margin:-4px 0 12px">${totalButs} but${totalButs > 1 ? "s" : ""} attribué${totalButs > 1 ? "s" : ""} aux joueurs sur ${f.nous} marqué${f.nous > 1 ? "s" : ""}${totalButs < f.nous ? " (contre son camp adverse ? pas grave)" : ""}. <button class="btn lien" data-a="f-score-auto">Mettre ${totalButs}</button></p>` : ""}
+      <section class="carte"><h2>Qui a joué ? <span class="etiq bleu">${f.joueurs.length}</span><span class="plus discret petit">Touchez + pour chaque but ou passe décisive</span></h2>
+        <ul class="feuille">${ordre.map(ligne).join("")}</ul>
+        <div class="form" style="margin-top:12px"><label>Notes du coach (privées)<textarea id="fNotes" placeholder="Ce qui a marché, ce qu'on travaille mardi…">${esc(f.notes)}</textarea></label>
+        <div class="pied">${ex ? `<span class="discret petit gauche">Enregistré le ${new Date(ex.saisie).toLocaleDateString("fr-FR")}</span>` : ""}<a class="btn" href="#convocations/joues">Annuler</a><button class="btn prim" data-a="f-enregistrer" data-id="${esc(id)}"${futur ? " disabled" : ""}>Enregistrer le match</button></div></div></section>`;
   }
 
   const brouillons = {};
@@ -604,7 +670,7 @@
           ${autres.length ? `<h3>Aussi au programme</h3><ul class="ents">${autres.map((x) => `<li class="ent"><span class="q"><b>${esc(x.titre)}</b> · ${fJ(x.date)} ${hh(x.heure)}<small>${esc(x.lieu)}${x.notes ? " · " + esc(x.notes) : ""}</small></span></li>`).join("")}</ul>` : ""}</section>
         <section class="carte"><h2>📞 ${coachs.length > 1 ? "Les éducateurs" : "L'éducateur"}</h2>${coachs.length ? coachs.map((x) => `<div class="contact">${avatarP(x)}<span><b>${esc(C.nomComplet(x))}</b><small>${esc(ROLES[x.role] || "")}</small></span><a class="btn mini" href="tel:${esc(x.tel.replace(/\s/g, ""))}">Appeler</a></div>`).join("") : '<p class="discret">Éducateur pas encore désigné.</p>'}
           <a class="btn prim" style="margin-top:10px" href="${URL_MOD.messagerie(j.equipe)}">💬 Messagerie de l'équipe</a></section>
-        <section class="carte"><h2>🪪 ${parent ? "Le dossier de " + esc(j.prenom) : "Mon dossier"}</h2><dl class="detail"><dt>Licence</dt><dd>${etiqLicence(j)}</dd><dt>Certificat</dt><dd>${etiqCertif(j)}</dd><dt>Maillot</dt><dd>${j.numero ? "n°" + j.numero : "–"}${j.poste ? " · " + esc(j.poste) : ""}</dd></dl><p class="aide">Une info à corriger (téléphone, allergie…) ? Écrivez-le au coach dans la messagerie.</p></section>
+        <section class="carte"><h2>🪪 ${parent ? "Le dossier de " + esc(j.prenom) : "Mon dossier"}</h2><dl class="detail"><dt>Licence</dt><dd>${etiqLicence(j)}</dd><dt>Certificat</dt><dd>${etiqCertif(j)}</dd><dt>Maillot</dt><dd>${j.numero ? "n°" + j.numero : "–"}${j.poste ? " · " + esc(j.poste) : ""}</dd>${(() => { const st = C.statsJoueur(j.id); return st ? `<dt>Saison</dt><dd>${pl(st.joues, "match", "matchs")} · ${pl(st.buts, "but")} · ${pl(st.passes, "passe déc.", "passes déc.")}</dd>` : ""; })()}</dl><p class="aide">Une info à corriger (téléphone, allergie…) ? Écrivez-le au coach dans la messagerie.</p></section>
       </div>`;
   }
   function ouvrirMotif(evt) {
@@ -637,7 +703,7 @@
     if (estFamille() && r.page !== "moi") { history.replaceState(null, "", "#moi"); r.page = "moi"; }
     if (!estFamille() && r.page === "moi") r.page = "accueil";
     if (estCoach() && ["licencies", "parametres"].includes(r.page) && !r.params) r.page = r.page === "licencies" ? "equipes" : "accueil";
-    const menuPage = { equipe: "equipes", convoc: "convocations" }[r.page] || r.page;
+    const menuPage = { equipe: "equipes", convoc: "convocations", feuille: "convocations" }[r.page] || r.page;
     rendreMenu(menuPage);
     let html = "";
     if (r.page === "moi") html = pageMoi();
@@ -647,7 +713,8 @@
     else if (r.page === "licencies") html = pageLicencies(r.params);
     else if (r.page === "staff") html = pageStaff();
     else if (r.page === "calendrier") html = pageCalendrier();
-    else if (r.page === "convocations") html = pageConvocations();
+    else if (r.page === "convocations") html = pageConvocations(r.a);
+    else if (r.page === "feuille") html = pageFeuille(r.a);
     else if (r.page === "convoc") html = pageConvoc(r.a);
     else if (r.page === "parametres") html = pageParametres();
     else html = pageAccueil();
@@ -665,6 +732,7 @@
     if (ev.target.closest("[data-stop]")) return;
     const a = t.dataset.a, id = t.dataset.id;
     if (t.tagName === "A") return; // liens normaux
+    if (a === "f-joue") return; // case à cocher : gérée à l'événement « change »
     ev.preventDefault();
     if (a === "fermer") return fermer();
     if (a === "role") {
@@ -676,6 +744,17 @@
     if (a === "choisir-joueur") { profil = { role: choix.role, joueur: id }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#moi", "C'est parti !"); }
     if (a === "dispo-match") { if (t.dataset.v === "absent") return ouvrirMotif(id); C.setDispo(id, moiJoueur().id, { statut: t.dataset.v, motif: t.dataset.v === "present" ? "Disponible" : "Incertain", par: "famille" }); return toast("Réponse envoyée au coach. 👍"); }
     if (a === "absence") return ouvrirMotif(id);
+    if (a === "lancer-sondage") { C.lancerSondage(id); return toast("Sondage envoyé dans la messagerie de l'équipe. Les réponses arrivent ici."); }
+    if (a === "relancer-sondage") { C.lancerSondage(id, true); return toast("Rappel envoyé aux familles qui n'ont pas répondu."); }
+    if (a === "f-plus" || a === "f-moins") {
+      const fid = route().a, f = feuilles[fid], k = t.dataset.k, d = a === "f-plus" ? 1 : -1;
+      if (id) { const st = (f.stats[id] = f.stats[id] || { buts: 0, passes: 0 }); st[k] = Math.max(0, (st[k] || 0) + d); if (d > 0 && !f.joueurs.includes(id)) f.joueurs.push(id); if (k === "buts" && d > 0 && f.nous < Object.values(f.stats).reduce((x, y) => x + (y.buts || 0), 0)) f.nous++; }
+      else f[k] = Math.max(0, f[k] + d);
+      return rendre(true);
+    }
+    if (a === "f-joue") { const f = feuilles[route().a]; f.joueurs = t.checked ? [...new Set([...f.joueurs, id])] : f.joueurs.filter((x) => x !== id); return rendre(true); }
+    if (a === "f-score-auto") { const f = feuilles[route().a]; f.nous = Object.values(f.stats).reduce((x, y) => x + (y.buts || 0), 0); return rendre(true); }
+    if (a === "f-enregistrer") { const f = feuilles[id]; f.notes = ($("#fNotes") || {}).value || ""; Object.keys(f.stats).forEach((k) => { if (!f.stats[k].buts && !f.stats[k].passes) delete f.stats[k]; }); C.setFeuille(id, f); delete feuilles[id]; location.hash = "#convocations/joues"; return toast("Match enregistré : les fiches des joueurs sont à jour."); }
     if (a === "dispo-annuler") { C.setDispo(id, moiJoueur().id, null); return toast("C'est noté, le coach est prévenu."); }
     if (a === "lien") { location.hash = t.dataset.href; return; }
     if (a === "evt") { ev.stopPropagation(); return ouvrirEvt(id); }
@@ -686,7 +765,7 @@
     if (a === "staff") return ouvrirStaff(id);
     if (a === "staff-voir") return ouvrirStaff(id, true);
     if (a === "suppr-staff") { const sid = $("#tiroirCorps").dataset.staff; if (confirmer("Retirer cette personne du club ?")) { C.supprimer("staff", sid); fermer(); toast("Personne retirée."); } return; }
-    if (a === "nouvel-evt") return ouvrirFormEvt(null, t.dataset.equipe);
+    if (a === "nouvel-evt") return ouvrirFormEvt(null, t.dataset.equipe, null, t.dataset.type);
     if (a === "modifier-evt") return ouvrirFormEvt(id);
     if (a === "annuler-evt") { const e = C.evenement(id); C.modifierEvenement(id, { statut: "annule" }); toast(`${TYPES[e.type]} annulé. Pensez à prévenir les familles dans la messagerie.`); return ouvrirEvt(id); }
     if (a === "retablir") { C.modifierEvenement(id, { statut: "prevu" }); toast("Rétabli."); return ouvrirEvt(id); }
@@ -728,6 +807,7 @@
   });
   document.addEventListener("change", (ev) => {
     const t = ev.target;
+    if (t.dataset && t.dataset.a === "f-joue") { const f = feuilles[route().a]; f.joueurs = t.checked ? [...new Set([...f.joueurs, t.dataset.id])] : f.joueurs.filter((x) => x !== t.dataset.id); return rendre(true); }
     if (t.name === "type" && t.closest("#fEvt")) { const z = $("#champsAmical"); if (z) z.hidden = t.value !== "amical"; return; }
     if (t.id === "fEquipe") { filtres.equipe = t.value; return rendre(true); }
     if (t.id === "fLicence") { filtres.licence = t.value; return rendre(true); }

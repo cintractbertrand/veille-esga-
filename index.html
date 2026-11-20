@@ -10,17 +10,17 @@
     // Anciens liens de la veille des PV (#semaine, #historique, #equipe/U17…) : renvoyés vers le module PV.
     (function () {
       const h = decodeURIComponent(location.hash.slice(1)), [page, id] = h.split("?")[0].split("/");
-      const console_ = ["accueil", "bienvenue", "moi", "calendrier", "equipes", "equipe", "licencies", "staff", "convocations", "convoc", "parametres"];
+      const console_ = ["accueil", "bienvenue", "moi", "feuille", "calendrier", "equipes", "equipe", "licencies", "staff", "convocations", "convoc", "parametres"];
       if (h && (!console_.includes(page) || (page === "equipe" && id && !/-\d+$/.test(id)))) location.replace("pv.html" + location.hash);
     })();
   </script>
   <meta name="description" content="ES Genas Azieu : console du club, licenciés, éducateurs, équipes, calendrier, convocations et présences, au même endroit">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="commun/charte.css?v=2026-11-20f">
-  <link rel="stylesheet" href="console/style.css?v=2026-11-20f">
-  <script src="commun/modules.js?v=2026-11-20f" data-module="console" defer></script>
-  <script src="commun/club.js?v=2026-11-20f"></script>
+  <link rel="stylesheet" href="commun/charte.css?v=2026-11-20g">
+  <link rel="stylesheet" href="console/style.css?v=2026-11-20g">
+  <script src="commun/modules.js?v=2026-11-20g" data-module="console" defer></script>
+  <script src="commun/club.js?v=2026-11-20g"></script>
 </head>
 <body class="chargement">
   <div class="demo-bandeau">
@@ -39,6 +39,6 @@
   </aside>
   <div class="toast" id="toast" role="status" hidden></div>
 
-  <script src="console/app.js?v=2026-11-20f"></script>
+  <script src="console/app.js?v=2026-11-20g"></script>
 </body>
 </html>
