@@ -6,11 +6,15 @@
   const ID = 'demo-duchere';
   const PC = 'Disponible sur le PC du club (outil complet). En ligne, c’est une démo.';
 
-  const EFFECTIF = [
+  // Effectif lu dans la console du club (commun/club.js) : U15F 2, numéros = identifiants du Monteur (j3 = n°3)
+  const EFFECTIF_DEMO = [
     { id: 'j3', num: '3', nom: 'Léa' }, { id: 'j5', num: '5', nom: 'Inès' }, { id: 'j6', num: '6', nom: 'Manon' },
     { id: 'j8', num: '8', nom: 'Jade' }, { id: 'j9', num: '9', nom: 'Chloé' }, { id: 'j10', num: '10', nom: 'Sarah' },
     { id: 'j11', num: '11', nom: 'Lina' }, { id: 'j14', num: '14', nom: 'Zoé' },
   ];
+  const EQUIPE = 'U15F-2';
+  const depuisClub = () => (window.CLUB ? CLUB.joueurs(EQUIPE).filter((p) => p.numero) : []).map((p) => ({ id: 'j' + p.numero, num: String(p.numero), nom: p.prenom }));
+  const EFFECTIF = depuisClub().length ? depuisClub() : EFFECTIF_DEMO;
   const JAUNE = '#ffd43b', ROUGE = '#ff4d4f', VERT = '#51cf66';
   const MATCH = {
     id: ID, nom: 'La Duchère – ESGA U15F (extrait)',
@@ -40,7 +44,7 @@
 
   const lire = () => { try { return JSON.parse(localStorage.getItem(CLE)) || {}; } catch { return {}; } };
   const ecrire = (d) => { try { localStorage.setItem(CLE, JSON.stringify(d)); } catch { /* navigation privée */ } };
-  const etat = () => { const d = lire(); d.match ||= structuredClone(MATCH); d.effectif ||= structuredClone(EFFECTIF); d.seances ||= []; return d; };
+  const etat = () => { const d = lire(); d.match ||= structuredClone(MATCH); if (!d.effectifModifie) d.effectif = depuisClub().length ? depuisClub() : structuredClone(EFFECTIF); d.seances ||= []; return d; };
   const voix = {};          // commentaires au micro : en mémoire (URL d'objet)
   const taches = {};
 
@@ -60,7 +64,7 @@
       return rep(d.match);
     }
     if (p === '/api/effectif') {
-      if (m === 'PUT') { d.effectif = JSON.parse(opt.body); ecrire(d); return rep({ ok: true }); }
+      if (m === 'PUT') { d.effectif = JSON.parse(opt.body); d.effectifModifie = true; ecrire(d); return rep({ ok: true }); }
       return rep(d.effectif);
     }
     if (p === '/api/bibliotheque') {

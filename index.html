@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b2a6f">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230b2a6f%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
   <title>ESGA · Espace éducateurs</title>
-  <meta name="description" content="ES Genas Azieu : analyse vidéo, lecture des PV du District, atelier d'entraînements et messagerie d'équipe">
+  <meta name="description" content="ES Genas Azieu : console du club, analyse vidéo, lecture des PV du District, atelier d'entraînements et messagerie d'équipe">
   <script>
     // Anciens liens vers la veille des PV (#semaine, #equipe/U17…) : on les renvoie vers le module.
     if (location.hash.length > 1) location.replace("pv.html" + location.hash);
@@ -25,8 +25,8 @@
     h1 { margin: 4px 0 6px; font-size: clamp(1.5rem, 4.5vw, 2.1rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
     .intro { margin: 0; opacity: .9; max-width: 560px; }
     main { margin-top: -46px; flex: 1; }
-    .mods { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
-    @media (max-width: 1000px) { .mods { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .mods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    @media (max-width: 1000px) { .mods { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     .mod { position: relative; display: flex; flex-direction: column; background: var(--esga-carte); border: 1px solid var(--esga-ligne); border-radius: 16px; padding: 16px; box-shadow: var(--esga-ombre-l); color: inherit; text-decoration: none; transition: transform .18s, box-shadow .18s, border-color .18s; overflow: hidden; }
     .mod::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--c, var(--esga-bleu)); }
     .mod:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c) 45%, var(--esga-ligne)); }
@@ -38,8 +38,8 @@
     .mod .info { font-size: .84rem; color: var(--esga-gris); background: var(--esga-carte-2); border: 1px solid var(--esga-ligne); border-radius: 9px; padding: 6px 9px; margin: 0 0 12px; font-size: .76rem; line-height: 1.4; }
     .mod .info b { color: var(--esga-texte); }
     .mod .esga-btn { margin-top: auto; align-self: flex-start; padding: 8px 12px; font-size: .84rem; }
-    .m-video { --c: #c2410c; } .m-pv { --c: var(--esga-bleu); } .m-atelier { --c: var(--esga-vert); } .m-equipe { --c: #7c3aed; } .m-messagerie { --c: #0f766e; }
-    @media (prefers-color-scheme: dark) { .m-video { --c: #f97316; } .m-pv { --c: #5b8cff; } .m-atelier { --c: #2fbf7f; } .m-equipe { --c: #a78bfa; } .m-messagerie { --c: #2dd4bf; } }
+    .m-console { --c: var(--esga-marine); } .m-video { --c: #c2410c; } .m-pv { --c: var(--esga-bleu); } .m-atelier { --c: var(--esga-vert); } .m-equipe { --c: #7c3aed; } .m-messagerie { --c: #0f766e; }
+    @media (prefers-color-scheme: dark) { .m-console { --c: var(--esga-or); } .m-video { --c: #f97316; } .m-pv { --c: #5b8cff; } .m-atelier { --c: #2fbf7f; } .m-equipe { --c: #a78bfa; } .m-messagerie { --c: #2dd4bf; } }
     .foot { color: var(--esga-gris); font-size: .82rem; padding: 20px 20px 18px; text-align: center; }
     @media (max-width: 700px) {
       .hero { padding: 18px 0 56px; } .intro { display: none; }
@@ -75,7 +75,7 @@
 
   <script>
     const { MODULES, ICONES } = window.ESGA;
-    const ACTION = { video: "Essayer la démo", pv: "Lire les PV", atelier: "Préparer une séance", messagerie: "Essayer la démo", equipe: "Ouvrir MyFootSquad ↗" };
+    const ACTION = { console: "Ouvrir la console", video: "Essayer la démo", pv: "Lire les PV", atelier: "Préparer une séance", messagerie: "Essayer la démo", equipe: "Ouvrir MyFootSquad ↗" };
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     document.getElementById("mods").innerHTML = MODULES.map((m) => `
       <a class="mod m-${m.id}" href="${m.url}"${m.externe ? ' target="_blank" rel="noopener"' : ""}>
@@ -99,6 +99,9 @@
     const v = document.getElementById("info-video");
     v.innerHTML = "Une <b>minute du match contre La Duchère</b> est déjà chargée : rien à importer pour tester.";
     v.hidden = false;
+    const co = document.getElementById("info-console");
+    co.innerHTML = "Démo : passez de <b>dirigeant</b> à <b>coach</b> en haut de la page.";
+    co.hidden = false;
     const ms = document.getElementById("info-messagerie");
     ms.innerHTML = "Démo : jouez <b>le coach</b> dans un onglet et <b>un parent</b> dans un autre.";
     ms.hidden = false;

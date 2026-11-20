@@ -397,7 +397,10 @@
     $("#eq-equipes").innerHTML = nums.length ? (nums.length > 1 ? `<button class="eq-team ${eqNum == null ? "on" : ""}" data-n=""><b>Toutes les équipes</b><span>${toutes.length} matchs</span></button>` : "") + nums.map((n) => {
       const mm = toutes.filter((m) => m.equipe === n), proch = mm.find((m) => joursAvant(m.date) >= 0);
       const comp = (mm.filter((m) => !/coupe/i.test(m.competition)).pop() || mm[mm.length - 1] || {}).competition || "";
-      return `<button class="eq-team ${eqNum === n ? "on" : ""}" data-n="${n}"><b>${esc(c)} ${n}</b><span>${esc(comp)}</span>
+      // Encadrement et effectif : lus dans la console du club (commun/club.js)
+      const ce = window.CLUB && (CLUB.equipe(`${c}-${n}`) ? `${c}-${n}` : c === "U18" && n === 21 ? "U17-1" : null), co = ce && CLUB.coachDe(ce);
+      const club = ce ? `<span>${co ? "Éducateur : " + esc(CLUB.nomComplet(co)) : "Éducateur à désigner"} · ${CLUB.joueurs(ce).length} joueurs</span>` : "";
+      return `<button class="eq-team ${eqNum === n ? "on" : ""}" data-n="${n}"><b>${esc(c)} ${n}</b><span>${esc(comp)}</span>${club}
         <small>${proch ? `Prochain : ${JOURS[(parseD(proch.date).getDay() + 6) % 7]} ${parseD(proch.date).getDate()} ${MOIS_C[parseD(proch.date).getMonth()]} ${hm(proch.heure)} · ${proch.a_domicile ? "reçoit" : "à"} ${esc(advDe(proch))}` : "Aucun match à venir"}</small></button>`;
     }).join("") : "";
     $("#eq-equipes").querySelectorAll(".eq-team").forEach((b) => b.onclick = () => { eqNum = b.dataset.n === "" ? null : +b.dataset.n; renderEquipe(); });

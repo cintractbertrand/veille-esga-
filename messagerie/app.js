@@ -4,6 +4,7 @@
 (function () {
   "use strict";
   const S = window.STOCKAGE;
+  const CLUB = window.CLUB; // socle commun : joueurs, séances, matchs, convocations, présences (commun/club.js)
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -14,14 +15,12 @@
   const maj1 = (s) => s.charAt(0).toUpperCase() + s.slice(1);
   const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 
-  const PRENOMS_G = ["Léo M.", "Nathan B.", "Yanis K.", "Lucas D.", "Adam R.", "Hugo P.", "Ilyes T.", "Gabriel L.", "Noah S.", "Rayan F.", "Tom C.", "Sacha V.", "Enzo G.", "Mathis H.", "Kylian A.", "Jules N."];
-  const PRENOMS_F = ["Léa M.", "Inès B.", "Jade K.", "Chloé D.", "Lina R.", "Manon P.", "Sarah T.", "Emma L.", "Zoé S.", "Maëlys F.", "Louise C.", "Nina V.", "Camille G.", "Assia H.", "Lou A.", "Romane N."];
-  const FORMATIONS = { 11: ["4-4-2", "4-3-3", "4-2-3-1", "3-5-2", "5-3-2"], 8: ["3-3-1", "2-3-2", "3-2-2"] };
+  const FORMATIONS = { 11: ["4-4-2", "4-3-3", "4-2-3-1", "3-5-2", "5-3-2"], 8: ["3-3-1", "2-3-2", "3-2-2"], 5: ["2-2", "1-2-1"], 4: ["2-1", "1-2"] };
   const MOTIFS = ["Malade", "Blessure", "École / devoirs", "Raison familiale", "Transport", "Autre"];
   const OPTIONS_MATCH = ["Présent", "Incertain", "Absent"]; // index 0, 1, 2
   const CLES_MATCH = ["oui", "incertain", "non"];
   const REACTIONS = ["👍", "❤️", "😂", "👏", "⚽", "🙏"];
-  const VERSION = 3;
+  const VERSION = 4;
   const COULEURS = ["#1d4ed8", "#0f766e", "#b45309", "#7c3aed", "#be185d", "#15803d", "#c2410c", "#0369a1"];
   const IC = {
     groupe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/></svg>',
@@ -43,7 +42,6 @@
     crayon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   };
 
-  let MATCHS = [];
   let EQUIPES = [];
   let moi = lireMoi();
   let etat = null;
@@ -59,7 +57,7 @@
   const enfantDe = (p) => (p || "").startsWith("p-") ? p.slice(2) : null;
   const monEnfant = () => enfantDe(moi.profil);
   const joueur = (id) => etat.joueurs.find((j) => j.id === id) || { id, nom: "?" };
-  const fem = () => /F/.test((moi.equipe || "").split("-")[0]);
+  const fem = () => { const e = CLUB.equipe(moi.equipe); return e ? e.genre === "F" : /F/.test((moi.equipe || "").split("-")[0]); };
   const e_ = () => (fem() ? "e" : "");
   const nomProfil = (p) => p === "coach" ? "Coach" : enfantDe(p) ? "Parent de " + joueur(enfantDe(p)).nom : "?";
   const tousProfils = () => ["coach", ...etat.joueurs.map((j) => "p-" + j.id)];
@@ -67,34 +65,21 @@
   function couleur(t) { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COULEURS[h % COULEURS.length]; }
 
   /* ---------- équipes, match du week-end et séances ---------- */
-  const equipeDe = (m) => `${m.categorie}-${m.equipe}`;
-  function nomEquipe(id) { const i = id.lastIndexOf("-"); return `${id.slice(0, i)} · équipe ${id.slice(i + 1)}`; }
+  function nomEquipe(id) { return CLUB.nomEquipe(id); }
+  // Prochain match et séances : lus dans le socle du club (matchs des PV + créneaux de la console)
   function prochainMatch(equipe) {
-    const auj = jourISO(new Date());
-    const m = MATCHS.filter((x) => equipeDe(x) === equipe && x.date >= auj).sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure))[0];
-    if (m) {
-      const adv = m.a_domicile ? m.exterieur : m.domicile;
-      return { id: m.numero, date: m.date, heure: m.heure, adversaire: adv.replace(/\s+\d+$/, ""), domicile: m.a_domicile, lieu: m.lieu.replace(/\s+à\s*$/, ""), competition: m.competition, format: /à\s*8/i.test(m.competition) ? 8 : 11 };
-    }
+    const m = CLUB.prochainMatch(equipe), eq = CLUB.equipe(equipe), format = eq ? eq.format : 11;
+    if (m) return { id: m.id, date: m.date, heure: m.heure, adversaire: m.adversaire || m.titre, domicile: m.domicile !== false, lieu: m.lieu, competition: m.competition || "Match amical", format: FORMATIONS[format] ? format : 8 };
     const d = new Date(); d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
-    return { id: "demo-" + jourISO(d), date: jourISO(d), heure: "15:00", adversaire: "Adversaire à confirmer", domicile: true, lieu: "Stade Edmond Pouzet", competition: "Match amical", format: /U1[0-3]/.test(equipe) ? 8 : 11 };
+    return { id: "demo-" + jourISO(d), date: jourISO(d), heure: "10:00", adversaire: format < 8 ? "Plateau à confirmer" : "Adversaire à confirmer", domicile: true, lieu: CLUB.club.lieux[0], competition: format < 8 ? "Plateau" : "Match amical", format: FORMATIONS[format] ? format : 8 };
   }
-  function seances(equipe) {
-    const heure = /Seniors|Vétérans|U20/.test(equipe) ? "19:30" : "18:30";
-    const liste = [], d = new Date(); d.setHours(12, 0, 0, 0);
-    while (liste.length < 6) {
-      if (d.getDay() === 2 || d.getDay() === 4) liste.push({ id: jourISO(d), date: jourISO(d), heure, lieu: d.getDay() === 2 ? "Stade Léon Garaud" : "Stade Edmond Pouzet" });
-      d.setDate(d.getDate() + 1);
-    }
-    return liste;
-  }
+  function seances(equipe) { return CLUB.prochainsEntrainements(equipe, 6).map((e) => ({ id: e.id, date: e.date, heure: e.heure, lieu: e.lieu })); }
   const libSeance = (s) => `${maj1(fmtJour(s.date))} · ${s.heure.replace(":", "h")}`;
   const seance = (id) => seances(moi.equipe).find((s) => s.id === id);
 
   /* ---------- état de l'équipe ---------- */
   function etatInitial(equipe) {
-    const noms = /F/.test(equipe.split("-")[0]) ? PRENOMS_F : PRENOMS_G;
-    const joueurs = noms.map((nom, i) => ({ id: "j" + (i + 1), nom }));
+    const joueurs = CLUB.donnees.personnes.filter((p) => p.equipe === equipe).map((p, i) => ({ id: "j" + (i + 1), nom: `${p.prenom} ${p.nom[0]}.`, club: p.id }));
     const match = prochainMatch(equipe), s = seances(equipe);
     const il = (h) => new Date(Date.now() - h * 3600e3).toISOString();
     const tous = ["coach", ...joueurs.map((j) => "p-" + j.id)];
@@ -133,6 +118,13 @@
     m("equipe", "coach", 2.2, { type: "sondage", sondage: sl.id });
     e.absences.push({ id: uid(), seance: s[0].id, joueur: "j9", motif: "École / devoirs", precision: "Contrôle de maths le lendemain", par: "p-j9", date: il(1.5) });
     m("equipe", "p-j9", 1.5, { type: "absence", joueur: "j9", seance: s[0].id, motif: "École / devoirs" });
+    // Les personnes citées dans la démo doivent exister dans l'effectif (les petites équipes ont moins de 16 joueurs)
+    const ok = new Set(tous);
+    e.convs.forEach((c) => (c.membres = c.membres.filter((p) => ok.has(p))));
+    e.convs = e.convs.filter((c) => c.type !== "perso" || c.membres.length === 2);
+    e.messages = e.messages.filter((x) => ok.has(x.auteur) && e.convs.some((c) => c.id === x.conv) && (!x.joueur || ok.has("p-" + x.joueur)));
+    e.absences = e.absences.filter((a) => ok.has("p-" + a.joueur));
+    e.sondages.forEach((so) => Object.keys(so.reponses).forEach((k) => { if (!ok.has(k) && !ok.has("p-" + k)) delete so.reponses[k]; }));
     // Tout est lu sauf les derniers messages
     tous.forEach((p) => { e.lus[p] = {}; e.convs.forEach((c) => (e.lus[p][c.id] = Math.max(0, e.messages.filter((x) => x.conv === c.id).length - (c.id === "equipe" ? 2 : 1)))); });
     return e;
@@ -140,9 +132,58 @@
   function charger() {
     etat = S.lire(moi.equipe);
     if (!etat || etat.version !== VERSION) etat = etatInitial(moi.equipe);
+    depuisClub(); versClub();
     S.ecrire(moi.equipe, etat);
   }
-  function sauver() { S.ecrire(moi.equipe, etat); rendre(); }
+  function sauver() { versClub(); S.ecrire(moi.equipe, etat); rendre(); }
+
+  /* ---------- synchronisation avec le socle du club ---------- */
+  const idClub = (jid) => (etat.joueurs.find((j) => j.id === jid) || {}).club;
+  const idMsg = (cid) => (etat.joueurs.find((j) => j.club === cid) || {}).id;
+  // Ce que la console a changé : effectif, appel, convocations publiées depuis la console
+  function depuisClub() {
+    CLUB.joueurs(moi.equipe).forEach((p) => {
+      const j = etat.joueurs.find((x) => x.club === p.id), nom = `${p.prenom} ${p.nom[0]}.`;
+      if (j) j.nom = nom;
+      else { const id = "j" + (etat.joueurs.reduce((m, x) => Math.max(m, +x.id.slice(1) || 0), 0) + 1); etat.joueurs.push({ id, nom, club: p.id }); etat.convs.filter((c) => c.type === "equipe" || c.annonces).forEach((c) => c.membres.push("p-" + id)); }
+    });
+    seances(moi.equipe).forEach((s) => {
+      const pr = CLUB.presences(s.id); Object.keys(pr).forEach((cid) => { const j = idMsg(cid); if (j) (etat.appel[s.id] = etat.appel[s.id] || {})[j] = ["absent", "excuse"].includes(pr[cid]) ? "absent" : "present"; });
+    });
+    const m = prochainMatch(moi.equipe), cv = CLUB.convocation(m.id);
+    if (cv && cv.source !== "messagerie" && !etat.convocations.some((c) => c.clubRef === cv.id)) {
+      const ancienne = etat.convocations.filter((c) => c.match === m.id).slice(-1)[0];
+      const formation = ancienne ? ancienne.formation : FORMATIONS[m.format][m.format === 11 ? 1 : 0];
+      const joueurs = cv.joueurs.map(idMsg).filter(Boolean);
+      const c = Object.assign({}, m, { id: uid(), match: m.id, joueurs, formation, postes: places(formation).map(() => null), rdvHeure: cv.rdvHeure, rdvLieu: cv.rdvLieu, tenue: cv.tenue, mot: cv.mot, publiee: cv.publiee, vus: [], clubRef: cv.id });
+      remplirAuto(c);
+      etat.convocations.push(c);
+      etat.messages.push({ id: uid(), conv: "equipe", auteur: "coach", date: cv.publiee, type: "convocation", convoc: c.id });
+      const eq = etat.convs.find((x) => x.id === "equipe"); if (eq) eq.epingle = etat.messages[etat.messages.length - 1].id;
+    }
+  }
+  // Ce que la messagerie apporte au club : absences signalées, appel, réponses au sondage, empêchements, convocations
+  function versClub() {
+    CLUB.lot(() => {
+      const ss = seances(moi.equipe);
+      ss.forEach((s) => {
+        const d = CLUB.dispos(s.id);
+        Object.keys(d).forEach((cid) => { if (d[cid].par === "famille" && !etat.absences.some((a) => a.seance === s.id && idClub(a.joueur) === cid)) CLUB.setDispo(s.id, cid, null); });
+        Object.entries(etat.appel[s.id] || {}).forEach(([jid, v]) => { const cid = idClub(jid), cur = CLUB.presences(s.id)[cid]; if (cid && !(v === "absent" && ["absent", "excuse"].includes(cur)) && !(v === "present" && ["present", "retard"].includes(cur))) CLUB.setPresence(s.id, cid, v === "absent" ? "excuse" : "present"); });
+      });
+      etat.absences.forEach((a) => { const cid = idClub(a.joueur); if (cid && !CLUB.dispos(a.seance)[cid]) CLUB.setDispo(a.seance, cid, { statut: "absent", motif: a.motif, precision: a.precision, par: "famille", date: a.date }); });
+      const m = prochainMatch(moi.equipe), sm = etat.sondages.find((x) => x.type === "match" && x.match === m.id), cv = etat.convocations.filter((c) => c.match === m.id).slice(-1)[0];
+      etat.joueurs.forEach((j) => {
+        const emp = cv && cv.empechements && cv.empechements[j.id], r = sm ? sm.reponses[j.id] : undefined, d = CLUB.dispos(m.id)[j.club];
+        const voulu = emp ? { statut: "absent", motif: emp.motif, precision: emp.precision, par: "famille" } : r === 2 ? { statut: "absent", motif: "Absent au sondage", par: "sondage" } : r === 1 ? { statut: "incertain", motif: "Incertain au sondage", par: "sondage" } : null;
+        if (voulu && (!d || d.statut !== voulu.statut || d.motif !== voulu.motif)) CLUB.setDispo(m.id, j.club, voulu);
+        else if (!voulu && d && ["sondage", "famille"].includes(d.par)) CLUB.setDispo(m.id, j.club, null);
+      });
+      etat.convocations.filter((c) => !c.clubRef && !String(c.match).startsWith("demo-")).forEach((c) => {
+        c.clubRef = CLUB.publierConvocation({ evenement: c.match, joueurs: c.joueurs.map(idClub).filter(Boolean), rdvHeure: c.rdvHeure, rdvLieu: c.rdvLieu, tenue: c.tenue, mot: c.mot, source: "messagerie" }).id;
+      });
+    });
+  }
   function poster(conv, msg) { etat.messages.push(Object.assign({ id: uid(), conv, date: maintenant(), auteur: moi.profil }, msg)); marquerLu(conv); }
 
   /* ---------- conversations ---------- */
@@ -937,14 +978,16 @@
     lecteur.readAsDataURL(f);
   });
 
+  // La console (ou un autre module) a modifié le socle du club
+  CLUB.surChangement(() => { if (!etat) return; const avant = JSON.stringify(etat); depuisClub(); if (JSON.stringify(etat) !== avant) { S.ecrire(moi.equipe, etat); rendre(); } });
   // Un autre onglet a écrit : on relit
   S.surChangement((equipe) => { if (equipe === moi.equipe) { const e = S.lire(equipe); if (e && e.version === VERSION) { notifierNouveaux(etat, e); etat = e; rendre(); } } });
 
   /* ---------- démarrage ---------- */
-  fetch("../data/matchs.json").then((r) => r.json()).catch(() => []).then((m) => {
-    MATCHS = Array.isArray(m) ? m : [];
-    EQUIPES = [...new Set(MATCHS.map(equipeDe))].sort((a, b) => a.localeCompare(b, "fr", { numeric: true }));
-    if (!EQUIPES.length) EQUIPES = ["U15F-2"];
+  CLUB.pret.then(() => {
+    EQUIPES = CLUB.equipes().map((e) => e.id);
+    const demande = new URLSearchParams(location.search).get("equipe"); // lien depuis la console
+    if (demande && EQUIPES.includes(demande) && demande !== moi.equipe) { moi.equipe = demande; moi.profil = "coach"; moi.conv = "equipe"; }
     if (!EQUIPES.includes(moi.equipe)) moi.equipe = EQUIPES.includes("U15F-2") ? "U15F-2" : EQUIPES[0];
     charger();
     if (!tousProfils().includes(moi.profil)) moi.profil = "coach";
