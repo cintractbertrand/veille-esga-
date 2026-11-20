@@ -20,7 +20,7 @@
   const OPTIONS_MATCH = ["Présent", "Incertain", "Absent"]; // index 0, 1, 2
   const CLES_MATCH = ["oui", "incertain", "non"];
   const REACTIONS = ["👍", "❤️", "😂", "👏", "⚽", "🙏"];
-  const VERSION = 4;
+  const VERSION = 5;
   const COULEURS = ["#1d4ed8", "#0f766e", "#b45309", "#7c3aed", "#be185d", "#15803d", "#c2410c", "#0369a1"];
   const IC = {
     groupe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/></svg>',
@@ -86,14 +86,13 @@
     const il = (h) => new Date(Date.now() - h * 3600e3).toISOString();
     const tous = ["coach", ...joueurs.map((j) => "p-" + j.id)];
     const e = { version: VERSION, joueurs, convs: [], messages: [], sondages: [], absences: [], appel: {}, convocations: [], lus: {} };
-    e.convs.push({ id: "equipe", type: "equipe", nom: nomEquipe(equipe), membres: tous, creePar: "coach", date: il(80) });
-    e.convs.push({ id: "annonces", type: "groupe", annonces: true, nom: "Annonces de l'équipe", membres: tous, creePar: "coach", date: il(90) });
-    e.convs.push({ id: "c-covoit", type: "groupe", nom: "Covoiturage du samedi", membres: ["p-j3", "p-j1", "p-j6", "p-j8", "p-j11"], creePar: "p-j3", date: il(60) });
+    e.convs.push({ id: "equipe", type: "equipe", nom: "Blabla · " + nomEquipe(equipe), membres: tous, creePar: "coach", date: il(80) });
+    e.convs.push({ id: "annonces", type: "groupe", annonces: true, nom: "Annonces · " + nomEquipe(equipe), membres: tous, creePar: "coach", date: il(90) });
     e.convs.push({ id: "c-staff", type: "groupe", nom: "Parents référents", membres: ["coach", "p-j2", "p-j10"], creePar: "coach", date: il(70) });
     e.convs.push({ id: "c-perso-j3", type: "perso", membres: ["coach", "p-j3"], creePar: "p-j3", date: il(30) });
     const m = (conv, auteur, h, o) => e.messages.push(Object.assign({ id: uid(), conv, auteur, date: il(h) }, o));
-    m("equipe", "coach", 50, { type: "texte", texte: "Bonjour à tous ! Bienvenue sur la messagerie de l'équipe 👋 Pour une absence à l'entraînement, touchez le + en bas puis « Absence »." });
-    m("annonces", "coach", 49, { type: "texte", texte: "📣 Ici, seulement les informations importantes du coach : horaires, changements de terrain, convocations. Pour échanger, utilisez le groupe de l'équipe." });
+    m("equipe", "coach", 50, { type: "texte", texte: "Bonjour à tous ! Ici c'est le Blabla de l'équipe 👋 Tout le monde peut écrire : covoiturage, goûters, questions… Les informations officielles (sondages, convocations) sont dans « Annonces ». Pour une absence à l'entraînement, touchez le + en bas puis « Absence »." });
+    m("annonces", "coach", 49, { type: "texte", texte: "📣 Ici, seulement les informations du staff : sondages des matchs, convocations, horaires, changements de terrain. Pour échanger entre vous (covoiturage…), utilisez le Blabla de l'équipe." });
     m("annonces", "coach", 6, { type: "texte", texte: "Rappel : pensez aux licences 2026-2027, à rendre avant le 30 novembre au secrétariat du club." });
     m("c-staff", "coach", 48, { type: "texte", texte: "Merci à vous deux d'être référents cette saison. Je vous mets ici l'organisation des goûters." });
     m("c-staff", "p-j2", 47, { type: "texte", texte: "Parfait, on s'en occupe !" });
@@ -101,23 +100,23 @@
     m("equipe", "coach", 25, { type: "texte", texte: "Oui, on s'entraîne sauf si la mairie ferme le terrain. Je préviens ici dans ce cas." });
     const q = e.messages[e.messages.length - 2], r = e.messages[e.messages.length - 1];
     r.reponseA = q.id; r.reactions = { "p-j3": "🙏", "p-j1": "👍", "p-j8": "👍" };
-    m("c-covoit", "p-j3", 24, { type: "texte", texte: "Qui peut emmener samedi ? J'ai 2 places." });
-    m("c-covoit", "p-j6", 23, { type: "texte", texte: "Moi aussi, 3 places au départ de Genas centre." });
+    m("equipe", "p-j3", 24, { type: "texte", texte: "Qui peut emmener samedi ? J'ai 2 places." });
+    m("equipe", "p-j6", 23, { type: "texte", texte: "Moi aussi, 3 places au départ de Genas centre." });
     e.absences.push({ id: uid(), seance: s[0].id, joueur: "j5", motif: "Malade", precision: "Fièvre depuis hier", par: "p-j5", date: il(5) });
     m("equipe", "p-j5", 5, { type: "absence", joueur: "j5", seance: s[0].id, motif: "Malade" });
     e.appel[s[0].id] = { j5: "absent" };
     // Sondage du match créé par le coach
-    const sm = { id: "s-match", conv: "equipe", auteur: "coach", date: il(4), type: "match", match: match.id, question: `Match contre ${match.adversaire} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
+    const sm = { id: "s-match", conv: "annonces", auteur: "coach", date: il(4), type: "match", match: match.id, question: `Match contre ${match.adversaire} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
     const rep = { j1: 0, j2: 0, j3: 0, j4: 2, j5: 2, j6: 0, j7: 1, j8: 0, j10: 0, j11: 0, j12: 0, j13: 0, j14: 0, j15: 0, j16: 0 };
     Object.assign(sm.reponses, rep);
     e.sondages.push(sm);
-    m("equipe", "coach", 4, { type: "sondage", sondage: sm.id });
+    m("annonces", "coach", 4, { type: "sondage", sondage: sm.id });
     e.convs[0].epingle = e.messages[e.messages.length - 1].id;
     m("c-perso-j3", "p-j3", 3, { type: "texte", texte: "Bonjour coach, Jade aura 15 minutes de retard mardi (dentiste). Désolé !" });
     m("c-perso-j3", "coach", 2.5, { type: "texte", texte: "Pas de souci, merci de prévenir." });
-    const sl = { id: "s-repas", conv: "equipe", auteur: "coach", date: il(2.2), type: "libre", question: "Repas de fin d'année : quelle date vous arrange ?", options: ["Samedi 12 décembre", "Dimanche 13 décembre", "Samedi 19 décembre"], reponses: { "p-j1": 0, "p-j2": 0, "p-j4": 1, "p-j6": 0, "p-j9": 2 } };
+    const sl = { id: "s-repas", conv: "annonces", auteur: "coach", date: il(2.2), type: "libre", question: "Repas de fin d'année : quelle date vous arrange ?", options: ["Samedi 12 décembre", "Dimanche 13 décembre", "Samedi 19 décembre"], reponses: { "p-j1": 0, "p-j2": 0, "p-j4": 1, "p-j6": 0, "p-j9": 2 } };
     e.sondages.push(sl);
-    m("equipe", "coach", 2.2, { type: "sondage", sondage: sl.id });
+    m("annonces", "coach", 2.2, { type: "sondage", sondage: sl.id });
     e.absences.push({ id: uid(), seance: s[0].id, joueur: "j9", motif: "École / devoirs", precision: "Contrôle de maths le lendemain", par: "p-j9", date: il(1.5) });
     m("equipe", "p-j9", 1.5, { type: "absence", joueur: "j9", seance: s[0].id, motif: "École / devoirs" });
     // Les personnes citées dans la démo doivent exister dans l'effectif (les petites équipes ont moins de 16 joueurs)
@@ -167,14 +166,14 @@
     const cs = CLUB.sondage(m.id);
     let sl = etat.sondages.find((x) => x.type === "match" && x.match === m.id);
     if (cs && !sl) {
-      sl = { id: uid(), conv: "equipe", auteur: "coach", date: cs.lance, type: "match", match: m.id, question: `Match contre ${m.adversaire} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
-      etat.sondages.push(sl); etat.messages.push({ id: uid(), conv: "equipe", auteur: "coach", date: cs.lance, type: "sondage", sondage: sl.id });
-      const eq0 = etat.convs.find((x) => x.id === "equipe"); if (eq0) eq0.epingle = etat.messages[etat.messages.length - 1].id;
+      sl = { id: uid(), conv: "annonces", auteur: "coach", date: cs.lance, type: "match", match: m.id, question: `Match contre ${m.adversaire} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
+      etat.sondages.push(sl); etat.messages.push({ id: uid(), conv: "annonces", auteur: "coach", date: cs.lance, type: "sondage", sondage: sl.id });
+      const eq0 = etat.convs.find((x) => x.id === "annonces"); if (eq0) eq0.epingle = etat.messages[etat.messages.length - 1].id;
     }
     if (cs && cs.relance && sl && sl.relanceClub !== cs.relance) {
       sl.relanceClub = cs.relance;
       const sans = etat.joueurs.filter((j) => sl.reponses[j.id] === undefined && !CLUB.dispos(m.id)[j.club]);
-      if (sans.length) etat.messages.push({ id: uid(), conv: "equipe", auteur: "coach", date: cs.relance, type: "relance", sondage: sl.id, noms: sans.map((j) => j.nom) });
+      if (sans.length) etat.messages.push({ id: uid(), conv: "annonces", auteur: "coach", date: cs.relance, type: "relance", sondage: sl.id, noms: sans.map((j) => j.nom) });
     }
     // Réponses données dans l'espace parent : reportées sur le sondage du match et la convocation
     const sm = etat.sondages.find((x) => x.type === "match" && x.match === m.id), cvm = etat.convocations.filter((c) => c.match === m.id).slice(-1)[0];
@@ -192,8 +191,8 @@
       const c = Object.assign({}, m, { id: uid(), match: m.id, joueurs, formation, postes: places(formation).map(() => null), rdvHeure: cv.rdvHeure, rdvLieu: cv.rdvLieu, tenue: cv.tenue, mot: cv.mot, publiee: cv.publiee, vus: [], clubRef: cv.id });
       remplirAuto(c);
       etat.convocations.push(c);
-      etat.messages.push({ id: uid(), conv: "equipe", auteur: "coach", date: cv.publiee, type: "convocation", convoc: c.id });
-      const eq = etat.convs.find((x) => x.id === "equipe"); if (eq) eq.epingle = etat.messages[etat.messages.length - 1].id;
+      etat.messages.push({ id: uid(), conv: "annonces", auteur: "coach", date: cv.publiee, type: "convocation", convoc: c.id });
+      const eq = etat.convs.find((x) => x.id === "annonces"); if (eq) eq.epingle = etat.messages[etat.messages.length - 1].id;
     }
   }
   // Ce que la messagerie apporte au club : absences signalées, appel, réponses au sondage, empêchements, convocations
@@ -333,7 +332,7 @@
     $("#epingle").hidden = !ep;
     if (ep) $("#epingle").innerHTML = `${IC.epingle}<span><b>Épinglé</b> ${esc(extrait(ep))}</span>`, ($("#epingle").dataset.allerMsg = ep.id);
     // Lecture seule (groupe d'annonces) et réponse en cours
-    const peutEcrire = !c.annonces || estCoach() || c.creePar === moi.profil;
+    const peutEcrire = !c.annonces || estCoach();
     $("#formEnvoi").hidden = !peutEcrire; $("#lectureSeule").hidden = peutEcrire;
     const ra = reponseA && msgs.find((m) => m.id === reponseA);
     $("#reponseBarre").hidden = !ra;
@@ -477,8 +476,8 @@
     return `<div class="menu-sep">Coach</div>` +
       `<button data-action="absence-coach">${IC.absence}<span>Noter une absence${esc(nom)} à l'entraînement</span></button>` +
       `<button data-action="match-coach">${IC.ballon}<span>Présence${esc(nom)} au match</span></button>` +
-      (c.type === "equipe" ? `<button data-action="sondage-match">${IC.sondage}<span>Sondage du match</span></button>` : "") +
-      (conv && c.type !== "equipe" ? `<button data-action="envoyer-convoc">${IC.convoc}<span>Envoyer la convocation ici</span></button>` : "") +
+      (c.type === "equipe" || c.annonces ? `<button data-action="sondage-match">${IC.sondage}<span>Sondage du match</span></button>` : "") +
+      (conv && c.type !== "equipe" && !c.annonces ? `<button data-action="envoyer-convoc">${IC.convoc}<span>Envoyer la convocation ici</span></button>` : "") +
       `<button data-action="convoc">${IC.convoc}<span>Compo et convocation</span></button>`;
   }
   // Fenêtre d'actions sur un enfant (depuis le menu ou un message d'un parent)
@@ -603,7 +602,7 @@
   }
   function modaleInfos(id) {
     const c = conv(id);
-    ouvrirModale(nomConv(c), `${c.annonces ? `<p class="alerte">${IC.megaphone} Groupe d'annonces : seul le coach y écrit.</p>` : ""}<p class="discret">${c.type === "equipe" ? "Groupe de toute l'équipe, créé par le coach." : c.type === "groupe" ? `Groupe créé par ${esc(c.creePar === moi.profil ? "vous" : nomProfil(c.creePar))}.` : "Conversation privée."}</p>
+    ouvrirModale(nomConv(c), `${c.annonces ? `<p class="alerte">${IC.megaphone} Annonces : seuls les coachs et les dirigeants y écrivent. Pour discuter entre vous (covoiturage…), utilisez le Blabla.</p>` : ""}<p class="discret">${c.type === "equipe" ? "Groupe de toute l'équipe, créé par le coach." : c.type === "groupe" ? `Groupe créé par ${esc(c.creePar === moi.profil ? "vous" : nomProfil(c.creePar))}.` : "Conversation privée."}</p>
       ${c.type === "perso" ? "" : `<h3>${pluriel(c.membres.length, "membre")}</h3><ul class="liste">${c.membres.map((p) => `<li><span>${esc(p === moi.profil ? "Vous" : nomProfil(p))}</span>${p === "coach" ? '<span class="etiquette e-oui">Coach</span>' : ""}</li>`).join("")}</ul>`}
       ${c.type !== "perso" && (c.creePar === moi.profil || estCoach()) ? `<div class="actions">${c.type === "groupe" ? `<button class="esga-btn" data-modifier-groupe="${c.id}">Modifier les membres</button>` : ""}<button class="esga-btn" data-annonces="${c.id}">${IC.megaphone} ${c.annonces ? "Permettre à tous d'écrire" : "Seul le coach écrit"}</button></div>` : ""}
       ${c.type === "groupe" && !c.annonces && c.creePar !== moi.profil ? `<div class="actions"><button class="lien rouge" data-quitter="${c.id}">Quitter le groupe</button></div>` : ""}`);
@@ -819,14 +818,14 @@
     if (t.id === "btnPhoto") return $("#fichierPhoto").click();
     if (d.replier !== undefined) { moi.semaineFerme = !moi.semaineFerme; ecrireMoi(); return rendreSemaine(); }
     if (d.empechement) return modaleEmpechement(d.empechement);
-    if (d.annonces) { const c = conv(d.annonces); c.annonces = !c.annonces; poster(c.id, { type: "info", texte: c.annonces ? "Seul le coach peut maintenant écrire dans ce groupe" : "Tout le monde peut de nouveau écrire dans ce groupe" }); fermerModale(); return sauver(); }
+    if (d.annonces) { const c = conv(d.annonces); c.annonces = !c.annonces; poster(c.id, { type: "info", texte: c.annonces ? "Seuls les coachs et les dirigeants peuvent maintenant écrire dans ce groupe" : "Tout le monde peut de nouveau écrire dans ce groupe" }); fermerModale(); return sauver(); }
     if (d.fermer !== undefined) return fermerModale();
     if (d.espace) { moi.espace = d.espace; ecrireMoi(); return rendre(); }
     if (d.coach) { if (d.revoir && derniereConvocation()) brouillon = nouveauBrouillon(); moi.coachOnglet = d.coach; moi.espace = "coach"; ecrireMoi(); rendre(); return window.scrollTo(0, 0); }
     if (d.ouvrir) { reponseA = null; return ouvrirConv(d.ouvrir); }
     if (d.retour !== undefined) { moi.mobileChat = false; ecrireMoi(); return rendre(); }
     if (d.infos) return modaleInfos(d.infos);
-    if (t.id === "btnGroupe") return modaleGroupe();
+    if (t.id === "btnGroupe") return estCoach() ? modaleGroupe() : toast("Seuls les coachs et les dirigeants créent les groupes. Pour un covoiturage, écrivez dans le Blabla de l'équipe.");
     if (t.id === "btnPerso") return modalePerso();
     if (d.perso) { const id = convPerso(d.perso); fermerModale(); fermerCtx(); reponseA = null; return ouvrirConv(id); }
     if (t.id === "btnPlus") { $("#menuPlus").hidden = !$("#menuPlus").hidden; return; }
@@ -843,10 +842,10 @@
         const ex = sondageMatch();
         if (ex) { toast("Le sondage de ce match est déjà ouvert."); return ouvrirConv(ex.conv); }
         const m = prochainMatch(moi.equipe);
-        const s = { id: "s-" + uid(), conv: "equipe", auteur: moi.profil, date: maintenant(), type: "match", match: m.id, question: `Match contre ${m.adversaire} (${fmtJour(m.date, { weekday: "long", day: "numeric" })}) : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
-        etat.sondages.push(s); poster("equipe", { type: "sondage", sondage: s.id });
+        const s = { id: "s-" + uid(), conv: "annonces", auteur: moi.profil, date: maintenant(), type: "match", match: m.id, question: `Match contre ${m.adversaire} (${fmtJour(m.date, { weekday: "long", day: "numeric" })}) : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
+        etat.sondages.push(s); poster("annonces", { type: "sondage", sondage: s.id });
         toast("Sondage envoyé au groupe de l'équipe.");
-        sauver(); return ouvrirConv("equipe");
+        sauver(); return ouvrirConv("annonces");
       }
     }
     if (t.id === "btnAjoutOpt") {
@@ -980,8 +979,8 @@
       const c = Object.assign({}, m, { id: uid(), match: m.id, joueurs: b.joueurs.slice(), formation: b.formation, postes: b.postes.slice(), rdvHeure: b.rdvHeure, rdvLieu: b.rdvLieu.trim(), tenue: b.tenue.trim(), mot: b.mot.trim(), publiee: maintenant(),
         // Une famille qui avait lu garde son « lu » seulement si son enfant reste dans le même cas
         vus: ancienne ? ancienne.vus.filter((id) => ancienne.joueurs.includes(id) === b.joueurs.includes(id)) : [] });
-      etat.convocations.push(c); poster("equipe", { type: "convocation", convoc: c.id });
-      conv("equipe").epingle = etat.messages[etat.messages.length - 1].id;
+      etat.convocations.push(c); poster("annonces", { type: "convocation", convoc: c.id });
+      conv("annonces").epingle = etat.messages[etat.messages.length - 1].id;
       brouillon = null; toast(ancienne ? "Convocation mise à jour dans le groupe de l'équipe." : "Convocation publiée dans le groupe de l'équipe.");
       return sauver();
     }

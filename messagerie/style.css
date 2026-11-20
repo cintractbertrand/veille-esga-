@@ -367,3 +367,6 @@ button.sem-l:hover { background: var(--esga-carte); }
 .sem-l.ok-l > svg { color: var(--oui); }
 .sem-choix { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
 .sem-choix .pastille { font-size: .74rem; }
+
+/* Seuls les coachs et dirigeants créent les groupes */
+body:not(.coach) #btnGroupe { display: none; }
