@@ -17,7 +17,7 @@
   };
 
   const MODULES = [
-    { id: "console", nom: "Console du club", court: "Console", url: BASE,
+    { id: "console", nom: "Console du club", court: "Accueil", url: BASE,
       desc: "Licenciés, éducateurs, équipes, calendrier, présences et convocations : tout le club au même endroit, partagé par tous les modules." },
     { id: "video", nom: "Analyse vidéo", court: "Vidéo", url: BASE + "analyse-video/",
       desc: "Revoir un match, marquer une joueuse, dessiner flèches et cercles sur l'image, monter des séquences et les envoyer." },
@@ -30,20 +30,24 @@
     { id: "equipe", nom: "Gestion de l'équipe", court: "Équipe", url: "https://myfootsquad.com/", externe: true,
       desc: "Le site de Nico (MyFootSquad) : gestion des matchs, des absences et de l'équipe." },
   ];
-  window.ESGA = { BASE, MODULES, ICONES };
+  window.ESGA = { BASE, MODULES, ICONES, bandeau: () => bandeau() };
 
   function bandeau() {
-    if (document.querySelector(".esga-bar")) return;
+    const ancien = document.querySelector(".esga-bar"); if (ancien) ancien.remove(); // reconstruit après un changement de profil
     const courant = (script && script.dataset.module) || "";
+    // Parents et joueurs ne voient que ce qui les concerne (profil choisi à l'accueil, commun/club.js)
+    let role = ""; try { role = (JSON.parse(localStorage.getItem("esga-profil")) || {}).role || ""; } catch (e) {}
+    const famille = role === "parent" || role === "joueur";
+    const visibles = famille ? MODULES.filter((m) => m.id === "console" || m.id === "messagerie") : MODULES;
     const bar = document.createElement("div");
     bar.className = "esga-bar";
     bar.innerHTML = `<div class="esga-bar-in">
       <a class="esga-accueil" href="${BASE}" title="Retour à l'accueil">
         <span class="esga-blason" aria-hidden="true">ES<small>GA</small></span>
-        <span class="esga-nom">ESGA<small>Espace éducateurs</small></span>
+        <span class="esga-nom">ESGA<small>${famille ? "Espace familles" : "Espace du club"}</small></span>
       </a>
       <nav class="esga-mods" aria-label="Modules">
-        ${MODULES.map((m) => `<a href="${m.url}"${m.id === courant ? ' aria-current="page"' : ""}${m.externe ? ' target="_blank" rel="noopener"' : ""} title="${m.nom}${m.externe ? " (nouvel onglet)" : ""}">${ICONES[m.id]}<span>${m.court}</span></a>`).join("")}
+        ${visibles.map((m) => `<a href="${m.url}"${m.id === courant ? ' aria-current="page"' : ""}${m.externe ? ' target="_blank" rel="noopener"' : ""} title="${m.nom}${m.externe ? " (nouvel onglet)" : ""}">${ICONES[m.id]}<span>${m.court}</span></a>`).join("")}
       </nav>
     </div>`;
     document.body.prepend(bar);

@@ -189,7 +189,7 @@
     });
     // Disponibilités signalées pour la semaine qui vient (reprises par la messagerie)
     const prochains = entrainements(auj(), ajout(auj(), 6), "U15F-2");
-    if (prochains[0]) D.dispos[prochains[0].id] = { "j-U15F-2-5": { statut: "absent", motif: "Malade", precision: "Fièvre depuis hier", par: "famille", date: new Date().toISOString() }, "j-U15F-2-9": { statut: "absent", motif: "École / devoirs", precision: "Contrôle de maths le lendemain", par: "famille", date: new Date().toISOString() } };
+    if (prochains[0]) D.dispos[prochains[0].id] = { "j-U15F-2-5": { statut: "absent", motif: "Malade", precision: "Fièvre depuis hier", par: "messagerie", date: new Date().toISOString() }, "j-U15F-2-9": { statut: "absent", motif: "École / devoirs", precision: "Contrôle de maths le lendemain", par: "messagerie", date: new Date().toISOString() } };
     // Une partie des convocations du week-end sont déjà faites par les coachs (sauf U15F 2, pour essayer)
     MATCHS.map(matchEvt).filter((e) => e.date >= auj() && e.date <= ajout(auj(), 3) && e.equipe !== "U15F-2").forEach((e) => {
       if (r() < .55) {
@@ -250,6 +250,20 @@
   function importer(txt) { const n = JSON.parse(txt); if (!n || !Array.isArray(n.personnes) || !Array.isArray(n.equipes)) throw new Error("Fichier non reconnu"); n.version = VERSION; D = n; sauver(); }
   function reinitialiser() { STOCKAGE.effacer(); D = graine(); STOCKAGE.ecrire(D); presencesDemo(); notifier(); }
 
+  /* ---------- profil de la personne qui utilise l'appli (le même pour tous les modules) ----------
+     { role: "dirigeant" } | { role: "coach", staff } | { role: "parent", joueur } | { role: "joueur", joueur }
+     En démo on le choisit ; avec Supabase il viendra du compte connecté. */
+  const CLE_PROFIL = "esga-profil";
+  function profil() { try { return JSON.parse(localStorage.getItem(CLE_PROFIL)) || null; } catch (e) { return null; } }
+  function setProfil(p) { try { if (p) localStorage.setItem(CLE_PROFIL, JSON.stringify(p)); else localStorage.removeItem(CLE_PROFIL); } catch (e) {} }
+  function nomProfil(p) {
+    p = p || profil(); if (!p) return "";
+    if (p.role === "dirigeant") return "Dirigeant du club";
+    if (p.role === "coach") { const s = D.staff.find((x) => x.id === p.staff); return s ? `${s.prenom} ${s.nom}` : "Éducateur"; }
+    const j = personne(p.joueur); if (!j) return "";
+    return p.role === "parent" ? `Parent de ${j.prenom}` : `${j.prenom} ${j.nom}`;
+  }
+
   const pret = fetch(BASE + "data/matchs.json").then((r) => r.json()).catch(() => []).then((m) => { MATCHS = Array.isArray(m) ? m : []; presencesDemo(); return window.CLUB; });
 
   window.CLUB = {
@@ -260,7 +274,7 @@
     evenements, evenement, prochainMatch, prochainsEntrainements, convocation, convocations: (eq) => D.convocations.filter((c) => !eq || c.equipe === eq),
     presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, tauxPresence, categorieAge,
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
-    exporter, importer, reinitialiser, surChangement: (cb) => abonnes.push(cb),
+    exporter, importer, reinitialiser, profil, setProfil, nomProfil, surChangement: (cb) => abonnes.push(cb),
     outils: { iso, ajout, auj, jour, uid },
   };
 })();
