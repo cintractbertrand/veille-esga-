@@ -179,7 +179,7 @@ function listeSeq() {
         <button class="bt k-corriger ${s.genre === 'corriger' ? 'on' : ''}" data-a="corriger" title="À corriger">${ic('corriger', 14)} À corriger</button>
         <span class="espace"></span>
         ${s.voix ? `<button class="bt" data-a="ecouter" title="Lire la séquence avec le commentaire">${ic('ecouter', 15)}</button><button class="bt discret" data-a="sansvoix" title="Supprimer le commentaire">${ic('sansvoix', 15)}</button>`
-          : ''}<button class="bt ${s.voix ? 'discret' : ''}" data-a="micro" title="${s.voix ? 'Refaire le commentaire' : 'Commenter au micro : la séquence défile (arrêts sur image compris) pendant que vous parlez'}">${ic('micro', 15)}</button>
+          : ''}<button class="bt ${s.voix ? 'discret' : ''}" data-a="micro" title="${s.voix ? 'Refaire le commentaire' : 'Commenter au micro : la séquence défile (arrêts sur image compris) pendant que vous parlez'}">${ic('micro', 15)}</button>${window.CLUB ? `<button class="bt" data-a="partager" title="Envoyer cette séquence à une joueuse ou à toute l’équipe (elle la retrouve dans son espace)">${ic('envoyer', 14)} Partager</button>` : ''}
       </div></div>`;
   }).join('') : `<p class="astuce">En regardant le match, cliquez une joueuse de l’effectif : sa séquence est créée
     (${E.match?.reglages.avant ?? 6} s avant, ${E.match?.reglages.apres ?? 4} s après).<br><br>
@@ -206,6 +206,7 @@ $('#listeSeq').addEventListener('click', (e) => {
   if (a === 'lire') { choisirSeq(s.id); L.lireSegment(s.debut, s.fin); return; }
   if (a === 'ecouter') { choisirSeq(s.id); lireAvecVoix(s); return; }
   if (a === 'micro') { choisirSeq(s.id); enregistrer(s); return; }
+  if (a === 'partager') { choisirSeq(s.id); partager(s); return; }
   if (a === 'sansvoix') { api('POST', `/api/voix?match=${E.match.id}&seq=${s.id}`, '', true).then(() => { s.voix = 0; sauver(); listes(); }); return; }
   if (a === 'suppr') {
     const i = E.match.sequences.indexOf(s);
@@ -396,6 +397,41 @@ $('#tRepere').onclick = poserRepere;
 $('#tEntree').onclick = () => { E.entree = L.t(); redessiner(); };
 $('#tSortie').onclick = () => { E.sortie = L.t(); redessiner(); };
 $('#tCreer').onclick = creerDepuisIO;
+
+// ================= partager une séquence : reliée au match du calendrier du club, envoyée à une joueuse ou à l'équipe
+async function partager(s) {
+  const C = window.CLUB; if (!C) return;
+  await C.pret;
+  const p = C.profil(), st = p && p.role === 'coach' ? C.staff().find((x) => x.id === p.staff) : null;
+  const eq = (st && st.equipes[0]) || 'U15F-2';
+  const matchs = C.evenements({ equipe: eq, du: C.SAISON.debut, au: C.outils.auj(), types: ['match', 'amical'] }).filter((x) => x.statut !== 'annule').reverse();
+  if (!matchs.length) { toast('Aucun match joué dans le calendrier de l’équipe', { erreur: true }); return; }
+  const relie = matchs.find((x) => (C.video(x.id) || {}).source === 'monteur') || matchs[0];
+  const js = C.joueurs(eq), duClub = (jid) => { const n = (joueuse(jid) || {}).num; return js.find((x) => String(x.numero) === String(n)); };
+  const dansSeq = (s.joueuses || []).map(duClub).filter(Boolean);
+  const v = await dialogue({ titre: 'Partager la séquence', ok: 'Envoyer', corps: `
+    <p><b>${esc(titreSeq(s))}</b> · <span class="mono">${fmt(s.debut, false)} → ${fmt(s.fin, false)}</span></p>
+    <label>Match<select name="evt">${matchs.map((x) => `<option value="${esc(x.id)}"${x.id === relie.id ? ' selected' : ''}>${esc(new Date(x.date + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }))} · ${esc(x.titre)}${C.video(x.id) ? ' 🎬' : ''}</option>`).join('')}</select></label>
+    ${window.DEMO ? '' : `<label>Lien de la vidéo en ligne (si le match n’en a pas encore)<input name="url" type="url" placeholder="https://youtube.com/…"></label>`}
+    <p style="margin:10px 0 4px"><b>Pour qui ?</b></p>
+    ${dansSeq.length ? `<label><input type="radio" name="pour" value="seq" checked> ${dansSeq.map((x) => esc(x.prenom)).join(', ')} (dans la séquence)</label>` : ''}
+    <label><input type="radio" name="pour" value="equipe"${dansSeq.length ? '' : ' checked'}> Toute l’équipe</label>
+    <label><input type="radio" name="pour" value="choix"> Seulement :</label>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:2px;margin:4px 0 8px">${js.map((x) => `<label class="petit"><input type="checkbox" name="j_${esc(x.id)}"> ${x.numero ? x.numero + ' ' : ''}${esc(x.prenom)}</label>`).join('')}</div>
+    <label>Message (facultatif)<textarea name="note" rows="2" placeholder="Ce qu’il faut regarder…">${esc(s.note || '')}</textarea></label>`,
+    auChargement: (el) => { el.addEventListener('change', () => { POUR = el.querySelector('[name="pour"]:checked')?.value || 'equipe'; }); POUR = el.querySelector('[name="pour"]:checked')?.value || 'equipe'; } });
+  if (!v) return;
+  const a = POUR === 'equipe' ? 'equipe' : POUR === 'seq' ? dansSeq.map((x) => x.id) : js.filter((x) => v['j_' + x.id]).map((x) => x.id);
+  if (a !== 'equipe' && !a.length) { toast('Cochez au moins une joueuse', { erreur: true }); return; }
+  if (!C.video(v.evt)) {
+    const url = window.DEMO ? new URL(DEMO.video, location.href).href : (v.url || '').trim();
+    if (!url) { toast('Indiquez le lien de la vidéo en ligne : la vidéo du PC ne peut pas être envoyée', { erreur: true, duree: 5000 }); return; }
+    C.setVideo(v.evt, { url, titre: E.match.nom || 'Vidéo du match', source: 'monteur' });
+  }
+  C.envoyerSequence({ evt: v.evt, equipe: eq, a, debut: s.debut, fin: s.fin, nom: titreSeq(s), note: (v.note || '').trim(), genre: s.genre || null, de: st ? C.nomComplet(st) : 'Le coach', sequence: s.id });
+  toast(a === 'equipe' ? 'Envoyée à toute l’équipe : chacune la retrouve dans son espace' : `Envoyée à ${a.map((id) => (C.personne(id) || {}).prenom).join(', ')}`, { duree: 4000 });
+}
+let POUR = 'equipe';
 
 // ================= envoi
 let suiviEnvoi = 0;

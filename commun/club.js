@@ -134,7 +134,7 @@
   /* ---------- état ---------- */
   let D = STOCKAGE.lire();
   if (!D || D.version !== VERSION) { D = graine(); STOCKAGE.ecrire(D); }
-  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; return d; }; // données plus anciennes
+  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; d.videos = d.videos || {}; d.envois = d.envois || []; return d; }; // données plus anciennes
   completer(D);
   let MATCHS = []; // matchs officiels (data/matchs.json)
   const abonnes = [];
@@ -183,7 +183,7 @@
 
   /* ---------- historique de démo : présences des entraînements passés ---------- */
   function presencesDemo() {
-    seancesDemo();
+    seancesDemo(); videosDemo();
     if (D.presencesDemo) { if (!D.matchsDemo) { matchsDemo(alea("matchs")); STOCKAGE.ecrire(D); } return; }
     const r = alea("presences");
     entrainements(ajout(auj(), -42), ajout(auj(), -1)).forEach((e) => {
@@ -215,6 +215,19 @@
       materiel: "16 ballons, 24 coupelles, 12 chasubles, 4 mini-buts",
       exercices: [{ titre: "Échauffement : passes en mouvement", theme: "échauffement", duree: 15 }, { titre: "Rondo 4 contre 2", theme: "technique", duree: 15 },
         { titre: "Conservation 5 contre 5 + 2 appuis", theme: "jeu réduit", duree: 20, variante: "2 touches maximum" }, { titre: "Match à thème : jouer vers l'avant", theme: "tactique", duree: 25 }, { titre: "Retour au calme et étirements", theme: "retour au calme", duree: 5 }] };
+    STOCKAGE.ecrire(D);
+  }
+
+  // U15F 2 : la vidéo de démonstration du Monteur reliée au dernier match joué, et deux séquences déjà envoyées
+  function videosDemo() {
+    if (D.videosDemo || !MATCHS.length) return;
+    const m = MATCHS.map(matchEvt).filter((e) => e.equipe === "U15F-2" && e.date < auj()).sort((a, b) => a.date.localeCompare(b.date)).pop(); if (!m) return;
+    D.videosDemo = true;
+    D.videos[m.id] = { url: BASE + "analyse-video/demo/duchere.mp4", titre: "Vidéo du match (extrait de démonstration)", source: "monteur", maj: new Date().toISOString() };
+    const js = joueurs("U15F-2"), num = (n) => (js.find((p) => p.numero === n) || {}).id, de = "Julie Marchand";
+    const t = new Date(jour(ajout(m.date, 1))); t.setHours(20, 15);
+    D.envois.push({ id: "env-demo-1", evt: m.id, equipe: "U15F-2", a: "equipe", debut: 4, fin: 13, nom: "Transition : l'appel dans la profondeur", note: "Bel enchaînement ! C'est ce qu'on veut voir dès la récupération.", genre: "bien", de, date: t.toISOString(), vus: {}, sequence: "s1" });
+    if (num(3)) D.envois.push({ id: "env-demo-2", evt: m.id, equipe: "U15F-2", a: [num(3)], debut: 17, fin: 27, nom: "Placement : resserre vers l'axe", note: "Regarde ta position au moment de la relance adverse, on en reparle mardi.", genre: "corriger", de, date: t.toISOString(), vus: {}, sequence: "s2" });
     STOCKAGE.ecrire(D);
   }
 
@@ -292,6 +305,18 @@
   // Séance préparée dans l'Atelier, rattachée à un entraînement choisi par le coach (pas forcément le prochain)
   // s = { nom, duree, exercices: [{ titre, theme, duree, variante, note }], materiel, lien, auteur }
   function setSeance(evt, s) { if (s) D.seances[evt] = Object.assign({ maj: new Date().toISOString(), source: "atelier" }, s); else delete D.seances[evt]; sauver(); }
+  // Vidéo d'un match (lien YouTube, Veo, Drive… ou vidéo du Monteur) et séquences envoyées aux joueurs
+  function setVideo(evt, v) { if (v && v.url) D.videos[evt] = Object.assign({ maj: new Date().toISOString() }, v); else delete D.videos[evt]; sauver(); }
+  // o = { evt, equipe, a: "equipe" | [ids joueurs], debut, fin (secondes), nom, note, genre ("bien" | "corriger"), de, sequence (id Monteur) }
+  function envoyerSequence(o) {
+    const e = Object.assign({ id: uid(), date: new Date().toISOString(), vus: {} }, o);
+    if (o.sequence) D.envois = D.envois.filter((x) => !(x.sequence === o.sequence && x.evt === o.evt && JSON.stringify(x.a) === JSON.stringify(o.a)));
+    D.envois.unshift(e); sauver(); return e.id;
+  }
+  const pourJoueur = (x, jid) => { const p = personne(jid); return x.a === "equipe" ? !!p && p.equipe === x.equipe : Array.isArray(x.a) && x.a.includes(jid); };
+  function envois({ evt, equipe, joueur } = {}) { return D.envois.filter((x) => (!evt || x.evt === evt) && (!equipe || x.equipe === equipe) && (!joueur || pourJoueur(x, joueur))); }
+  function vuEnvoi(id, jid) { const x = D.envois.find((y) => y.id === id); if (!x || !jid || x.vus[jid]) return; x.vus[jid] = new Date().toISOString(); sauver(); }
+  function retirerEnvoi(id) { D.envois = D.envois.filter((x) => x.id !== id); sauver(); }
   function statsJoueur(id) {
     const p = personne(id); if (!p) return null;
     const passes = MATCHS.map(matchEvt).concat(D.evenements.filter((e) => e.type === "amical")).filter((e) => e.equipe === p.equipe && e.date < auj());
@@ -330,6 +355,8 @@
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
     feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,
     seance: (evt) => D.seances[evt] || null, setSeance,
+    video: (evt) => D.videos[evt] || null, setVideo, envoyerSequence, envois, envoi: (id) => D.envois.find((x) => x.id === id) || null, vuEnvoi, retirerEnvoi,
+    lienEnvoi: (id) => BASE + "analyse-video/voir.html?e=" + encodeURIComponent(id),
     exporter, importer, reinitialiser, profil, setProfil, nomProfil, surChangement: (cb) => abonnes.push(cb),
     outils: { iso, ajout, auj, jour, uid },
   };
