@@ -223,7 +223,7 @@
           <p style="margin:10px 0 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" data-a="appel" data-id="${esc(prochain.id)}">Faire l'appel</button></p>
           <div style="margin-top:12px">${seanceHTML(prochain, true, true)}</div>
           ${ent.length > 1 ? `<p class="petit discret" style="margin:10px 0 4px">Séances suivantes :</p><ul class="suivantes">${ent.slice(1).map((x) => { const s = C.seance(x.id); return `<li><button class="btn lien" data-a="evt" data-id="${esc(x.id)}">${fJ(x.date)} ${hh(x.heure)}</button> ${s ? `📋 ${esc(s.nom || "Séance prête")}` : `<a href="${URL_MOD.atelier(x.id, eq)}" target="_blank" rel="noopener">préparer ↗</a>`}</li>`; }).join("")}</ul>` : ""}` : '<p class="vide">Pas d\'entraînement prévu (vacances ?).</p>'}</section>
-        <section class="carte"><h2>Effectif</h2><p style="margin:0 0 6px"><b>${pl(js.length, "joueur")}</b> · présence moyenne ${moy != null ? moy + " %" : "–"}</p>
+        <section class="carte"><h2>Effectif</h2><p style="margin:0 0 6px"><b>${pl(js.length, (C.equipe(eq) || {}).genre === "F" ? "joueuse" : "joueur")}</b> · présence moyenne ${moy != null ? moy + " %" : "–"}</p>
           ${alertes.length ? `<div class="alerte ko" style="margin-bottom:8px">${alertes.map((p) => `<b>${esc(p.prenom)} ${esc(p.nom[0])}.</b> ${p.certificat !== "ok" ? "certificat" : "licence"}`).join(", ")}</div>` : '<p class="discret petit">Licences et certificats en règle.</p>'}
           ${bas.length ? `<p class="petit discret" style="margin:6px 0">Peu présents ces dernières semaines : ${bas.map(([p, t]) => `${esc(p.prenom)} (${t} %)`).join(", ")}</p>` : ""}
           <a class="btn" href="#equipe/${esc(eq)}">Voir l'effectif</a></section>
@@ -518,9 +518,9 @@
       ${estFamille() ? "" : '<div class="actions"><button class="btn" data-a="nouvel-evt" data-type="amical">+ Match amical</button></div>'}</div>`;
     if (joues) {
       const evs = C.evenements({ du: C.SAISON.debut, au: ajout(auj(), -1), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule").reverse();
-      return tete + tabs + `<div class="table-wrap"><table class="liste"><thead><tr><th>Date</th>${estDirigeant() ? "<th>Équipe</th>" : ""}<th>Match</th><th>Score</th><th class="cache-m">Buteurs</th><th></th></tr></thead><tbody>
+      return tete + tabs + `<div class="table-wrap"><table class="liste"><thead><tr><th>Date</th>${estDirigeant() ? "<th>Équipe</th>" : ""}<th>Match</th><th class="cache-m">Score</th><th class="cache-m">Buteurs</th><th></th></tr></thead><tbody>
         ${evs.map((e) => { const f = C.feuille(e.id);
-          return `<tr data-a="lien" data-href="#feuille/${esc(e.id)}"><td>${fJ(e.date)}</td>${estDirigeant() ? `<td><b>${esc(C.nomEquipe(e.equipe))}</b></td>` : ""}<td>${esc(e.titre)}${C.video(e.id) ? " 🎬" : ""}<br><small class="discret">${esc(e.competition || "")}</small></td><td>${scoreHTML(e, f)}</td><td class="cache-m petit">${buteursHTML(f)}</td><td><a class="btn mini${f ? "" : " prim"}" href="#feuille/${esc(e.id)}">${f ? "Voir" : "Saisir"}</a></td></tr>`; }).join("") || `<tr><td colspan="6" class="vide">Aucun match joué cette saison.</td></tr>`}
+          return `<tr data-a="lien" data-href="#feuille/${esc(e.id)}"><td>${fJ(e.date)}</td>${estDirigeant() ? `<td><b>${esc(C.nomEquipe(e.equipe))}</b></td>` : ""}<td>${esc(e.titre)}${C.video(e.id) ? " 🎬" : ""}<br><small class="discret">${esc(e.competition || "")}</small><span class="seul-m"> ${scoreHTML(e, f)}</span></td><td class="cache-m">${scoreHTML(e, f)}</td><td class="cache-m petit">${buteursHTML(f)}</td><td><a class="btn mini${f ? "" : " prim"}" href="#feuille/${esc(e.id)}">${f ? "Voir" : "Saisir"}</a></td></tr>`; }).join("") || `<tr><td colspan="6" class="vide">Aucun match joué cette saison.</td></tr>`}
         </tbody></table></div>`;
     }
     const evs = C.evenements({ du: auj(), au: ajout(auj(), 35), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule");
@@ -566,14 +566,15 @@
     const cv = C.convocation(id), js = C.joueurs(e.equipe);
     const dispo = C.dispos(id); // empêchements signalés par les familles (messagerie)
     const b = brouillons[id] || (brouillons[id] = cv && !brouillons[id] ? { joueurs: cv.joueurs.slice(), rdvHeure: cv.rdvHeure, rdvLieu: cv.rdvLieu, tenue: cv.tenue, mot: cv.mot, modif: false }
-      : { joueurs: js.filter((p) => !(dispo[p.id] && dispo[p.id].statut === "absent") && p.certificat === "ok").slice(0, e.equipe && C.equipe(e.equipe).format === 11 ? 16 : 12).map((p) => p.id), rdvHeure: minutes(e.heure, e.domicile ? -60 : -90), rdvLieu: e.domicile ? `${e.lieu.split(",")[0]} (vestiaires)` : "Parking du stade Edmond Pouzet", tenue: "Tenue du club, protège-tibias, gourde", mot: "", modif: true });
+      : { joueurs: js.filter((p) => !(dispo[p.id] && dispo[p.id].statut === "absent") && p.certificat === "ok").slice(0, maxConv(e) || 99).map((p) => p.id), rdvHeure: minutes(e.heure, e.domicile ? -60 : -90), rdvLieu: e.domicile ? `${e.lieu.split(",")[0]} (vestiaires)` : "Parking du stade Edmond Pouzet", tenue: "Tenue du club, protège-tibias, gourde", mot: "", modif: true });
     const edition = !cv || b.modif;
     const texte = texteConvoc(e, b);
     return `<div class="entete"><div><p class="fil-ariane"><a href="#convocations">Convocations</a> ›</p><h1>${esc(e.titre)}</h1><p class="sous">${esc(C.nomEquipe(e.equipe))} · ${fJL(e.date)} · ${hh(e.heure)} · ${esc(e.lieu)}</p></div>
       <div class="actions"><button class="btn" data-a="copier-convoc" data-id="${esc(id)}">Copier le texte</button><button class="btn" data-a="imprimer">Imprimer</button></div></div>
       ${cv ? `<div class="statut-convoc no-print">✅ <span><b>Publiée le ${new Date(cv.publiee).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} à ${new Date(cv.publiee).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</b>${cv.source === "messagerie" ? " depuis la messagerie" : ""} · visible dans la messagerie de l'équipe.</span>${edition ? "" : `<button class="btn mini" style="margin-left:auto" data-a="convoc-modifier" data-id="${esc(id)}">Modifier</button>`}</div>` : ""}
       <form class="convoc" id="fConvoc" data-id="${esc(id)}">
-        <section class="carte"><h2>Joueurs convoqués <span class="etiq bleu" id="nbConv">${b.joueurs.length} / ${js.length}</span>${edition ? `<span class="plus"><button type="button" class="btn lien" data-a="conv-tous">Tous</button> · <button type="button" class="btn lien" data-a="conv-aucun">Aucun</button></span>` : ""}</h2>
+        <section class="carte"><h2>Joueurs convoqués <span class="etiq bleu" id="nbConv">${b.joueurs.length} / ${js.length}</span>${maxConv(e) ? `<span class="discret petit"> · ${maxConv(e)} maximum</span>` : ""}${edition ? `<span class="plus"><button type="button" class="btn lien" data-a="conv-tous">Tous</button> · <button type="button" class="btn lien" data-a="conv-aucun">Aucun</button></span>` : ""}</h2>
+          ${edition && maxConv(e) ? `<label class="exception"><input type="checkbox" name="plus"${b.plus || b.joueurs.length > maxConv(e) ? " checked" : ""}> Exceptionnellement, convoquer plus de ${maxConv(e)} joueur${C.equipe(e.equipe).genre === "F" ? "ses" : "s"}</label>` : ""}
           <ul class="sel-joueurs">${js.map((p) => { const d = dispo[p.id], t = C.tauxPresence(p.id), notes = [p.poste, t != null ? `présence ${t} %` : ""].filter(Boolean).join(" · ");
             const ok = d && d.statut === "present";
             const al = [d && !ok ? `${d.statut === "incertain" ? "❔" : "⚠️"} ${d.motif || "indisponible"}${d.precision ? " (" + d.precision + ")" : ""}` : "", p.certificat !== "ok" ? "⛔ certificat médical manquant" : "", p.licence.statut === "en_attente" ? "⛔ licence en attente" : ""].filter(Boolean).join(" · ");
@@ -593,7 +594,8 @@
     const js = b.joueurs.map(C.personne).filter(Boolean).sort((a, c) => (a.numero || 99) - (c.numero || 99));
     return `📋 CONVOCATION · ${C.nomEquipe(e.equipe)}\n${e.titre}\n${fJL(e.date)} · coup d'envoi ${hh(e.heure)}\n📍 ${e.lieu}\n\n⏰ Rendez-vous ${hh(b.rdvHeure)} · ${b.rdvLieu}\n🎒 ${b.tenue}\n\nConvoqué${js.length > 1 ? "s" : ""} (${js.length}) :\n${js.map((p) => `${p.numero ? p.numero + ". " : "• "}${p.prenom} ${p.nom}`).join("\n")}${b.mot ? `\n\n💬 ${b.mot}` : ""}\n\nEn cas d'empêchement, prévenez le coach au plus vite.`;
   }
-  function lireConvoc(f) { const id = f.dataset.id, b = brouillons[id]; const d = new FormData(f); b.joueurs = d.getAll("j"); ["rdvHeure", "rdvLieu", "tenue", "mot"].forEach((k) => { if (d.has(k)) b[k] = d.get(k).trim(); }); return b; }
+  const maxConv = (e) => { const q = e && e.equipe && C.equipe(e.equipe); return q && q.format === 11 ? 14 : q && q.format === 8 ? 11 : null; };
+  function lireConvoc(f) { const id = f.dataset.id, b = brouillons[id]; const d = new FormData(f); b.joueurs = d.getAll("j"); b.plus = d.has("plus"); ["rdvHeure", "rdvLieu", "tenue", "mot"].forEach((k) => { if (d.has(k)) b[k] = d.get(k).trim(); }); return b; }
 
   /* ---------- réglages ---------- */
   function pageParametres() {
@@ -781,7 +783,7 @@
     if (a === "choix-equipe") { choix.equipe = t.dataset.v; choix.q = ""; return rendre(true); }
     if (a === "choisir-coach") { profil = { role: "coach", staff: id }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#accueil", `Bonjour ${moiStaff().prenom} ! Voici votre équipe.`); }
     if (a === "choisir-joueur") { profil = { role: choix.role, joueur: id }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#moi", "C'est parti !"); }
-    if (a === "dispo-match") { if (t.dataset.v === "absent") return ouvrirMotif(id); C.setDispo(id, moiJoueur().id, { statut: t.dataset.v, motif: t.dataset.v === "present" ? "Disponible" : "Incertain", par: "famille" }); return toast("Réponse envoyée au coach. 👍"); }
+    if (a === "dispo-match") { if (t.dataset.v === "absent") { if (!(C.dispos(id)[moiJoueur().id] || {}).motif || C.dispos(id)[moiJoueur().id].statut !== "absent") C.setDispo(id, moiJoueur().id, { statut: "absent", motif: "Absent", par: "famille" }); return ouvrirMotif(id); } C.setDispo(id, moiJoueur().id, { statut: t.dataset.v, motif: t.dataset.v === "present" ? "Disponible" : "Incertain", par: "famille" }); return toast("Réponse envoyée au coach. 👍"); }
     if (a === "absence") return ouvrirMotif(id);
     if (a === "lancer-sondage") { C.lancerSondage(id); return toast("Sondage envoyé dans la messagerie de l'équipe. Les réponses arrivent ici."); }
     if (a === "relancer-sondage") { C.lancerSondage(id, true); return toast("Rappel envoyé aux familles qui n'ont pas répondu."); }
@@ -836,13 +838,19 @@
   function allerA(h, msg) { rendreProfils(); if (window.ESGA && ESGA.bandeau) ESGA.bandeau(); if (location.hash === h) rendre(); else location.hash = h; if (msg) toast(msg); }
   function confirmer(t) { return window.confirm(t); }
   function majConvoc() {
-    const f = $("#fConvoc"); if (!f) return; const id = f.dataset.id, b = lireConvoc(f);
+    const f = $("#fConvoc"); if (!f) return; const id = f.dataset.id; let b = lireConvoc(f);
+    const mx = maxConv(C.evenement(id));
+    if (mx && !b.plus && b.joueurs.length > mx) {
+      const coches = [...f.querySelectorAll('input[name="j"]:checked')], der = majConvoc.derniere && coches.includes(majConvoc.derniere) ? majConvoc.derniere : coches[coches.length - 1];
+      if (der) der.checked = false; while (f.querySelectorAll('input[name="j"]:checked').length > mx) [...f.querySelectorAll('input[name="j"]:checked')].pop().checked = false;
+      b = lireConvoc(f); toast(`${mx} maximum pour ce format. Cochez « Exceptionnellement » pour en convoquer plus.`);
+    }
     $("#nbConv").textContent = `${b.joueurs.length} / ${C.joueurs(C.evenement(id).equipe).length}`;
     $("#apercuConvoc").textContent = texteConvoc(C.evenement(id), b);
   }
   document.addEventListener("input", (ev) => {
     const t = ev.target;
-    if (t.closest("#fConvoc")) return majConvoc();
+    if (t.closest("#fConvoc")) { if (t.name === "j" && t.checked) majConvoc.derniere = t; return majConvoc(); }
     if (t.id === "bvQ") { choix.q = t.value; clearTimeout(rendre.t); rendre.t = setTimeout(() => { rendre(true); const q = $("#bvQ"); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }, 140); return; }
     if (t.id === "fQ") { filtres.q = t.value; clearTimeout(rendre.t); rendre.t = setTimeout(() => { rendre(true); const q = $("#fQ"); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }, 160); }
   });
@@ -859,8 +867,9 @@
   document.addEventListener("submit", (ev) => {
     const f = ev.target; ev.preventDefault();
     if (f.id === "fConvoc") {
-      const id = f.dataset.id, b = lireConvoc(f);
+      const id = f.dataset.id, b = lireConvoc(f), mx = maxConv(C.evenement(id));
       if (!b.joueurs.length) return toast("Cochez au moins un joueur.");
+      if (mx && !b.plus && b.joueurs.length > mx) return toast(`${mx} joueurs maximum : décochez-en ou cochez « Exceptionnellement ».`);
       const ancienne = C.convocation(id);
       C.publierConvocation({ evenement: id, joueurs: b.joueurs.slice(), rdvHeure: b.rdvHeure, rdvLieu: b.rdvLieu, tenue: b.tenue, mot: b.mot, source: "console" });
       delete brouillons[id]; toast(ancienne ? "Convocation mise à jour et renvoyée dans la messagerie." : "Convocation publiée dans la messagerie de l'équipe.");

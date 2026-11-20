@@ -435,3 +435,9 @@ fieldset label.tout { display: inline-flex; gap: 6px; margin-right: 14px; font-w
 .envoi .vign { flex: none; width: 44px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: var(--esga-marine); color: #fff; text-decoration: none; font-size: .8rem; }
 .envoi .vign.bien { background: var(--esga-vert); }
 .envoi .vign.corriger { background: var(--esga-rouge); }
+
+/* convocation : limite par format */
+.convoc label.exception { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: var(--esga-carte-2); font-size: .88rem; font-weight: 600; }
+.score { white-space: nowrap; }
+.liste .seul-m { display: none; }
+@media (max-width: 820px) { .liste .seul-m { display: inline-block; margin-top: 4px; } }
