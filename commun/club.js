@@ -134,7 +134,7 @@
   /* ---------- état ---------- */
   let D = STOCKAGE.lire();
   if (!D || D.version !== VERSION) { D = graine(); STOCKAGE.ecrire(D); }
-  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; return d; }; // données plus anciennes
+  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; return d; }; // données plus anciennes
   completer(D);
   let MATCHS = []; // matchs officiels (data/matchs.json)
   const abonnes = [];
@@ -183,6 +183,7 @@
 
   /* ---------- historique de démo : présences des entraînements passés ---------- */
   function presencesDemo() {
+    seancesDemo();
     if (D.presencesDemo) { if (!D.matchsDemo) { matchsDemo(alea("matchs")); STOCKAGE.ecrire(D); } return; }
     const r = alea("presences");
     entrainements(ajout(auj(), -42), ajout(auj(), -1)).forEach((e) => {
@@ -204,6 +205,17 @@
     const so = (statut, motif) => ({ statut, motif, par: "sondage", date: new Date().toISOString() });
     D.dispos["ev-amical-u15f"] = Object.assign(D.dispos["ev-amical-u15f"] || {}, { "j-U15F-2-4": so("absent", "Absent au sondage"), "j-U15F-2-5": so("absent", "Absent au sondage"), "j-U15F-2-7": so("incertain", "Incertain au sondage") });
     D.presencesDemo = true; matchsDemo(r); STOCKAGE.ecrire(D);
+  }
+
+  // U15F 2 : une séance déjà préparée dans l'Atelier pour le 2e entraînement à venir (le coach choisit lequel)
+  function seancesDemo() {
+    if (D.seancesDemo) return; D.seancesDemo = true;
+    const e = entrainements(auj(), ajout(auj(), 28), "U15F-2").filter((x) => x.date > auj()).sort((a, b) => a.date.localeCompare(b.date))[1]; if (!e) return;
+    D.seances[e.id] = { nom: "Conservation et jeu vers l'avant", duree: e.duree, source: "atelier", auteur: "Julie Marchand", maj: new Date().toISOString(), lien: "https://cintractbertrand.github.io/atelier-foot/site/",
+      materiel: "16 ballons, 24 coupelles, 12 chasubles, 4 mini-buts",
+      exercices: [{ titre: "Échauffement : passes en mouvement", theme: "échauffement", duree: 15 }, { titre: "Rondo 4 contre 2", theme: "technique", duree: 15 },
+        { titre: "Conservation 5 contre 5 + 2 appuis", theme: "jeu réduit", duree: 20, variante: "2 touches maximum" }, { titre: "Match à thème : jouer vers l'avant", theme: "tactique", duree: 25 }, { titre: "Retour au calme et étirements", theme: "retour au calme", duree: 5 }] };
+    STOCKAGE.ecrire(D);
   }
 
   // U15F 2 : matchs déjà joués avec convocation et feuille de match (score, buts, passes décisives)
@@ -277,6 +289,9 @@
   function setFeuille(evt, f) { D.feuilles[evt] = Object.assign({ saisie: new Date().toISOString() }, f); sauver(); }
   // Sondage de disponibilité d'un match : lancé depuis la console ou la messagerie, réponses dans dispos
   function lancerSondage(evt, relance) { const s = D.sondages[evt]; if (s && !relance) return; D.sondages[evt] = Object.assign({}, s, s ? { relance: new Date().toISOString() } : { lance: new Date().toISOString() }); sauver(); }
+  // Séance préparée dans l'Atelier, rattachée à un entraînement choisi par le coach (pas forcément le prochain)
+  // s = { nom, duree, exercices: [{ titre, theme, duree, variante, note }], materiel, lien, auteur }
+  function setSeance(evt, s) { if (s) D.seances[evt] = Object.assign({ maj: new Date().toISOString(), source: "atelier" }, s); else delete D.seances[evt]; sauver(); }
   function statsJoueur(id) {
     const p = personne(id); if (!p) return null;
     const passes = MATCHS.map(matchEvt).concat(D.evenements.filter((e) => e.type === "amical")).filter((e) => e.equipe === p.equipe && e.date < auj());
@@ -314,6 +329,7 @@
     presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, tauxPresence, categorieAge,
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
     feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,
+    seance: (evt) => D.seances[evt] || null, setSeance,
     exporter, importer, reinitialiser, profil, setProfil, nomProfil, surChangement: (cb) => abonnes.push(cb),
     outils: { iso, ajout, auj, jour, uid },
   };
