@@ -21,3 +21,9 @@ Les onglets proposent ensuite les vues de tout le club :
 Pour tester le site en local : `python3 -m http.server`, puis ouvrir http://localhost:8000.
 
 À chaque modification de `app.js` ou `style.css`, changer le numéro `?v=` dans `pv.html` pour que les navigateurs rechargent les fichiers.
+
+## Console du club (`console/`) et socle commun (`commun/club.js`)
+
+La console gère licenciés, éducateurs, équipes, créneaux, calendrier (matchs des PV + entraînements + événements), présences et convocations. Vue dirigeant (tout le club) ou vue coach (ses équipes), au choix en haut de la page.
+
+`commun/club.js` est le socle partagé : la messagerie, le Monteur vidéo et la lecture des PV y lisent l'effectif, les séances, les matchs et les convocations. En démo, tout reste dans le navigateur. Le schéma Supabase prévu est dans `supabase/schema.sql` (non appliqué) : pour basculer, remplacer seulement l'objet `STOCKAGE` de `commun/club.js`.
