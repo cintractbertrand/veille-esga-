@@ -205,7 +205,8 @@
       ${env.length ? `<h3>Séquences envoyées</h3><ul class="envois">${env.map((x) => ligneEnvoi(x)).join("")}</ul>` : ""}</section>`;
   }
   /* ---------- matchs à préparer : le coach lance le sondage quand il veut, avec un rappel ---------- */
-  const dateRappel = (e) => C.rappel(e.id) || ajout(e.date, -7);
+  // Par défaut : le lundi qui précède le match (règle de Bertrand)
+  const dateRappel = (e) => C.rappel(e.id) || ajout(e.date, -(((jour(e.date).getDay() + 6) % 7) || 7));
   const rappelDu = (e) => !C.convocation(e.id) && !etatSondage(e).lance && dateRappel(e) <= auj();
   function matchsAPreparer(eq) { return C.evenements({ equipe: eq, du: auj(), au: ajout(auj(), 42), types: ["match", "amical"] }).filter((e) => e.statut !== "annule" && e.equipe === eq); }
   const memeWeekend = (a, b) => a.id !== b.id && Math.abs((jour(a.date) - jour(b.date)) / 864e5) <= 2 && [5, 6, 0].includes(jour(a.date).getDay()) && [5, 6, 0].includes(jour(b.date).getDay());
