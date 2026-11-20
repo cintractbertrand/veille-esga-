@@ -24,6 +24,6 @@ Pour tester le site en local : `python3 -m http.server`, puis ouvrir http://loca
 
 ## Console du club (`console/`) et socle commun (`commun/club.js`)
 
-La console gère licenciés, éducateurs, équipes, créneaux, calendrier (matchs des PV + entraînements + événements), présences et convocations. Vue dirigeant (tout le club) ou vue coach (ses équipes), au choix en haut de la page.
+La console est la page d'accueil du site (racine ; `console/` renvoie vers la racine). Elle gère licenciés, éducateurs, équipes, créneaux, calendrier (matchs des PV + entraînements + événements), présences et convocations. Vue dirigeant (tout le club) ou vue coach (ses équipes), au choix en haut de la page.
 
 `commun/club.js` est le socle partagé : la messagerie, le Monteur vidéo et la lecture des PV y lisent l'effectif, les séances, les matchs et les convocations. En démo, tout reste dans le navigateur. Le schéma Supabase prévu est dans `supabase/schema.sql` (non appliqué) : pour basculer, remplacer seulement l'objet `STOCKAGE` de `commun/club.js`.

@@ -2,109 +2,43 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b2a6f">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230b2a6f%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
-  <title>ESGA · Espace éducateurs</title>
-  <meta name="description" content="ES Genas Azieu : console du club, analyse vidéo, lecture des PV du District, atelier d'entraînements et messagerie d'équipe">
+  <title>ESGA · Console du club</title>
   <script>
-    // Anciens liens vers la veille des PV (#semaine, #equipe/U17…) : on les renvoie vers le module.
-    if (location.hash.length > 1) location.replace("pv.html" + location.hash);
+    // Anciens liens de la veille des PV (#semaine, #historique, #equipe/U17…) : renvoyés vers le module PV.
+    (function () {
+      const h = decodeURIComponent(location.hash.slice(1)), [page, id] = h.split("?")[0].split("/");
+      const console_ = ["accueil", "calendrier", "equipes", "equipe", "licencies", "staff", "convocations", "convoc", "parametres"];
+      if (h && (!console_.includes(page) || (page === "equipe" && id && !/-\d+$/.test(id)))) location.replace("pv.html" + location.hash);
+    })();
   </script>
-  <link rel="stylesheet" href="commun/charte.css?v=2026-11-20d">
-  <script src="commun/modules.js?v=2026-11-20d" data-module="accueil" data-bandeau="non"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font: 15px/1.5 var(--esga-police); background: var(--esga-fond); color: var(--esga-texte); -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
-    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; width: 100%; }
-    .hero { background: var(--esga-degrade); color: #fff; padding: 26px 0 68px; border-bottom: 4px solid var(--esga-or); }
-    .brand { display: flex; align-items: center; gap: 18px; }
-    .crest { flex: 0 0 auto; width: 56px; height: 63px; border-radius: 14px 14px 30px 30px; background: #fff; color: var(--esga-marine); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,.25); border: 3px solid rgba(255,255,255,.6); outline: 2px solid var(--esga-marine); outline-offset: -7px; }
-    .crest span { font-weight: 800; font-size: 1.35rem; line-height: 1; }
-    .crest small { font-weight: 700; font-size: .78rem; letter-spacing: .2em; margin-top: 3px; color: var(--esga-bleu); }
-    h1 { margin: 4px 0 6px; font-size: clamp(1.5rem, 4.5vw, 2.1rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
-    .intro { margin: 0; opacity: .9; max-width: 560px; }
-    main { margin-top: -46px; flex: 1; }
-    .mods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-    @media (max-width: 1000px) { .mods { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    .mod { position: relative; display: flex; flex-direction: column; background: var(--esga-carte); border: 1px solid var(--esga-ligne); border-radius: 16px; padding: 16px; box-shadow: var(--esga-ombre-l); color: inherit; text-decoration: none; transition: transform .18s, box-shadow .18s, border-color .18s; overflow: hidden; }
-    .mod::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--c, var(--esga-bleu)); }
-    .mod:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c) 45%, var(--esga-ligne)); }
-    .mod:hover .esga-btn { background: var(--c); border-color: var(--c); color: #fff; }
-    .ic { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); margin-bottom: 10px; }
-    .ic svg { width: 22px; height: 22px; }
-    .mod h2 { margin: 0 0 4px; font-size: 1.02rem; line-height: 1.25; letter-spacing: -.01em; }
-    .mod p { margin: 0 0 12px; color: var(--esga-gris); font-size: .86rem; line-height: 1.45; }
-    .mod .info { font-size: .84rem; color: var(--esga-gris); background: var(--esga-carte-2); border: 1px solid var(--esga-ligne); border-radius: 9px; padding: 6px 9px; margin: 0 0 12px; font-size: .76rem; line-height: 1.4; }
-    .mod .info b { color: var(--esga-texte); }
-    .mod .esga-btn { margin-top: auto; align-self: flex-start; padding: 8px 12px; font-size: .84rem; }
-    .m-console { --c: var(--esga-marine); } .m-video { --c: #c2410c; } .m-pv { --c: var(--esga-bleu); } .m-atelier { --c: var(--esga-vert); } .m-equipe { --c: #7c3aed; } .m-messagerie { --c: #0f766e; }
-    @media (prefers-color-scheme: dark) { .m-console { --c: var(--esga-or); } .m-video { --c: #f97316; } .m-pv { --c: #5b8cff; } .m-atelier { --c: #2fbf7f; } .m-equipe { --c: #a78bfa; } .m-messagerie { --c: #2dd4bf; } }
-    .foot { color: var(--esga-gris); font-size: .82rem; padding: 20px 20px 18px; text-align: center; }
-    @media (max-width: 700px) {
-      .hero { padding: 18px 0 56px; } .intro { display: none; }
-      .mods { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-      .mod { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; column-gap: 12px; padding: 12px 14px; }
-      .mod::before { inset: 0 auto 0 0; width: 4px; height: auto; }
-      .mod .ic { margin: 0; grid-row: 1 / span 2; }
-      .mod h2 { margin: 0; align-self: end; } .mod p { align-self: start; } .mod p { margin: 0; font-size: .78rem; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-      .mod .info, .mod .esga-btn { display: none; }
-      .mod::after { content: "›"; grid-column: 3; grid-row: 1 / span 2; font-size: 1.5rem; color: var(--c); }
-    }
-  </style>
+  <meta name="description" content="ES Genas Azieu : console du club, licenciés, éducateurs, équipes, calendrier, convocations et présences, au même endroit">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="commun/charte.css?v=2026-11-20e">
+  <link rel="stylesheet" href="console/style.css?v=2026-11-20e">
+  <script src="commun/modules.js?v=2026-11-20e" data-module="console" defer></script>
+  <script src="commun/club.js?v=2026-11-20e"></script>
 </head>
-<body>
-  <header class="hero">
-    <div class="wrap">
-      <div class="brand">
-        <div class="crest" aria-hidden="true"><span>ES</span><small>GA</small></div>
-        <div>
-          <p class="esga-kicker">ES Genas Azieu · Espace éducateurs</p>
-          <h1>Bienvenue au club</h1>
-          <p class="intro">Les outils du club, réunis au même endroit : préparer les entraînements, analyser les matchs, suivre les PV du District et gérer l'équipe.</p>
-        </div>
-      </div>
-    </div>
-  </header>
+<body class="chargement">
+  <div class="demo-bandeau">
+    <span><b>Démo</b> · les données restent dans ce navigateur et sont partagées avec la messagerie, le Monteur et les PV. Changez de profil pour voir la console d'un coach.</span>
+    <label>Je suis <select id="choixProfil" aria-label="Profil"></select></label>
+  </div>
+  <div class="console">
+    <nav class="menu" id="menu" aria-label="Sections"></nav>
+    <main class="contenu" id="contenu" tabindex="-1"></main>
+  </div>
 
-  <main class="wrap">
-    <div class="mods" id="mods"></div>
-  </main>
+  <div class="tiroir-fond" id="tiroirFond" hidden></div>
+  <aside class="tiroir" id="tiroir" role="dialog" aria-modal="true" aria-labelledby="tiroirTitre" hidden>
+    <header class="tiroir-tete"><h2 id="tiroirTitre"></h2><button class="icone" data-a="fermer" aria-label="Fermer">✕</button></header>
+    <div class="tiroir-corps" id="tiroirCorps"></div>
+  </aside>
+  <div class="toast" id="toast" role="status" hidden></div>
 
-  <footer class="foot">ES Genas Azieu · n° 523341</footer>
-
-  <script>
-    const { MODULES, ICONES } = window.ESGA;
-    const ACTION = { console: "Ouvrir la console", video: "Essayer la démo", pv: "Lire les PV", atelier: "Préparer une séance", messagerie: "Essayer la démo", equipe: "Ouvrir MyFootSquad ↗" };
-    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-    document.getElementById("mods").innerHTML = MODULES.map((m) => `
-      <a class="mod m-${m.id}" href="${m.url}"${m.externe ? ' target="_blank" rel="noopener"' : ""}>
-        <div class="ic">${ICONES[m.id]}</div>
-        <h2>${esc(m.nom)}</h2>
-        <p>${esc(m.desc)}</p>
-        <div class="info" id="info-${m.id}" hidden></div>
-        <span class="esga-btn">${ACTION[m.id]}${m.externe ? "" : " ›"}</span>
-      </a>`).join("");
-
-    // Dernier PV publié, lu dans les données du module
-    fetch("data/pv.json").then((r) => r.json()).then((d) => {
-      const p = d.pvs && d.pvs[0];
-      if (!p) return;
-      const n = (p.items || []).length;
-      const date = new Date(p.date + "T12:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
-      const el = document.getElementById("info-pv");
-      el.innerHTML = `Dernier PV : <b>n°${p.numero} du ${date}</b> · ${n} mention${n > 1 ? "s" : ""} du club`;
-      el.hidden = false;
-    }).catch(() => {});
-    const v = document.getElementById("info-video");
-    v.innerHTML = "Une <b>minute du match contre La Duchère</b> est déjà chargée : rien à importer pour tester.";
-    v.hidden = false;
-    const co = document.getElementById("info-console");
-    co.innerHTML = "Démo : passez de <b>dirigeant</b> à <b>coach</b> en haut de la page.";
-    co.hidden = false;
-    const ms = document.getElementById("info-messagerie");
-    ms.innerHTML = "Démo : jouez <b>le coach</b> dans un onglet et <b>un parent</b> dans un autre.";
-    ms.hidden = false;
-  </script>
+  <script src="console/app.js?v=2026-11-20e"></script>
 </body>
 </html>

@@ -38,6 +38,7 @@
     messagerie: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14.5h4"/>',
     video: '<rect x="2" y="5" width="14" height="14" rx="2"/><path d="m16 10 6-3v10l-6-3"/>',
     pv: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+    equipe: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/>',
     atelier: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 9h3v6H3M21 9h-3v6h3"/><circle cx="12" cy="12" r="2.5"/>',
   };
   const svg = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
@@ -87,10 +88,10 @@
     const items = dir
       ? [["accueil", "Tableau de bord", 0, "Accueil"], ["calendrier", "Calendrier"], ["equipes", "Équipes"], ["licencies", "Licenciés"], ["staff", "Éducateurs et bureau", 0, "Staff"], ["convocations", "Convocations", nbConv, "Convoc."], ["parametres", "Réglages"]]
       : [["accueil", "Mon tableau de bord", 0, "Accueil"], ["calendrier", "Calendrier"], ["equipes", mesEquipes().length > 1 ? "Mes équipes" : "Mon équipe", 0, "Équipe"], ["licencies", "Mes joueurs", 0, "Joueurs"], ["convocations", "Convocations", nbConv, "Convoc."], ["staff", "Contacts du club", 0, "Contacts"]];
-    const ext = [["messagerie", "Messagerie", URL_MOD.messagerie(dir ? "" : mesEquipes()[0])], ["atelier", "Atelier entraînements", URL_MOD.atelier()], ["video", "Monteur vidéo", URL_MOD.video()], ["pv", "PV du District", URL_MOD.pv()]];
+    const ext = [["messagerie", "Messagerie", URL_MOD.messagerie(dir ? "" : mesEquipes()[0])], ["atelier", "Atelier entraînements", URL_MOD.atelier()], ["video", "Monteur vidéo", URL_MOD.video()], ["pv", "PV du District", URL_MOD.pv()], ["equipe", "MyFootSquad", "https://myfootsquad.com/"]];
     $("#menu").innerHTML = `<div class="profil"><b>${dir ? "Console du club" : esc(C.nomComplet(s))}</b><span>${dir ? "Vue dirigeant · tout le club" : esc((s.equipes || []).map(C.nomEquipe).join(", ") || "Aucune équipe")}</span></div>`
       + items.map(([id, l, n, c]) => `<a href="#${id}"${page === id ? ' aria-current="page"' : ""}>${svg(id)}<span class="long">${l}</span><span class="court">${c || l}</span>${n ? `<span class="compte">${n}</span>` : ""}</a>`).join("")
-      + `<div class="sep">Modules</div>` + ext.map(([id, l, u]) => `<a class="ext" href="${u}"${id === "atelier" ? ' target="_blank" rel="noopener"' : ""}>${svg(id)}<span>${l}</span></a>`).join("");
+      + `<div class="sep">Modules</div>` + ext.map(([id, l, u]) => `<a class="ext" href="${u}"${["atelier", "equipe"].includes(id) ? ' target="_blank" rel="noopener"' : ""}>${svg(id)}<span>${l}</span></a>`).join("");
   }
 
   /* ---------- données calculées ---------- */
