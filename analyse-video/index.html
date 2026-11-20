@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
 <link rel="stylesheet" href="../commun/charte.css?v=2026-11-20c">
-<link rel="stylesheet" href="style.css?v=2026-11-20m">
+<link rel="stylesheet" href="style.css?v=2026-11-20p">
 <script src="../commun/modules.js?v=2026-11-20d" data-module="video" defer></script>
 <script src="demo/demo.js?v=2026-11-20c"></script>
 <script>document.documentElement.classList.add("demo")</script>
@@ -28,7 +28,8 @@
   <button id="btnPresenter" title="Présenter les séquences en plein écran (séance au club)"><i data-ic="presenter" data-t="16"></i> Présenter</button>
   <button id="btnEnvoyer" class="principal" title="Une vidéo par joueuse concernée + une vidéo d'équipe"><i data-ic="envoyer" data-t="16"></i> Envoyer</button>
   <button id="btnDossier" class="discret" title="Ouvrir le dossier des envois"><i data-ic="dossier"></i></button>
-  <button id="btnAide" class="discret" title="Raccourcis clavier"><i data-ic="aide"></i></button>
+  <button id="btnAide" class="discret" title="Aide et raccourcis"><i data-ic="aide"></i></button>
+  <button id="btnMenu" class="discret" title="Plus : exporter ou importer l'analyse, aide"><i data-ic="menu"></i></button>
 </header>
 
 <main>
@@ -77,6 +78,20 @@
         <p>Les vidéos du dossier <b>analyse-veo\match</b> apparaissent toutes seules.<br>Sinon : « + Vidéo » et collez le chemin du fichier.</p></div>
       <div id="bandeauDessin" hidden></div>
       <div id="info" hidden></div>
+      <div id="pres" hidden>
+        <div class="pr-haut"><span id="prCompte" class="mono"></span><span id="prGenre"></span><span class="espace"></span>
+          <button id="prQuitter" title="Quitter la présentation (Échap)"><i data-ic="fermer" data-t="18"></i> Quitter</button></div>
+        <div class="pr-bas">
+          <div class="pr-texte"><b id="prTitre"></b><span id="prJoueuses"></span><p id="prNote"></p></div>
+          <div class="pr-boutons">
+            <button id="prPrec" title="Séquence précédente (←)"><i data-ic="prec" data-t="22"></i></button>
+            <button id="prLecture" class="pr-lecture" title="Pause / lecture (Espace)"><i data-ic="pause" data-t="26"></i></button>
+            <button id="prSuiv" title="Séquence suivante (→)"><i data-ic="suiv" data-t="22"></i></button>
+            <button id="prRevoir" title="Revoir cette séquence (R)"><i data-ic="revoir" data-t="20"></i></button>
+          </div>
+          <div id="prPoints"></div>
+        </div>
+      </div>
     </div>
     <div id="transport">
       <button id="tLecture" class="icone" title="Lecture / pause (Espace, K)"><i data-ic="lecture" data-t="20"></i></button>
@@ -114,9 +129,15 @@
     <div class="titre-bloc"><h3>Effectif</h3><span class="petit discret">clic = marquer à l'instant</span>
       <button id="btnEffectif" class="discret petit">Modifier</button></div>
     <div id="effectif"></div>
-    <div class="onglets"><button data-onglet="seq" class="actif">Séquences <span id="nSeq"></span></button><button data-onglet="rep">Repères <span id="nRep"></span></button></div>
-    <div id="listeSeq" class="liste"></div>
-    <div id="listeRep" class="liste" hidden></div>
+    <div class="onglets"><button data-onglet="seq" class="actif">Séquences <span id="nSeq"></span></button><button data-onglet="rep">Repères <span id="nRep"></span></button><button data-onglet="bilan">Bilan</button></div>
+    <div id="filtreSeq" class="filtres">
+      <select id="fsJoueuse" title="N'afficher que les séquences d'une joueuse"><option value="">Toutes les joueuses</option></select>
+      <span class="segment" id="fsGenre"><button data-g="" class="actif">Tout</button><button data-g="bien" title="À valoriser"><i data-ic="bien" data-t="13"></i></button><button data-g="corriger" title="À corriger"><i data-ic="corriger" data-t="13"></i></button></span>
+      <button id="fsPresenter" class="petit" title="Présenter les séquences affichées"><i data-ic="presenter" data-t="14"></i></button>
+    </div>
+    <div id="listeSeq" class="liste" data-panneau="seq"></div>
+    <div id="listeRep" class="liste" data-panneau="rep" hidden></div>
+    <div id="listeBilan" class="liste" data-panneau="bilan" hidden></div>
   </aside>
 </main>
 
@@ -148,6 +169,6 @@
 <dialog id="dlg"><form method="dialog" id="dlgForm"><h3 id="dlgTitre"></h3><div id="dlgCorps"></div>
   <div class="dlg-pied"><button value="annuler" class="discret">Annuler</button><button value="ok" class="principal" id="dlgOk">OK</button></div></form></dialog>
 <div id="toasts"></div>
-<script type="module" src="app.js?v=2026-11-20m"></script>
+<script type="module" src="app.js?v=2026-11-20p"></script>
 </body>
 </html>

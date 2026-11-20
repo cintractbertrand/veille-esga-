@@ -33,7 +33,7 @@ function remplirFiltres() {
 function filtrees() {
   const j = $('#fJoueuse').value, th = $('#fTheme').value, m = $('#fMatch').value, g = $('#fGenre').value, q = $('#fTexte').value.trim().toLowerCase();
   return B.sequences.filter((s) => (!j || (s.joueuses || []).includes(j)) && (!th || (s.themes || []).includes(th)) && (!m || s.match === m)
-    && (!g || s.genre === g) && (!q || `${s.nom} ${s.matchNom} ${(s.themes || []).join(' ')}`.toLowerCase().includes(q)))
+    && (!g || s.genre === g) && (!q || `${s.nom} ${s.matchNom} ${s.note || ''} ${(s.themes || []).join(' ')}`.toLowerCase().includes(q)))
     .sort((a, b) => a.matchNom.localeCompare(b.matchNom) || a.debut - b.debut);
 }
 const titre = (s) => s.nom || (s.joueuses || []).map((id) => E.effectif.find((j) => j.id === id)?.nom).filter(Boolean).join(', ') || 'Séquence';
@@ -50,6 +50,7 @@ function rendre() {
       ${s.genre ? `<span class="bi-genre">${s.genre === 'bien' ? ic('bien', 13) + ' Bien' : ic('corriger', 13) + ' À corriger'}</span>` : ''}
       <div class="bi-txt"><div class="bi-titre">${esc(titre(s))}</div>
         <div class="petit discret">${esc(s.matchNom)} · <span class="mono">${fmt(s.debut, false)}</span> · ${(s.fin - s.debut).toFixed(0)} s${s.nDessins ? ' · ✎' + s.nDessins : ''}${s.voix ? ' · 🎙' : ''}</div>
+        ${s.note ? `<p class="bi-note">« ${esc(s.note)} »</p>` : ''}
         <div class="puces">${js.map((j) => `<span class="puce">${esc(nomJoueuse(j))}</span>`).join('')}${(s.themes || []).map((t) => `<span class="puce theme">${esc(t)}</span>`).join('')}</div></div>
       <button class="bi-ouvrir" data-ouvrir title="Ouvrir cette séquence dans son match">${ic('ouvrir', 13)} Ouvrir</button></div>`;
   }).join('') : '<p class="astuce">Aucune séquence avec ces filtres. Donnez des thèmes à vos séquences (＋ thème) pour les retrouver ici.</p>';
