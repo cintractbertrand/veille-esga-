@@ -134,12 +134,14 @@
   /* ---------- état ---------- */
   let D = STOCKAGE.lire();
   if (!D || D.version !== VERSION) { D = graine(); STOCKAGE.ecrire(D); }
+  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; return d; }; // données plus anciennes
+  completer(D);
   let MATCHS = []; // matchs officiels (data/matchs.json)
   const abonnes = [];
   const notifier = () => abonnes.forEach((cb) => { try { cb(); } catch (e) { console.error(e); } });
   let enLot = 0, sale = false;
   function sauver() { if (enLot) { sale = true; return; } D.maj = new Date().toISOString(); STOCKAGE.ecrire(D); notifier(); }
-  STOCKAGE.surChangement(() => { const n = STOCKAGE.lire(); if (n && n.version === VERSION) { D = n; notifier(); } });
+  STOCKAGE.surChangement(() => { const n = STOCKAGE.lire(); if (n && n.version === VERSION) { D = completer(n); notifier(); } });
 
   /* ---------- calendrier : matchs des PV + entraînements des créneaux + événements ---------- */
   function matchEvt(m) {
@@ -181,7 +183,7 @@
 
   /* ---------- historique de démo : présences des entraînements passés ---------- */
   function presencesDemo() {
-    if (D.presencesDemo) return;
+    if (D.presencesDemo) { if (!D.matchsDemo) { matchsDemo(alea("matchs")); STOCKAGE.ecrire(D); } return; }
     const r = alea("presences");
     entrainements(ajout(auj(), -42), ajout(auj(), -1)).forEach((e) => {
       const p = (D.presences[e.id] = D.presences[e.id] || {});
@@ -201,7 +203,32 @@
     // Réponses au sondage du match amical U15F 2 (les mêmes que dans la messagerie)
     const so = (statut, motif) => ({ statut, motif, par: "sondage", date: new Date().toISOString() });
     D.dispos["ev-amical-u15f"] = Object.assign(D.dispos["ev-amical-u15f"] || {}, { "j-U15F-2-4": so("absent", "Absent au sondage"), "j-U15F-2-5": so("absent", "Absent au sondage"), "j-U15F-2-7": so("incertain", "Incertain au sondage") });
-    D.presencesDemo = true; STOCKAGE.ecrire(D);
+    D.presencesDemo = true; matchsDemo(r); STOCKAGE.ecrire(D);
+  }
+
+  // U15F 2 : matchs déjà joués avec convocation et feuille de match (score, buts, passes décisives)
+  function matchsDemo(r) {
+    if (D.matchsDemo) return;
+    const SCORES = { "Ent. Ols Charly": [3, 1], "As Saint Priest": [1, 1], "Chassieu Decines Fc": [2, 0], "Sevenne F.C.": [0, 2], "F.C. Gerland Lyon": [4, 2], "Us Villette D Anthon": [2, 3], "A.S. De Montchat Lyo": [1, 0] };
+    const js = joueurs("U15F-2");
+    MATCHS.map(matchEvt).filter((e) => e.equipe === "U15F-2" && e.date < auj()).forEach((e) => {
+      const conv = js.filter((j) => j.certificat === "ok" && r() < .9).slice(0, 14).map((j) => j.id);
+      if (!D.convocations.some((c) => c.evenement === e.id)) D.convocations.push({ id: uid("cv"), evenement: e.id, equipe: e.equipe, joueurs: conv, rdvHeure: "13:30", rdvLieu: e.domicile ? "Vestiaires du stade" : "Parking du stade Edmond Pouzet", tenue: "Tenue du club", mot: "", publiee: ajout(e.date, -3) + "T18:00:00.000Z", source: "console" });
+      const [nous, eux] = SCORES[e.adversaire] || [1, 1], stats = {};
+      const attaque = conv.filter((id) => /Attaquant|Milieu/.test((personne(id) || {}).poste));
+      for (let b = 0; b < nous; b++) {
+        const bu = attaque[Math.floor(r() * attaque.length)] || conv[0]; (stats[bu] = stats[bu] || { buts: 0, passes: 0 }).buts++;
+        if (r() < .7) { const pa = conv[Math.floor(r() * conv.length)]; if (pa !== bu) (stats[pa] = stats[pa] || { buts: 0, passes: 0 }).passes++; }
+      }
+      D.feuilles[e.id] = { nous, eux, joueurs: conv.filter(() => r() < .95), stats, notes: "", saisie: ajout(e.date, 1) + "T10:00:00.000Z" };
+    });
+    // Sondage du match amical déjà lancé, avec les mêmes réponses que dans la messagerie (Zoé n'a pas répondu)
+    const so = (statut, motif) => ({ statut, motif, par: "sondage", date: new Date().toISOString() });
+    const rep = { 1: "present", 2: "present", 3: "present", 4: "absent", 5: "absent", 6: "present", 7: "incertain", 8: "present", 10: "present", 11: "present", 12: "present", 13: "present", 14: "present", 15: "present", 16: "present" };
+    const dm = (D.dispos["ev-amical-u15f"] = D.dispos["ev-amical-u15f"] || {});
+    Object.entries(rep).forEach(([k, v]) => { const id = "j-U15F-2-" + k; if (!dm[id]) dm[id] = so(v, v === "present" ? "Disponible" : v === "absent" ? "Absent au sondage" : "Incertain au sondage"); });
+    D.sondages["ev-amical-u15f"] = D.sondages["ev-amical-u15f"] || { lance: new Date(Date.now() - 4 * 3600e3).toISOString() };
+    D.matchsDemo = true;
   }
 
   /* ---------- lecture ---------- */
@@ -246,9 +273,21 @@
     D.convocations.push(conv); sauver(); return conv;
   }
   function majClub(champs) { Object.assign(D.club, champs); sauver(); }
+  // Feuille de match : { nous, eux, joueurs: [ids ayant joué], stats: { id: { buts, passes } }, notes }
+  function setFeuille(evt, f) { D.feuilles[evt] = Object.assign({ saisie: new Date().toISOString() }, f); sauver(); }
+  // Sondage de disponibilité d'un match : lancé depuis la console ou la messagerie, réponses dans dispos
+  function lancerSondage(evt, relance) { const s = D.sondages[evt]; if (s && !relance) return; D.sondages[evt] = Object.assign({}, s, s ? { relance: new Date().toISOString() } : { lance: new Date().toISOString() }); sauver(); }
+  function statsJoueur(id) {
+    const p = personne(id); if (!p) return null;
+    const passes = MATCHS.map(matchEvt).concat(D.evenements.filter((e) => e.type === "amical")).filter((e) => e.equipe === p.equipe && e.date < auj());
+    const convs = D.convocations.filter((c) => c.joueurs.includes(id));
+    let joues = 0, buts = 0, pd = 0;
+    Object.values(D.feuilles).forEach((f) => { if ((f.joueurs || []).includes(id)) joues++; const st = (f.stats || {})[id]; if (st) { buts += st.buts || 0; pd += st.passes || 0; } });
+    return { joues, buts, passes: pd, convocations: convs.length, matchsEquipe: passes.length, presence: tauxPresence(id, 30) };
+  }
   function exporter() { return JSON.stringify(D, null, 1); }
-  function importer(txt) { const n = JSON.parse(txt); if (!n || !Array.isArray(n.personnes) || !Array.isArray(n.equipes)) throw new Error("Fichier non reconnu"); n.version = VERSION; D = n; sauver(); }
-  function reinitialiser() { STOCKAGE.effacer(); D = graine(); STOCKAGE.ecrire(D); presencesDemo(); notifier(); }
+  function importer(txt) { const n = JSON.parse(txt); if (!n || !Array.isArray(n.personnes) || !Array.isArray(n.equipes)) throw new Error("Fichier non reconnu"); n.version = VERSION; D = completer(n); sauver(); }
+  function reinitialiser() { STOCKAGE.effacer(); D = completer(graine()); STOCKAGE.ecrire(D); presencesDemo(); notifier(); }
 
   /* ---------- profil de la personne qui utilise l'appli (le même pour tous les modules) ----------
      { role: "dirigeant" } | { role: "coach", staff } | { role: "parent", joueur } | { role: "joueur", joueur }
@@ -274,6 +313,7 @@
     evenements, evenement, prochainMatch, prochainsEntrainements, convocation, convocations: (eq) => D.convocations.filter((c) => !eq || c.equipe === eq),
     presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, tauxPresence, categorieAge,
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
+    feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,
     exporter, importer, reinitialiser, profil, setProfil, nomProfil, surChangement: (cb) => abonnes.push(cb),
     outils: { iso, ajout, auj, jour, uid },
   };
