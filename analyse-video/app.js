@@ -434,11 +434,39 @@ async function partager(s) {
 let POUR = 'equipe';
 
 // ================= envoi
+// En ligne : « Envoyer » publie les séquences dans l'espace de chaque joueuse taguée (console du club).
+async function envoyerAuClub(seqs) {
+  const C = window.CLUB; await C.pret;
+  const p = C.profil(), st = p && p.role === 'coach' ? C.staff().find((x) => x.id === p.staff) : null;
+  const eq = (st && st.equipes[0]) || 'U15F-2';
+  const matchs = C.evenements({ equipe: eq, du: C.SAISON.debut, au: C.outils.auj(), types: ['match', 'amical'] }).filter((x) => x.statut !== 'annule').reverse();
+  if (!matchs.length) { toast('Aucun match joué dans le calendrier de l’équipe', { erreur: true }); return; }
+  const relie = matchs.find((x) => (C.video(x.id) || {}).source === 'monteur') || matchs[0];
+  const js = C.joueurs(eq), duClub = (jid) => { const n = (joueuse(jid) || {}).num; return js.find((x) => String(x.numero) === String(n)); };
+  const parJ = {}; seqs.forEach((s) => (s.joueuses || []).map(duClub).filter(Boolean).forEach((x) => (parJ[x.id] = parJ[x.id] || { x, n: 0 }).n++));
+  const sansJ = seqs.filter((s) => !(s.joueuses || []).map(duClub).some(Boolean)).length;
+  const v = await dialogue({ titre: 'Envoyer aux joueuses', ok: 'Envoyer', corps: `
+    <label>Match<select name="evt">${matchs.map((x) => `<option value="${esc(x.id)}"${x.id === relie.id ? ' selected' : ''}>${esc(new Date(x.date + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }))} · ${esc(x.titre)}${C.video(x.id) ? ' 🎬' : ''}</option>`).join('')}</select></label>
+    <p><b>${Object.keys(parJ).length}</b> joueuse(s) taguée(s) : chacune retrouve ses séquences dans son espace (« Mes vidéos »).</p>
+    <p class="petit">${Object.values(parJ).map(({ x, n }) => esc(x.prenom) + ' (' + n + ')').join(' · ') || '—'}</p>
+    ${sansJ ? `<p class="petit discret">${sansJ} séquence(s) sans joueuse taguée : elles partent seulement si vous cochez l’équipe.</p>` : ''}
+    <label><input type="checkbox" name="equipe"${Object.keys(parJ).length ? '' : ' checked'}> Envoyer aussi toutes les séquences à toute l’équipe</label>` });
+  if (!v) return;
+  if (!C.video(v.evt)) C.setVideo(v.evt, { url: new URL(DEMO.video, location.href).href, titre: E.match.nom || 'Vidéo du match', source: 'monteur' });
+  let n = 0;
+  C.lot(() => seqs.forEach((s) => {
+    const a = v.equipe ? 'equipe' : (s.joueuses || []).map(duClub).filter(Boolean).map((x) => x.id);
+    if (a !== 'equipe' && !a.length) return;
+    C.envoyerSequence({ evt: v.evt, equipe: eq, a, debut: s.debut, fin: s.fin, nom: titreSeq(s), note: s.note || '', genre: s.genre || null, de: st ? C.nomComplet(st) : 'Le coach', sequence: s.id }); n++;
+  }));
+  toast(n ? `${n} séquence(s) envoyée(s)${v.equipe ? ' à toute l’équipe' : ' : chaque joueuse taguée les voit dans son espace'}` : 'Rien à envoyer : taguez des joueuses ou cochez l’équipe', { erreur: !n, duree: 5000 });
+}
 let suiviEnvoi = 0;
 $('#btnEnvoyer').onclick = async () => {
   if (!E.match) return;
   const seqs = E.match.sequences;
   if (!seqs.length) { toast('Aucune séquence : marquez d’abord des joueuses', { erreur: true }); return; }
+  if (window.DEMO && window.CLUB) return envoyerAuClub(seqs);
   const info = await api('GET', '/api/info');
   if (!info.ffmpeg) { toast('ffmpeg introuvable : relancez lancer_montage.bat', { erreur: true, duree: 6000 }); return; }
   const jids = [...new Set(seqs.flatMap((s) => s.joueuses || []))].map(joueuse).filter(Boolean);
