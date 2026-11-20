@@ -1,367 +1,153 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Analyse vidéo · ESGA</title>
 <meta name="theme-color" content="#0b2a6f">
-<link rel="stylesheet" href="../commun/charte.css?v=2026-11-20a">
-<script src="../commun/modules.js?v=2026-11-20b" data-module="video" defer></script>
-<style>
-  :root{
-    /* charte ESGA (commun/charte.css), version sombre pour la vidéo */
-    --bg:#0a1122; --panel:#121b30; --panel2:#1a2540; --line:#26324f; --txt:#e9edf5;
-    --muted:#98a2b6; --accent:var(--esga-or,#e8b923); --red:#e5484d; --blue:#5b8cff; --green:#2fbf7f;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font:14px/1.4 var(--esga-police,system-ui,sans-serif);background:var(--bg);color:var(--txt);height:100vh;display:flex;flex-direction:column;overflow:hidden}
-  header{display:flex;align-items:center;gap:14px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
-  header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.3px}
-  header .tag{color:var(--accent)}
-  header .sp{flex:1}
-  button,select,input[type=file]::file-selector-button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px}
-  button:hover{border-color:var(--accent)}
-  .tabs{display:flex;gap:4px}
-  .tabs button.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
-  main{flex:1;display:flex;min-height:0}
-  .view{flex:1;display:none;min-height:0}
-  .view.active{display:flex}
-  /* --- codage --- */
-  #vwrap{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--line)}
-  .stage{flex:1;position:relative;background:#000;min-height:0;display:flex;align-items:center;justify-content:center}
-  .stage video{max-width:100%;max-height:100%}
-  #radar{background:#12361a;border-radius:4px}
-  .side{width:320px;display:flex;flex-direction:column;background:var(--panel);min-height:0}
-  .side h3{margin:0;padding:8px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--line)}
-  .coder{padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  .coder button{padding:10px 6px;font-weight:600}
-  .coder .c0{border-left:3px solid var(--red)} .coder .c1{border-left:3px solid var(--blue)}
-  .coder .cn{border-left:3px solid var(--green)}
-  .instances{flex:1;overflow:auto;border-top:1px solid var(--line)}
-  .inst{display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12px}
-  .inst:hover{background:var(--panel2)}
-  .inst .k{flex:1;font-weight:600}
-  .inst .t{color:var(--muted);font-variant-numeric:tabular-nums}
-  .inst .x{color:var(--muted);opacity:0}
-  .inst:hover .x{opacity:1}
-  .controls{display:flex;gap:8px;align-items:center;padding:8px 12px;background:var(--panel);border-top:1px solid var(--line)}
-  .controls input[type=range]{flex:1}
-  .time{font-variant-numeric:tabular-nums;color:var(--muted);min-width:96px}
-  .timeline{height:120px;background:var(--panel);border-top:1px solid var(--line);overflow-x:auto;overflow-y:hidden;position:relative}
-  .trow{display:flex;align-items:center;height:28px;border-bottom:1px solid var(--line);position:relative}
-  .trow .lbl{position:sticky;left:0;width:120px;background:var(--panel2);height:100%;display:flex;align-items:center;padding:0 8px;font-size:11px;z-index:2;border-right:1px solid var(--line)}
-  .seg{position:absolute;height:16px;top:6px;border-radius:3px;opacity:.85;cursor:pointer}
-  /* --- dashboard --- */
-  #dash{flex-direction:column;overflow:auto;padding:16px;gap:16px}
-  .cards{display:flex;gap:16px;flex-wrap:wrap}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;flex:1;min-width:260px}
-  .card h4{margin:0 0 10px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-  table{width:100%;border-collapse:collapse;font-size:12px}
-  th,td{text-align:right;padding:4px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
-  th:first-child,td:first-child{text-align:left}
-  th{color:var(--muted);font-weight:600;cursor:pointer}
-  .bar{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden;display:flex}
-  .big{font-size:26px;font-weight:700}
-  .muted{color:var(--muted)}
-  .empty{margin:auto;color:var(--muted);text-align:center;padding:40px}
-  .pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;background:var(--panel2)}
-  .demo{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 14px;background:color-mix(in srgb,var(--accent) 14%,var(--panel));border-bottom:1px solid var(--line);font-size:13px}
-  .demo b{color:var(--accent)}
-  .demo .sp{flex:1}
-  .demo a{color:var(--txt)}
-  .fichier{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px}
-  .fichier:hover{border-color:var(--accent)}
-  .fichier input{display:none}
-  @media (max-width:1000px){
-    body{height:auto;min-height:100vh;overflow:auto}
-    main{flex-direction:column}
-    .view.active{flex-direction:column}
-    #vwrap{border-right:0}
-    .stage{min-height:56vw}
-    .side{width:100%!important;border-left:0!important;border-top:1px solid var(--line)}
-    .instances{max-height:260px}
-  }
-  canvas.heat{width:100%;background:#12361a;border-radius:4px;border:1px solid var(--line)}
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="../commun/charte.css?v=2026-11-20c">
+<link rel="stylesheet" href="style.css?v=2026-11-20c">
+<script src="../commun/modules.js?v=2026-11-20c" data-module="video" defer></script>
+<script src="demo/demo.js?v=2026-11-20c"></script>
+<script>document.documentElement.classList.add("demo")</script>
 </head>
 <body>
-<header>
-  <h1>Analyse <span class="tag">vidéo</span></h1>
-  <div class="tabs">
-    <button data-tab="code" class="active">Codage</button>
-    <button data-tab="dash">Tableau de bord</button>
-  </div>
-  <div class="sp"></div>
-  <label class="fichier" title="Ouvrir une vidéo de match depuis cet appareil">🎞 Ma vidéo <input type="file" id="fvid" accept="video/*"></label>
-  <label class="fichier" title="Fichier result.json produit par l'outil d'analyse sur PC">📊 Mon analyse <input type="file" id="fres" accept="application/json"></label>
-  <button id="exp">Exporter</button>
+<div id="bandeauDemo"><span><b>Démo</b> · 1 min de La Duchère – ESGA (U15F), 3 séquences et des dessins déjà prêts. Lisez (Espace), cliquez une joueuse pour la marquer, dessinez, puis « Présenter ».</span>
+  <span class="espace"></span>
+  <button class="discret" onclick="DEMO.reinitialiser()">Remettre la démo à zéro</button></div>
+<header id="barre">
+  <b class="logo"><span class="logo-ic"><i data-ic="logo" data-t="20"></i></span>Monteur <em>foot</em></b>
+  <select id="choixVideo" title="Vidéo du match"></select>
+  <button id="ajoutVideo" class="discret" title="Ajouter une vidéo par son chemin"><i data-ic="plus" data-t="15"></i> Vidéo</button>
+  <input id="nomMatch" placeholder="Nom du match" title="Nom du match (nom du dossier d'envoi)">
+  <span class="espace"></span>
+  <span id="etatSauve" class="petit discret"></span>
+  <button id="btnBiblio" title="Toutes les séquences de tous les matchs : par joueuse, thème, match"><i data-ic="biblio" data-t="16"></i> Bibliothèque</button>
+  <button id="btnPresenter" title="Présenter les séquences en plein écran (séance au club)"><i data-ic="presenter" data-t="16"></i> Présenter</button>
+  <button id="btnEnvoyer" class="principal" title="Une vidéo par joueuse concernée + une vidéo d'équipe"><i data-ic="envoyer" data-t="16"></i> Envoyer</button>
+  <button id="btnDossier" class="discret" title="Ouvrir le dossier des envois"><i data-ic="dossier"></i></button>
+  <button id="btnAide" class="discret" title="Raccourcis clavier"><i data-ic="aide"></i></button>
 </header>
 
-<div class="demo" id="demo" hidden>
-  <span><b>Démo</b> · match simulé de 40 s, déjà analysé : lancez la vidéo, codez des actions au clavier (b, t, o, p…) ou avec les boutons, puis ouvrez le tableau de bord.</span>
-  <span class="sp"></span>
-  <span class="muted">Vos propres matchs : l'analyse se lance sur le PC du club, puis « Ma vidéo » et « Mon analyse ».</span>
-</div>
 <main>
-  <!-- CODAGE -->
-  <section class="view active" id="code">
-    <div id="vwrap">
-      <div class="stage">
-        <video id="vid" playsinline></video>
-        <canvas id="ovl" style="position:absolute;pointer-events:none"></canvas>
-      </div>
-      <div class="controls">
-        <button id="play">▶</button>
-        <span class="time" id="tcode">0:00.0 / 0:00.0</span>
-        <input type="range" id="seek" min="0" max="1000" value="0">
-        <select id="rate"><option>0.25</option><option>0.5</option><option selected>1</option><option>1.5</option><option>2</option></select>
-      </div>
-      <div class="timeline" id="tl"></div>
+  <aside id="outils">
+    <div class="groupe" id="listeOutils">
+      <button data-outil="choix" title="Sélectionner, déplacer (Suppr pour effacer)"><i data-ic="choix"></i></button>
+      <span class="sep">Tracer</span>
+      <button data-outil="fleche" title="Flèche : tracez le chemin, droit ou courbe (passe, déplacement)"><i data-ic="fleche"></i></button>
+      <button data-outil="course" title="Course : flèche en pointillés (appel, course sans ballon)"><i data-ic="course"></i></button>
+      <button data-outil="ligne" title="Ligne droite"><i data-ic="ligne"></i></button>
+      <span class="sep">Joueuses</span>
+      <button data-outil="cercle" title="Cercle au sol autour d'une joueuse ou d'une zone"><i data-ic="cercle"></i></button>
+      <button data-outil="projecteur" title="Projecteur : met une joueuse en lumière"><i data-ic="projecteur"></i></button>
+      <button data-outil="pastille" title="Pastille : numéro ou lettre aux pieds d'une joueuse"><i data-ic="pastille"></i></button>
+      <button data-outil="fantome" title="Fantôme : où la joueuse aurait dû être"><i data-ic="fantome"></i></button>
+      <button data-outil="formation" title="Ligne de formation : cliquez les joueuses, double-clic pour finir"><i data-ic="formation"></i></button>
+      <button data-outil="vision" title="Cône de vision : de la joueuse vers où elle regarde (ou devrait regarder)"><i data-ic="vision"></i></button>
+      <button data-outil="horsjeu" title="Ligne de hors-jeu : cliquez la dernière défenseuse (sol calé d'abord)"><i data-ic="horsjeu"></i></button>
+      <button data-outil="suivi" title="Suivre une joueuse : cliquez ses pieds, un cercle la suit pendant la séquence"><i data-ic="suivi"></i></button>
+      <span class="sep">Autres</span>
+      <button data-outil="zone" title="Zone : cliquez les sommets, double-clic pour finir"><i data-ic="zone"></i></button>
+      <button data-outil="texte" title="Texte"><i data-ic="texte"></i></button>
+      <button data-outil="main" title="Main levée"><i data-ic="main"></i></button>
+      <button data-outil="chrono" title="Chronomètre à l'écran (part de l'instant du dessin)"><i data-ic="chrono"></i></button>
     </div>
-    <aside class="side">
-      <h3>Boutons de codage <span class="muted" id="rollinfo"></span></h3>
-      <div class="coder" id="coder"></div>
-      <h3>Instances (<span id="ninst">0</span>) — clic = revoir</h3>
-      <div class="instances" id="insts"></div>
-    </aside>
-    <aside class="side" style="width:360px;border-left:1px solid var(--line)">
-      <h3>Vue 2D synchronisée</h3>
-      <div style="padding:10px;display:flex;flex-direction:column;gap:8px;align-items:center">
-        <canvas id="radar" width="340" height="226"></canvas>
-        <div class="muted" id="radinfo" style="font-size:12px">—</div>
+    <div class="groupe" id="couleurs"></div>
+    <div class="groupe ligne">
+      <button data-epais="0.7" title="Trait fin"><svg width="22" height="12" viewBox="0 0 22 12"><line x1="3" y1="6" x2="19" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      <button data-epais="1" title="Trait moyen" class="actif"><svg width="22" height="12" viewBox="0 0 22 12"><line x1="3" y1="6" x2="19" y2="6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
+      <button data-epais="1.6" title="Trait épais"><svg width="22" height="12" viewBox="0 0 22 12"><line x1="3" y1="6" x2="19" y2="6" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="groupe">
+      <button id="btnSol" title="Perspective : caler le sol avec 4 coins de la surface, les dessins se couchent sur la pelouse"><i data-ic="sol"></i><span>Sol</span></button>
+      <button id="btnAnnuler" title="Annuler (Ctrl+Z)"><i data-ic="annuler"></i></button>
+      <button id="btnEffacer" title="Effacer ce dessin"><i data-ic="effacer"></i></button>
+    </div>
+  </aside>
+
+  <section id="centre">
+    <div id="cadre">
+      <div id="scene">
+        <video id="video" preload="auto" playsinline></video>
+        <canvas id="calque"></canvas>
       </div>
-    </aside>
+      <div id="vide" class="vide"><div class="vide-ic"><i data-ic="video" data-t="40"></i></div><h2>Choisissez la vidéo du match en haut</h2>
+        <p>Les vidéos du dossier <b>analyse-veo\match</b> apparaissent toutes seules.<br>Sinon : « + Vidéo » et collez le chemin du fichier.</p></div>
+      <div id="bandeauDessin" hidden></div>
+      <div id="info" hidden></div>
+    </div>
+    <div id="transport">
+      <button id="tLecture" class="icone" title="Lecture / pause (Espace, K)"><i data-ic="lecture" data-t="20"></i></button>
+      <button data-saut="-30" class="icone" title="−30 s (Ctrl+←)"><i data-ic="recul"></i></button>
+      <button data-saut="-5" class="icone" title="−5 s (Maj+←)">−5</button>
+      <button data-saut="-2" class="icone" title="−2 s (←)">−2</button>
+      <button data-image="-1" class="icone" title="Image précédente (,)"><i data-ic="prec"></i></button>
+      <button data-image="1" class="icone" title="Image suivante (.)"><i data-ic="suiv"></i></button>
+      <button data-saut="2" class="icone" title="+2 s (→)">+2</button>
+      <button data-saut="5" class="icone" title="+5 s (Maj+→)">+5</button>
+      <button data-saut="30" class="icone" title="+30 s (Ctrl+→)"><i data-ic="avance"></i></button>
+      <span id="tTemps" class="mono">0:00.0</span>
+      <span class="groupe" id="vitesses">
+        <button data-v="0.25">¼×</button><button data-v="0.5">½×</button><button data-v="1" class="actif">1×</button><button data-v="2">2×</button><button data-v="4">4×</button>
+      </span>
+      <span id="tVitesse" class="mono petit"></span>
+      <span class="espace"></span>
+      <span class="groupe"><button id="zMoins" class="icone" title="Dézoomer l'image (−)"><i data-ic="moins" data-t="15"></i></button><button id="zNiveau" class="mono petit" title="Zoom 1×">1×</button><button id="zPlus" class="icone" title="Zoomer l'image (+)"><i data-ic="plus" data-t="15"></i></button></span>
+      <button id="tRepere" title="Poser un repère ici (M)"><i data-ic="repere" data-t="16"></i> Repère</button>
+      <button id="tEntree" title="Entrée de séquence (I)">[ I</button>
+      <button id="tSortie" title="Sortie de séquence (O)">O ]</button>
+      <button id="tCreer" title="Créer la séquence entre I et O (Entrée)"><i data-ic="ciseaux" data-t="16"></i> Séquence</button>
+    </div>
+    <div id="frise">
+      <canvas id="tl"></canvas>
+      <div class="frise-boutons">
+        <button id="tlMoins" class="icone" title="Dézoomer la timeline (molette)">−</button>
+        <button id="tlTout" class="petit" title="Voir tout le match">Tout</button>
+        <button id="tlPlus" class="icone" title="Zoomer la timeline (molette)">+</button>
+      </div>
+    </div>
   </section>
 
-  <!-- DASHBOARD -->
-  <section class="view" id="dash">
-    <div class="empty" id="dashEmpty">Charge une analyse (result.json) pour voir le tableau de bord.</div>
-    <div id="dashBody" style="display:none;width:100%">
-      <div class="cards">
-        <div class="card"><h4>Bloc équipe rouge</h4><div id="shape0"></div></div>
-        <div class="card"><h4>Bloc équipe bleue</h4><div id="shape1"></div></div>
-        <div class="card"><h4>Recalage follow-cam</h4><div id="regcard"></div></div>
-      </div>
-      <div class="cards">
-        <div class="card" style="min-width:340px"><h4>Carte de chaleur — rouge</h4><canvas class="heat" id="heat0" width="340" height="220"></canvas></div>
-        <div class="card" style="min-width:340px"><h4>Carte de chaleur — bleue</h4><canvas class="heat" id="heat1" width="340" height="220"></canvas></div>
-      </div>
-      <div class="card">
-        <h4>Joueuses — distances & zones de vitesse (en % de VMA)</h4>
-        <table id="ptab"><thead><tr>
-          <th data-s="id">#</th><th data-s="team">Éq.</th><th data-s="duree_s">Durée</th>
-          <th data-s="distance_m">Distance</th><th data-s="m_par_min">m/min</th><th data-s="vitesse_max_kmh">V.max</th>
-          <th data-s="vma_kmh">VMA</th><th data-s="hi">Haute int.</th><th data-s="sprint">Sprint</th>
-        </tr></thead><tbody></tbody></table>
-        <div class="muted" style="margin-top:8px;font-size:11px">Zones individualisées : « haute intensité » = 80–100 % VMA, « sprint » = au-delà de la VMA. Seuils adaptés aux U15F.</div>
-      </div>
-    </div>
-  </section>
+  <aside id="cote">
+    <div class="titre-bloc"><h3>Effectif</h3><span class="petit discret">clic = marquer à l'instant</span>
+      <button id="btnEffectif" class="discret petit">Modifier</button></div>
+    <div id="effectif"></div>
+    <div class="onglets"><button data-onglet="seq" class="actif">Séquences <span id="nSeq"></span></button><button data-onglet="rep">Repères <span id="nRep"></span></button></div>
+    <div id="listeSeq" class="liste"></div>
+    <div id="listeRep" class="liste" hidden></div>
+  </aside>
 </main>
 
-<script>
-// ---------- modèle de terrain (doit correspondre à veoanalyse/pitch.py) ----------
-const PITCH={L:105,W:68};
-function pitchSegments(){
-  const L=PITCH.L,W=PITCH.W,bd=16.5,bw=40.32,sd=5.5,sw=18.32,R=9.15,sp=11,segs=[];
-  const seg=(a,b)=>segs.push([a,b]);
-  seg([0,0],[L,0]);seg([L,0],[L,W]);seg([L,W],[0,W]);seg([0,W],[0,0]);seg([L/2,0],[L/2,W]);
-  for(const [x0,d] of [[0,1],[L,-1]]){
-    for(const [dp,w] of [[bd,bw],[sd,sw]]){const h=w/2;
-      seg([x0,W/2-h],[x0+d*dp,W/2-h]);seg([x0+d*dp,W/2-h],[x0+d*dp,W/2+h]);seg([x0+d*dp,W/2+h],[x0,W/2+h]);}
-  }
-  return segs;
-}
-function circle(cx,cy,r,n=40){const p=[];for(let i=0;i<=n;i++){const a=2*Math.PI*i/n;p.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);}return p;}
+<section id="biblio" hidden>
+  <div class="bi-filtres">
+    <h2><i data-ic="biblio" data-t="16"></i> Bibliothèque</h2>
+    <select id="fJoueuse"><option value="">Toutes les joueuses</option></select>
+    <select id="fTheme"><option value="">Tous les thèmes</option></select>
+    <select id="fMatch"><option value="">Tous les matchs</option></select>
+    <select id="fGenre"><option value="">Bien et à corriger</option><option value="bien">👍 Bien</option><option value="corriger">⚠ À corriger</option></select>
+    <input id="fTexte" type="search" placeholder="Chercher un nom…">
+    <span id="fNombre" class="discret petit"></span>
+    <span class="espace"></span>
+    <select id="biSeances" title="Reprendre une séance déjà préparée"><option value="">Séances préparées…</option></select>
+    <button id="biFermer" class="discret" title="Fermer (Échap)"><i data-ic="fermer"></i></button>
+  </div>
+  <div id="biGrille"></div>
+  <div class="bi-pied">
+    <span id="biSel">Cliquez des séquences pour préparer une séance (l’ordre de clic = l’ordre de la vidéo).</span>
+    <span class="espace"></span>
+    <button id="biTout" class="discret">Tout prendre</button>
+    <button id="biVider" class="discret">Vider</button>
+    <input id="biNom" placeholder="Nom de la séance">
+    <button id="biFaire" class="principal"><i data-ic="film" data-t="16"></i> Fabriquer la vidéo de séance</button>
+  </div>
+</section>
+<div id="lecteurSeance" hidden><video controls playsinline></video><button class="discret" id="lsFermer"><i data-ic="fermer" data-t="16"></i> Fermer</button></div>
 
-// ---------- état ----------
-let RES=null, FRAMES=[], instances=[], sortKey="id", sortDir=1;
-const vid=document.getElementById('vid');
-
-// boutons de codage : code + équipe (0 rouge,1 bleu, n neutre) + touche
-const CODES=[
-  {k:'But',key:'b',team:'n'},{k:'Tir',key:'t',team:'n'},
-  {k:'Occasion',key:'o',team:'n'},{k:'Perte balle',key:'p',team:'n'},
-  {k:'Récupération',key:'r',team:'n'},{k:'Corner',key:'c',team:'n'},
-  {k:'Pressing',key:'e',team:'n'},{k:'Transition',key:'n',team:'n'},
-  {k:'Attaque rouge',key:'1',team:'0'},{k:'Attaque bleue',key:'2',team:'1'},
-];
-const PRE=5, POST=3; // pré/post-roll (s)
-document.getElementById('rollinfo').textContent=`pré ${PRE}s / post ${POST}s`;
-
-// ---------- codage : construction des boutons ----------
-const coder=document.getElementById('coder');
-CODES.forEach(c=>{
-  const b=document.createElement('button');
-  b.className='c'+(c.team==='n'?'n':c.team);
-  b.innerHTML=`${c.k}<br><span class="muted" style="font-size:11px">[${c.key}]</span>`;
-  b.onclick=()=>addInstance(c);
-  coder.appendChild(b);
-});
-document.addEventListener('keydown',e=>{
-  if(e.target.tagName==='INPUT')return;
-  if(e.code==='Space'){e.preventDefault();togglePlay();return;}
-  if(e.key==='ArrowRight'){vid.currentTime+=e.shiftKey?5:1/ (RES?RES.fps:25);}
-  if(e.key==='ArrowLeft'){vid.currentTime-=e.shiftKey?5:1/ (RES?RES.fps:25);}
-  const c=CODES.find(x=>x.key===e.key.toLowerCase());
-  if(c)addInstance(c);
-});
-function addInstance(c){
-  const t=vid.currentTime||0;
-  instances.push({k:c.k,team:c.team,start:Math.max(0,t-PRE),end:t+POST,t});
-  instances.sort((a,b)=>a.start-b.start);
-  renderInstances();renderTimeline();save();
-}
-function renderInstances(){
-  document.getElementById('ninst').textContent=instances.length;
-  const box=document.getElementById('insts');box.innerHTML='';
-  instances.forEach((it,i)=>{
-    const d=document.createElement('div');d.className='inst';
-    const col=it.team==='0'?'var(--red)':it.team==='1'?'var(--blue)':'var(--green)';
-    d.innerHTML=`<span style="color:${col}">●</span><span class="k">${it.k}</span><span class="t">${fmt(it.t)}</span><span class="x">✕</span>`;
-    d.onclick=ev=>{if(ev.target.classList.contains('x')){instances.splice(i,1);renderInstances();renderTimeline();save();}else{vid.currentTime=it.start;vid.play();}};
-    box.appendChild(d);
-  });
-}
-function renderTimeline(){
-  const tl=document.getElementById('tl');tl.innerHTML='';
-  const dur=vid.duration||1, PX=Math.max(tl.clientWidth-120, dur*12);
-  const rows={};CODES.forEach(c=>rows[c.k]=null);
-  Object.keys(rows).forEach(k=>{
-    const row=document.createElement('div');row.className='trow';
-    row.innerHTML=`<div class="lbl">${k}</div>`;
-    row.style.width=(PX+120)+'px';
-    instances.filter(i=>i.k===k).forEach(it=>{
-      const s=document.createElement('div');s.className='seg';
-      s.style.left=(120+it.start/dur*PX)+'px';
-      s.style.width=Math.max(4,(it.end-it.start)/dur*PX)+'px';
-      s.style.background=it.team==='0'?'var(--red)':it.team==='1'?'var(--blue)':'var(--green)';
-      s.title=`${it.k} @ ${fmt(it.t)}`;
-      s.onclick=()=>{vid.currentTime=it.start;vid.play();};
-      row.appendChild(s);
-    });
-    tl.appendChild(row);
-  });
-}
-function fmt(s){s=s||0;const m=Math.floor(s/60);return `${m}:${(s-60*m).toFixed(1).padStart(4,'0')}`;}
-function save(){try{localStorage.setItem('veo_instances',JSON.stringify(instances));}catch(e){}}
-try{instances=JSON.parse(localStorage.getItem('veo_instances')||'[]');}catch(e){}
-renderInstances();
-
-// ---------- lecture vidéo ----------
-document.getElementById('fvid').onchange=e=>{const f=e.target.files[0];if(f){document.getElementById('demo').hidden=true;vid.src=URL.createObjectURL(f);vid.onloadedmetadata=()=>{renderTimeline();fit();};}};
-function togglePlay(){vid.paused?vid.play():vid.pause();}
-document.getElementById('play').onclick=togglePlay;
-vid.onplay=()=>document.getElementById('play').textContent='❚❚';
-vid.onpause=()=>document.getElementById('play').textContent='▶';
-document.getElementById('rate').onchange=e=>vid.playbackRate=parseFloat(e.target.value);
-const seek=document.getElementById('seek');
-seek.oninput=()=>{if(vid.duration)vid.currentTime=seek.value/1000*vid.duration;};
-vid.ontimeupdate=()=>{
-  if(vid.duration){seek.value=vid.currentTime/vid.duration*1000;
-    document.getElementById('tcode').textContent=`${fmt(vid.currentTime)} / ${fmt(vid.duration)}`;}
-  drawRadar();
-};
-function fit(){const r=vid.getBoundingClientRect();const o=document.getElementById('ovl');o.width=r.width;o.height=r.height;o.style.left=(r.left)+'px';}
-window.onresize=()=>{renderTimeline();};
-
-// ---------- chargement analyse ----------
-document.getElementById('fres').onchange=e=>{const f=e.target.files[0];if(!f)return;
-  const rd=new FileReader();rd.onload=()=>{try{RES=JSON.parse(rd.result);FRAMES=RES.frames||[];buildDash();drawRadar();}catch(err){alert('JSON invalide');}};rd.readAsText(f);};
-
-// ---------- radar 2D synchronisé ----------
-const radar=document.getElementById('radar');
-function frameAt(t){if(!FRAMES.length)return null;
-  let lo=0,hi=FRAMES.length-1;while(lo<hi){const m=(lo+hi)>>1;if(FRAMES[m].t<t)lo=m+1;else hi=m;}return FRAMES[Math.max(0,lo-1)];}
-function drawRadar(){
-  const c=radar.getContext('2d'),W=radar.width,H=radar.height,pad=14;
-  c.fillStyle='#12361a';c.fillRect(0,0,W,H);
-  const sx=(W-2*pad)/PITCH.L, sy=(H-2*pad)/PITCH.W;
-  const tp=([x,y])=>[pad+x*sx,pad+y*sy];
-  c.strokeStyle='rgba(230,230,230,.7)';c.lineWidth=1;
-  const draw=pts=>{c.beginPath();pts.forEach((p,i)=>{const q=tp(p);i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]);});c.stroke();};
-  pitchSegments().forEach(s=>draw(s));
-  draw(circle(PITCH.L/2,PITCH.W/2,9.15));
-  const fr=frameAt(vid.currentTime||0);
-  if(fr){document.getElementById('radinfo').textContent=`t=${fr.t.toFixed(1)}s — ${fr.players.length} joueuses — recalage ${fr.reg_ok?'OK':'approx.'}`;
-    fr.players.forEach(p=>{const q=tp(p.xy);c.beginPath();c.arc(q[0],q[1],5,0,7);c.fillStyle=p.team===0?'#e5484d':p.team===1?'#4493f8':'#bbb';c.fill();});}
-}
-drawRadar();
-
-// ---------- onglets ----------
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById(b.dataset.tab).classList.add('active');
-  if(b.dataset.tab==='code'){renderTimeline();}
-});
-
-// ---------- tableau de bord ----------
-function buildDash(){
-  document.getElementById('dashEmpty').style.display='none';
-  document.getElementById('dashBody').style.display='block';
-  const sh=(id,s)=>{const el=document.getElementById(id);if(!s||!s.compacite_moy_m){el.innerHTML='<span class="muted">—</span>';return;}
-    el.innerHTML=`<div class="big">${s.compacite_moy_m.toFixed(1)} m</div><div class="muted">compacité moyenne</div>
-      <table style="margin-top:8px"><tr><td>Longueur du bloc</td><td>${s.longueur_bloc_moy_m.toFixed(1)} m</td></tr>
-      <tr><td>Largeur du bloc</td><td>${s.largeur_bloc_moy_m.toFixed(1)} m</td></tr></table>`;};
-  sh('shape0',RES.team_shapes&&RES.team_shapes['0']);
-  sh('shape1',RES.team_shapes&&RES.team_shapes['1']);
-  const rc=document.getElementById('regcard');
-  const fail=RES.reg_fail||0,n=RES.n_frames||1;
-  rc.innerHTML=`<div class="big">${(100*(1-fail/n)).toFixed(1)} %</div><div class="muted">images bien recalées (${n-fail}/${n})</div>`;
-  heat('heat0',RES.heatmaps&&RES.heatmaps['0'],[229,72,77]);
-  heat('heat1',RES.heatmaps&&RES.heatmaps['1'],[68,147,248]);
-  buildTable();
-}
-function heat(id,H,rgb){const cv=document.getElementById(id),c=cv.getContext('2d'),W=cv.width,Ht=cv.height;
-  c.fillStyle='#12361a';c.fillRect(0,0,W,Ht);
-  if(!H)return;const rows=H.length,cols=H[0].length,cw=W/cols,ch=Ht/rows;
-  for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){const v=H[i][j];if(v>0.02){c.fillStyle=`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${0.12+0.8*v})`;c.fillRect(j*cw,i*ch,cw+1,ch+1);}}
-  c.strokeStyle='rgba(230,230,230,.5)';c.lineWidth=1;const sx=(W)/PITCH.L,sy=(Ht)/PITCH.W;
-  const tp=([x,y])=>[x*sx,y*sy];pitchSegments().forEach(s=>{c.beginPath();s.forEach((p,k)=>{const q=tp(p);k?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]);});c.stroke();});
-}
-function buildTable(){
-  const tb=document.querySelector('#ptab tbody');tb.innerHTML='';
-  let rows=Object.entries(RES.players).map(([id,p])=>({id:+id,...p,
-    hi:p.dist_course_haute_intensite_m||0,sprint:p.dist_sprint_m||0}));
-  rows=rows.filter(r=>r.duree_s>3);
-  rows.sort((a,b)=>sortDir*((a[sortKey]??0)>(b[sortKey]??0)?1:-1));
-  rows.forEach(r=>{
-    const tr=document.createElement('tr');
-    const tcol=r.team===0?'var(--red)':r.team===1?'var(--blue)':'var(--muted)';
-    tr.innerHTML=`<td>${r.id}</td><td style="color:${tcol}">●</td><td>${r.duree_s.toFixed(0)}s</td>
-      <td>${r.distance_m.toFixed(0)}</td><td>${r.m_par_min.toFixed(0)}</td><td>${r.vitesse_max_kmh.toFixed(1)}</td>
-      <td>${r.vma_kmh?r.vma_kmh.toFixed(1):'—'}</td><td>${r.hi.toFixed(0)} m</td><td>${r.sprint.toFixed(0)} m</td>`;
-    tb.appendChild(tr);
-  });
-}
-document.querySelectorAll('#ptab th').forEach(th=>th.onclick=()=>{const k=th.dataset.s;if(k===sortKey)sortDir*=-1;else{sortKey=k;sortDir=1;}buildTable();});
-
-// ---------- export ----------
-document.getElementById('exp').onclick=()=>{
-  const rows=[['code','equipe','debut_s','fin_s','instant_s']];
-  instances.forEach(i=>rows.push([i.k,i.team,i.start.toFixed(2),i.end.toFixed(2),i.t.toFixed(2)]));
-  const csv=rows.map(r=>r.join(';')).join('\n');
-  dl('instances.csv','text/csv',csv);
-  dl('instances.json','application/json',JSON.stringify(instances,null,1));
-};
-// ouverture directe depuis la page unique : ?video=...&result=...
-// sans paramètre : match de démonstration (demo/), pour tester sans importer de vidéo.
-(()=>{const q=new URLSearchParams(location.search);
-  if(!q.get('video')&&!q.get('result')){
-    q.set('video','demo/match_demo.mp4');q.set('result','demo/result.json');
-    document.getElementById('demo').hidden=false;
-    if(!instances.length){
-      instances=[{k:'Récupération',team:'n',t:6},{k:'Attaque rouge',team:'0',t:9},{k:'Tir',team:'n',t:14},{k:'Perte balle',team:'n',t:21},{k:'Attaque bleue',team:'1',t:24},{k:'Occasion',team:'n',t:31}]
-        .map(i=>({...i,start:Math.max(0,i.t-PRE),end:i.t+POST}));
-      renderInstances();
-    }
-  }
-  if(q.get('video')){vid.src=q.get('video');vid.onloadedmetadata=()=>{renderTimeline();fit();};}
-  if(q.get('result'))fetch(q.get('result')).then(r=>r.json()).then(j=>{RES=j;FRAMES=RES.frames||[];buildDash();drawRadar();}).catch(()=>{});
-})();
-function dl(name,type,data){const b=new Blob([data],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}
-</script>
+<dialog id="dlg"><form method="dialog" id="dlgForm"><h3 id="dlgTitre"></h3><div id="dlgCorps"></div>
+  <div class="dlg-pied"><button value="annuler" class="discret">Annuler</button><button value="ok" class="principal" id="dlgOk">OK</button></div></form></dialog>
+<div id="toasts"></div>
+<script type="module" src="app.js?v=2026-11-20c"></script>
 </body>
 </html>

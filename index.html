@@ -11,8 +11,8 @@
     // Anciens liens vers la veille des PV (#semaine, #equipe/U17…) : on les renvoie vers le module.
     if (location.hash.length > 1) location.replace("pv.html" + location.hash);
   </script>
-  <link rel="stylesheet" href="commun/charte.css?v=2026-11-20b">
-  <script src="commun/modules.js?v=2026-11-20b" data-module="accueil" data-bandeau="non"></script>
+  <link rel="stylesheet" href="commun/charte.css?v=2026-11-20c">
+  <script src="commun/modules.js?v=2026-11-20c" data-module="accueil" data-bandeau="non"></script>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; font: 15px/1.5 var(--esga-police); background: var(--esga-fond); color: var(--esga-texte); -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
@@ -88,7 +88,7 @@
       el.hidden = false;
     }).catch(() => {});
     const v = document.getElementById("info-video");
-    v.innerHTML = "Un <b>match de démonstration</b> est déjà chargé : rien à importer pour tester.";
+    v.innerHTML = "Une <b>minute du match contre La Duchère</b> est déjà chargée : rien à importer pour tester.";
     v.hidden = false;
   </script>
 </body>
