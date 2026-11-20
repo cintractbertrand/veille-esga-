@@ -16,7 +16,7 @@
 
   const MODULES = [
     { id: "video", nom: "Analyse vidéo", court: "Vidéo", url: BASE + "analyse-video/",
-      desc: "Revoir un match, coder les actions, suivre les joueuses sur une vue 2D et lire les statistiques d'équipe." },
+      desc: "Revoir un match, marquer une joueuse, dessiner flèches et cercles sur l'image, monter des séquences et les envoyer." },
     { id: "pv", nom: "Lecture des PV du District", court: "PV District", url: BASE + "pv.html",
       desc: "Chaque semaine, tout ce que les PV du District disent du club : sanctions, échéances, matchs, amendes." },
     { id: "atelier", nom: "Atelier entraînements", court: "Entraînements", url: "https://cintractbertrand.github.io/atelier-foot/site/",

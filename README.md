@@ -4,7 +4,7 @@ Synthèse hebdomadaire des procès-verbaux du District de Lyon et du Rhône de f
 
 - `index.html` : la page d'accueil de l'Espace éducateurs (Analyse vidéo, Lecture des PV, Atelier entraînements).
 - `commun/charte.css` et `commun/modules.js` : la charte graphique commune et le bandeau des modules, repris par tous les modules (y compris le dépôt `atelier-foot`, par leur adresse en ligne). Les adresses des modules se changent dans la liste `MODULES` de `commun/modules.js`.
-- `analyse-video/` : la version en ligne du studio d'analyse vidéo (copie de `studio/studio.html` du projet analyse-veo du PC), avec un match de démonstration dans `demo/`.
+- `analyse-video/` : la version en ligne du Monteur vidéo (copie de `montage/web/` du projet analyse-veo du PC). `demo/demo.js` remplace le serveur du PC par une démo dans le navigateur, avec une minute du match contre La Duchère (`demo/duchere.mp4`), des joueuses marquées, 3 séquences et des dessins. La fabrication des vidéos, le suivi et la détection restent sur le PC.
 - `pv.html`, `style.css`, `app.js` : le module Lecture des PV, publié par GitHub Pages depuis la racine de `main`. Les anciens liens `#…` vers la racine sont renvoyés vers `pv.html`.
 - `data/pv.json` : les données, avec une entrée par PV et une fiche par mention du club.
 - `MISE_A_JOUR.md` : la procédure suivie chaque jeudi soir pour ajouter le nouveau PV.
