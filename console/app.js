@@ -180,6 +180,30 @@
     if (!eqs.length) return `<div class="entete"><h1>Bonjour ${esc(s.prenom)}</h1></div><p class="vide">Aucune équipe ne vous est confiée pour l'instant. Le responsable sportif peut vous en affecter une.</p>`;
     return `<div class="entete"><div><p class="fil-ariane discret">${fJL(auj())}</p><h1>Bonjour ${esc(s.prenom)} 👋</h1><p class="sous">${eqs.map(C.nomEquipe).join(" · ")}</p></div></div>` + eqs.map((eq) => blocCoach(eq)).join("");
   }
+  /* ---------- vidéos : séquences envoyées aux joueurs ---------- */
+  const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+  const secondes = (v) => { const m = String(v || "").trim().match(/^(?:(\d+):)?(\d+(?:[.,]\d+)?)$/); return m ? (+(m[1] || 0)) * 60 + parseFloat(m[2].replace(",", ".")) : NaN; };
+  const destEnvoi = (x) => x.a === "equipe" ? "Toute l'équipe" : x.a.map((id) => (C.personne(id) || {}).prenom).filter(Boolean).join(", ");
+  function ligneEnvoi(x, jid) {
+    const vu = jid ? !!x.vus[jid] : null, nVus = Object.keys(x.vus).length, nDest = x.a === "equipe" ? C.joueurs(x.equipe).length : x.a.length;
+    return `<li class="envoi"><a class="vign ${x.genre || ""}" href="${C.lienEnvoi(x.id)}">▶</a><span class="q"><b>${esc(x.nom || "Séquence")}</b>${jid && !vu ? ' <span class="etiq or">Nouveau</span>' : ""}
+      <small>${jid ? `${esc(x.de || "Le coach")} · ${x.a === "equipe" ? "pour toute l'équipe" : "rien que pour " + (C.personne(jid) || {}).prenom}` : `${esc(destEnvoi(x))} · vu par ${nVus}/${nDest}`} · ${mmss(x.debut)}–${mmss(x.fin)}</small>${x.note && jid ? `<small class="nt">« ${esc(x.note)} »</small>` : ""}</span>
+      ${jid ? `<a class="btn mini prim" href="${C.lienEnvoi(x.id)}">Regarder</a>` : `<button class="btn mini lien" data-a="envoi-retirer" data-id="${esc(x.id)}">Retirer</button>`}</li>`;
+  }
+  function carteVideo(e) {
+    const v = C.video(e.id), env = C.envois({ evt: e.id }), js = C.joueurs(e.equipe);
+    return `<section class="carte" id="carteVideo"><h2>🎬 Vidéo du match${v ? ` <span class="plus"><a class="btn mini" href="${esc(v.url)}" target="_blank" rel="noopener">Ouvrir ↗</a>${v.source === "monteur" ? ` <a class="btn mini" href="${URL_MOD.video()}">Monteur vidéo</a>` : ""}</span>` : ""}</h2>
+      <form class="form" id="fVideo" data-id="${esc(e.id)}"><label>Lien de la vidéo (YouTube, Veo, Google Drive, fichier .mp4…)<span class="ligne-btn"><input name="url" type="url" placeholder="https://…" value="${esc(v ? v.url : "")}"><button class="btn">${v ? "Changer" : "Relier"}</button></span></label></form>
+      ${v ? `<details class="envoyer"${env.length ? "" : " open"}><summary class="btn prim">📤 Envoyer une séquence</summary>
+        <form class="form" id="fEnvoi" data-id="${esc(e.id)}">
+          <div class="ligne3"><label>Début (min:s)<input name="debut" placeholder="12:30" required></label><label>Fin (min:s)<input name="fin" placeholder="12:50" required></label><label>Type<select name="genre">${opt("", "Neutre", "")}${opt("bien", "👍 À refaire", "")}${opt("corriger", "✏️ À corriger", "")}</select></label></div>
+          <label>Titre<input name="nom" placeholder="ex. Pressing à la perte du ballon" required></label>
+          <label>Message du coach<textarea name="note" placeholder="Ce qu'il faut regarder…"></textarea></label>
+          <fieldset><legend>Pour qui ?</legend><label class="tout"><input type="radio" name="pour" value="equipe" checked> Toute l'équipe</label><label class="tout"><input type="radio" name="pour" value="choix"> Seulement :</label>
+            <div class="cases joueurs-envoi">${js.map((p) => `<label><input type="checkbox" name="j" value="${esc(p.id)}"> ${p.numero ? p.numero + " " : ""}${esc(p.prenom)}</label>`).join("")}</div></fieldset>
+          <div class="pied"><button class="btn prim">Envoyer</button></div></form></details>` : '<p class="aide">Reliez la vidéo pour envoyer des séquences aux joueurs. Depuis le Monteur vidéo, le bouton « Partager » d\'une séquence fait la même chose.</p>'}
+      ${env.length ? `<h3>Séquences envoyées</h3><ul class="envois">${env.map((x) => ligneEnvoi(x)).join("")}</ul>` : ""}</section>`;
+  }
   function blocCoach(eq) {
     const m = C.prochainMatch(eq), ent = C.prochainsEntrainements(eq, 3), js = C.joueurs(eq), cv = m && C.convocation(m.id);
     const alertes = js.filter((p) => p.certificat !== "ok" || p.licence.statut !== "validee");
@@ -193,7 +217,7 @@
             : (() => { const so = etatSondage(m); return so.lance ? `<div class="statut-convoc att">📊 <span><b>Sondage : ${so.oui} oui · ${so.peut} peut-être · ${so.non} non</b><br><small>${so.sans} sans réponse</small></span></div><a class="btn prim" href="#convoc/${esc(m.id)}">Faire la convocation</a>`
               : `<div class="statut-convoc att">⏳ <span><b>Qui sera disponible ?</b><br><small>Lancez le sondage, les familles répondent en un clic.</small></span></div><p style="margin:0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" data-a="lancer-sondage" data-id="${esc(m.id)}">Lancer le sondage</button><a class="btn" href="#convoc/${esc(m.id)}">Convoquer directement</a></p>`; })()}` : '<p class="vide">Aucun match à venir.</p>'}
           ${(() => { const d = C.evenements({ equipe: eq, du: C.SAISON.debut, au: ajout(auj(), -1), types: ["match", "amical"] }).filter((x) => x.statut !== "annule").pop(); if (!d) return ""; const f = C.feuille(d.id);
-            return `<p class="dernier petit">Dernier match : <b>${esc(d.adversaire || d.titre)}</b> ${scoreHTML(d, f)} <a href="#feuille/${esc(d.id)}">${f ? "voir" : "saisir le score ›"}</a></p>`; })()}</section>
+            return `<p class="dernier petit">Dernier match : <b>${esc(d.adversaire || d.titre)}</b> ${scoreHTML(d, f)} <a href="#feuille/${esc(d.id)}">${f ? "voir" : "saisir le score ›"}</a>${C.video(d.id) ? ` · <a href="#feuille/${esc(d.id)}">🎬 vidéo${C.envois({ evt: d.id }).length ? ` (${pl(C.envois({ evt: d.id }).length, "séquence envoyée", "séquences envoyées")})` : ""}</a>` : ""}</p>`; })()}</section>
         <section class="carte"><h2>Prochain entraînement</h2>${prochain ? `<p style="margin:0 0 4px"><b>${fJL(prochain.date)} · ${hh(prochain.heure)}</b></p><p class="discret petit" style="margin:0 0 10px">${esc(prochain.lieu)} · ${prochain.duree} min</p>
           ${abs.length ? `<div class="alerte">${pl(abs.length, "absence signalée", "absences signalées")} : ${abs.map((id) => `<b>${esc((C.personne(id) || {}).prenom)}</b> (${esc(dispo[id].motif || "")})`).join(", ")}</div>` : '<p class="discret petit">Aucune absence signalée par les familles.</p>'}
           <p style="margin:10px 0 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" data-a="appel" data-id="${esc(prochain.id)}">Faire l'appel</button></p>
@@ -496,7 +520,7 @@
       const evs = C.evenements({ du: C.SAISON.debut, au: ajout(auj(), -1), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule").reverse();
       return tete + tabs + `<div class="table-wrap"><table class="liste"><thead><tr><th>Date</th>${estDirigeant() ? "<th>Équipe</th>" : ""}<th>Match</th><th>Score</th><th class="cache-m">Buteurs</th><th></th></tr></thead><tbody>
         ${evs.map((e) => { const f = C.feuille(e.id);
-          return `<tr data-a="lien" data-href="#feuille/${esc(e.id)}"><td>${fJ(e.date)}</td>${estDirigeant() ? `<td><b>${esc(C.nomEquipe(e.equipe))}</b></td>` : ""}<td>${esc(e.titre)}<br><small class="discret">${esc(e.competition || "")}</small></td><td>${scoreHTML(e, f)}</td><td class="cache-m petit">${buteursHTML(f)}</td><td><a class="btn mini${f ? "" : " prim"}" href="#feuille/${esc(e.id)}">${f ? "Voir" : "Saisir"}</a></td></tr>`; }).join("") || `<tr><td colspan="6" class="vide">Aucun match joué cette saison.</td></tr>`}
+          return `<tr data-a="lien" data-href="#feuille/${esc(e.id)}"><td>${fJ(e.date)}</td>${estDirigeant() ? `<td><b>${esc(C.nomEquipe(e.equipe))}</b></td>` : ""}<td>${esc(e.titre)}${C.video(e.id) ? " 🎬" : ""}<br><small class="discret">${esc(e.competition || "")}</small></td><td>${scoreHTML(e, f)}</td><td class="cache-m petit">${buteursHTML(f)}</td><td><a class="btn mini${f ? "" : " prim"}" href="#feuille/${esc(e.id)}">${f ? "Voir" : "Saisir"}</a></td></tr>`; }).join("") || `<tr><td colspan="6" class="vide">Aucun match joué cette saison.</td></tr>`}
         </tbody></table></div>`;
     }
     const evs = C.evenements({ du: auj(), au: ajout(auj(), 35), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule");
@@ -531,7 +555,8 @@
       <section class="carte"><h2>Qui a joué ? <span class="etiq bleu">${f.joueurs.length}</span><span class="plus discret petit">Touchez + pour chaque but ou passe décisive</span></h2>
         <ul class="feuille">${ordre.map(ligne).join("")}</ul>
         <div class="form" style="margin-top:12px"><label>Notes du coach (privées)<textarea id="fNotes" placeholder="Ce qui a marché, ce qu'on travaille mardi…">${esc(f.notes)}</textarea></label>
-        <div class="pied">${ex ? `<span class="discret petit gauche">Enregistré le ${new Date(ex.saisie).toLocaleDateString("fr-FR")}</span>` : ""}<a class="btn" href="#convocations/joues">Annuler</a><button class="btn prim" data-a="f-enregistrer" data-id="${esc(id)}"${futur ? " disabled" : ""}>Enregistrer le match</button></div></div></section>`;
+        <div class="pied">${ex ? `<span class="discret petit gauche">Enregistré le ${new Date(ex.saisie).toLocaleDateString("fr-FR")}</span>` : ""}<a class="btn" href="#convocations/joues">Annuler</a><button class="btn prim" data-a="f-enregistrer" data-id="${esc(id)}"${futur ? " disabled" : ""}>Enregistrer le match</button></div></div></section>
+      ${futur ? "" : carteVideo(e)}`;
   }
 
   const brouillons = {};
@@ -683,6 +708,7 @@
           ${autres.length ? `<h3>Aussi au programme</h3><ul class="ents">${autres.map((x) => `<li class="ent"><span class="q"><b>${esc(x.titre)}</b> · ${fJ(x.date)} ${hh(x.heure)}<small>${esc(x.lieu)}${x.notes ? " · " + esc(x.notes) : ""}</small></span></li>`).join("")}</ul>` : ""}</section>
         <section class="carte"><h2>📞 ${coachs.length > 1 ? "Les éducateurs" : "L'éducateur"}</h2>${coachs.length ? coachs.map((x) => `<div class="contact">${avatarP(x)}<span><b>${esc(C.nomComplet(x))}</b><small>${esc(ROLES[x.role] || "")}</small></span><a class="btn mini" href="tel:${esc(x.tel.replace(/\s/g, ""))}">Appeler</a></div>`).join("") : '<p class="discret">Éducateur pas encore désigné.</p>'}
           <a class="btn prim" style="margin-top:10px" href="${URL_MOD.messagerie(j.equipe)}">💬 Messagerie de l'équipe</a></section>
+        ${(() => { const l = C.envois({ joueur: j.id }).slice(0, 6); return l.length ? `<section class="carte"><h2>🎬 ${parent ? "Les vidéos de " + esc(j.prenom) : "Mes vidéos"}</h2><ul class="envois">${l.map((x) => ligneEnvoi(x, j.id)).join("")}</ul></section>` : ""; })()}
         <section class="carte"><h2>🪪 ${parent ? "Le dossier de " + esc(j.prenom) : "Mon dossier"}</h2><dl class="detail"><dt>Licence</dt><dd>${etiqLicence(j)}</dd><dt>Certificat</dt><dd>${etiqCertif(j)}</dd><dt>Maillot</dt><dd>${j.numero ? "n°" + j.numero : "–"}${j.poste ? " · " + esc(j.poste) : ""}</dd>${(() => { const st = C.statsJoueur(j.id); return st ? `<dt>Saison</dt><dd>${pl(st.joues, "match", "matchs")} · ${pl(st.buts, "but")} · ${pl(st.passes, "passe déc.", "passes déc.")}</dd>` : ""; })()}</dl><p class="aide">Une info à corriger (téléphone, allergie…) ? Écrivez-le au coach dans la messagerie.</p></section>
       </div>`;
   }
@@ -784,6 +810,7 @@
     if (a === "retablir") { C.modifierEvenement(id, { statut: "prevu" }); toast("Rétabli."); return ouvrirEvt(id); }
     if (a === "suppr-evt") { if (confirmer("Supprimer cet événement du calendrier ?")) { C.supprimer("evenements", id); fermer(); toast("Événement supprimé."); } return; }
     if (a === "appel") return ouvrirAppel(id);
+    if (a === "envoi-retirer") { if (!confirm("Retirer cette séquence ? Les joueurs ne la verront plus.")) return; C.retirerEnvoi(id); toast("Séquence retirée."); return; }
     if (a === "seance-retirer") { if (!confirm("Retirer la séance prévue pour cet entraînement ?")) return; C.setSeance(id, null); toast("Séance retirée de cet entraînement."); return ouvrirEvt(id); }
     if (a === "pres") { const cur = C.presences(t.dataset.evt)[t.dataset.j]; C.setPresence(t.dataset.evt, t.dataset.j, cur === t.dataset.v ? null : t.dataset.v); return ouvrirAppel.rendre && ouvrirAppel.rendre(); }
     if (a === "tous-presents") { const e = C.evenement(id), d = C.dispos(id), p = C.presences(id); C.joueurs(e.equipe).forEach((j) => { if (!p[j.id]) C.setPresence(id, j.id, d[j.id] ? "excuse" : "present"); }); return ouvrirAppel.rendre(); }
@@ -838,6 +865,16 @@
       C.publierConvocation({ evenement: id, joueurs: b.joueurs.slice(), rdvHeure: b.rdvHeure, rdvLieu: b.rdvLieu, tenue: b.tenue, mot: b.mot, source: "console" });
       delete brouillons[id]; toast(ancienne ? "Convocation mise à jour et renvoyée dans la messagerie." : "Convocation publiée dans la messagerie de l'équipe.");
       return;
+    }
+    if (f.id === "fVideo") { const u = new FormData(f).get("url").trim(); C.setVideo(f.dataset.id, u ? { url: u, titre: "Vidéo du match", source: /analyse-video\//.test(u) ? "monteur" : "lien" } : null); toast(u ? "Vidéo reliée au match." : "Vidéo retirée."); return; }
+    if (f.id === "fEnvoi") {
+      const d = new FormData(f), debut = secondes(d.get("debut")), fin = secondes(d.get("fin")), e = C.evenement(f.dataset.id);
+      if (!(debut >= 0) || !(fin > debut)) return toast("Indiquez un début et une fin (ex. 12:30 et 12:50).");
+      const choix = d.getAll("j"), a = d.get("pour") === "choix" ? choix : "equipe";
+      if (a !== "equipe" && !a.length) return toast("Cochez au moins un joueur.");
+      const s = moiStaff();
+      C.envoyerSequence({ evt: e.id, equipe: e.equipe, a, debut, fin, nom: d.get("nom").trim(), note: d.get("note").trim(), genre: d.get("genre") || null, de: s ? C.nomComplet(s) : "Le coach" });
+      toast(a === "equipe" ? "Séquence envoyée à toute l'équipe." : `Séquence envoyée à ${a.length > 1 ? a.length + " joueurs" : (C.personne(a[0]) || {}).prenom}.`); return;
     }
     if (f.id === "fClub") { const d = new FormData(f); C.majClub({ nom: d.get("nom").trim(), numero: d.get("numero").trim(), ville: d.get("ville").trim(), email: d.get("email").trim(), lieux: d.get("lieux").split("\n").map((x) => x.trim()).filter(Boolean) }); return toast("Réglages enregistrés."); }
     if (surSoumission && f.closest("#tiroir")) surSoumission(f);

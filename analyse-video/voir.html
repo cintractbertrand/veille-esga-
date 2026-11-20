@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Séquence vidéo · ESGA</title>
+<meta name="theme-color" content="#0b2a6f">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../commun/charte.css?v=2026-11-20c">
+<script src="../commun/modules.js?v=2026-11-20g" data-module="video" defer></script>
+<script src="../commun/club.js?v=2026-11-20i"></script>
+<style>
+  body { margin: 0; background: var(--esga-fond); color: var(--esga-texte); font-family: var(--esga-police); }
+  main { max-width: 860px; margin: 0 auto; padding: 16px; }
+  .carte { background: var(--esga-carte); border: 1px solid var(--esga-ligne); border-radius: var(--esga-rayon); box-shadow: var(--esga-ombre); padding: 16px; }
+  h1 { font-size: 1.3rem; margin: 4px 0 2px; }
+  .sous { color: var(--esga-gris); margin: 0 0 12px; font-size: .9rem; }
+  .ecran { position: relative; background: #000; border-radius: 10px; overflow: hidden; aspect-ratio: 16 / 9; }
+  .ecran video, .ecran iframe { width: 100%; height: 100%; display: block; border: 0; }
+  .note { margin: 14px 0 0; padding: 12px 14px; border-left: 4px solid var(--esga-or); background: color-mix(in srgb, var(--esga-or) 10%, transparent); border-radius: 8px; }
+  .note.bien { border-left-color: var(--esga-vert); background: color-mix(in srgb, var(--esga-vert) 10%, transparent); }
+  .note.corriger { border-left-color: var(--esga-rouge); background: color-mix(in srgb, var(--esga-rouge) 8%, transparent); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--esga-ligne); background: var(--esga-carte); color: var(--esga-texte); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+  .btn.prim { background: var(--esga-bleu); border-color: var(--esga-bleu); color: #fff; }
+  .vide { color: var(--esga-gris); text-align: center; padding: 30px 0; }
+  .etiq { display: inline-block; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--esga-doux); }
+</style>
+</head>
+<body>
+<main><div class="carte" id="contenu"><p class="vide">Chargement…</p></div></main>
+<script>
+(async function () {
+  const C = await CLUB.pret, $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+  const x = C.envoi(new URLSearchParams(location.search).get("e") || "");
+  if (!x) { $("#contenu").innerHTML = '<p class="vide">Cette séquence n\'existe plus ou n\'est pas encore arrivée sur cet appareil.</p><p style="text-align:center"><a class="btn" href="../">Retour à l\'accueil</a></p>'; return; }
+  const m = C.evenement(x.evt), v = C.video(x.evt) || {}, url = x.url || v.url || "", p = C.profil();
+  const pour = x.a === "equipe" ? "Toute l'équipe" : x.a.map((id) => (C.personne(id) || {}).prenom).filter(Boolean).join(", ");
+  // Lecteur : fichier vidéo (extrait joué de début à fin), YouTube (début / fin), sinon lien vers la vidéo
+  const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/);
+  const fichier = /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url);
+  const lecteur = yt ? `<iframe src="https://www.youtube-nocookie.com/embed/${yt[1]}?start=${Math.floor(x.debut)}&end=${Math.ceil(x.fin)}&rel=0" allow="autoplay; fullscreen" allowfullscreen title="Séquence"></iframe>`
+    : fichier ? `<video id="vid" src="${esc(url)}#t=${x.debut},${x.fin}" controls playsinline preload="metadata"></video>` : "";
+  $("#contenu").innerHTML = `<span class="etiq">🎬 Séquence ${x.genre === "bien" ? "· 👍 à refaire" : x.genre === "corriger" ? "· ✏️ à corriger" : ""}</span>
+    <h1>${esc(x.nom || "Séquence du match")}</h1>
+    <p class="sous">${m ? esc(m.titre) + " · " + new Date(m.date + "T12:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) : ""} · ${mmss(x.debut)} à ${mmss(x.fin)} · pour ${esc(pour)}</p>
+    ${lecteur ? `<div class="ecran">${lecteur}</div>` : `<p class="vide">La vidéo est sur un autre site.</p>`}
+    ${x.note ? `<p class="note ${x.genre || ""}"><b>${esc(x.de || "Le coach")} :</b> ${esc(x.note)}</p>` : ""}
+    <div class="actions">${fichier ? '<button class="btn prim" id="revoir">↺ Revoir la séquence</button>' : ""}${url && !fichier ? `<a class="btn prim" href="${esc(url)}" target="_blank" rel="noopener">Ouvrir la vidéo ↗</a><span class="sous" style="align-self:center;margin:0">Aller à ${mmss(x.debut)}</span>` : ""}<a class="btn" href="../#moi">Mon espace</a></div>`;
+  const vid = $("#vid");
+  if (vid) {
+    const revoir = () => { vid.currentTime = x.debut; vid.play().catch(() => {}); };
+    vid.addEventListener("timeupdate", () => { if (vid.currentTime >= x.fin) { vid.pause(); vid.currentTime = x.fin; } });
+    const caler = () => { if (vid.currentTime < x.debut - 0.2 || vid.currentTime > x.fin) vid.currentTime = x.debut; };
+    if (vid.readyState >= 1) caler(); else vid.addEventListener("loadedmetadata", caler, { once: true });
+    vid.addEventListener("play", caler);
+    $("#revoir").onclick = revoir;
+  }
+  if (p && p.joueur && (x.a === "equipe" ? (C.personne(p.joueur) || {}).equipe === x.equipe : x.a.includes(p.joueur))) C.vuEnvoi(x.id, p.joueur);
+})();
+</script>
+</body>
+</html>
