@@ -96,7 +96,7 @@
   /* ---------- menu ---------- */
   function rendreMenu(page) {
     const dir = estDirigeant(), s = moiStaff();
-    const nbConv = convocationsAFaire().length;
+    const nbConv = new Set([...convocationsAFaire().map((e) => e.id), ...(estDirigeant() ? [] : mesEquipes().flatMap((q) => matchsAPreparer(q).filter(rappelDu).map((e) => e.id)))]).size;
     if (estFamille()) {
       const j = moiJoueur();
       $("#menu").innerHTML = `<div class="profil"><b>${esc(C.nomProfil(profil))}</b><span>${esc(j ? C.nomEquipe(j.equipe) : "")}</span></div>
@@ -204,6 +204,27 @@
           <div class="pied"><button class="btn prim">Envoyer</button></div></form></details>` : '<p class="aide">Reliez la vidéo pour envoyer des séquences aux joueurs. Depuis le Monteur vidéo, le bouton « Partager » d\'une séquence fait la même chose.</p>'}
       ${env.length ? `<h3>Séquences envoyées</h3><ul class="envois">${env.map((x) => ligneEnvoi(x)).join("")}</ul>` : ""}</section>`;
   }
+  /* ---------- matchs à préparer : le coach lance le sondage quand il veut, avec un rappel ---------- */
+  const dateRappel = (e) => C.rappel(e.id) || ajout(e.date, -7);
+  const rappelDu = (e) => !C.convocation(e.id) && !etatSondage(e).lance && dateRappel(e) <= auj();
+  function matchsAPreparer(eq) { return C.evenements({ equipe: eq, du: auj(), au: ajout(auj(), 42), types: ["match", "amical"] }).filter((e) => e.statut !== "annule" && e.equipe === eq); }
+  const memeWeekend = (a, b) => a.id !== b.id && Math.abs((jour(a.date) - jour(b.date)) / 864e5) <= 2 && [5, 6, 0].includes(jour(a.date).getDay()) && [5, 6, 0].includes(jour(b.date).getDay());
+  const jumeau = (e) => matchsAPreparer(e.equipe).find((x) => memeWeekend(e, x)) || null;
+  function boutonsSondage(e, prim) {
+    const j = jumeau(e), libre = j && !C.convocation(j.id) && !etatSondage(j).lance;
+    return libre ? `<button class="btn mini${prim ? " prim" : ""}" data-a="lancer-sondage-we" data-id="${esc(e.id)}" data-avec="${esc(j.id)}" title="Une seule réponse des familles pour les deux matchs">Un sondage pour les 2 matchs du week-end</button><button class="btn mini" data-a="lancer-sondage" data-id="${esc(e.id)}">Ce match seulement</button>`
+      : `<button class="btn mini${prim ? " prim" : ""}" data-a="lancer-sondage" data-id="${esc(e.id)}">${prim ? "Lancer le sondage" : "Lancer maintenant"}</button>`;
+  }
+  function carteAPreparer(eq) {
+    const l = matchsAPreparer(eq); if (!l.length) return "";
+    return `<section class="carte a-preparer"><h2>📋 Matchs à préparer <a class="plus" href="#convocations">Tous les matchs ›</a></h2><ul>${l.map((e) => {
+      const cv = C.convocation(e.id), so = etatSondage(e), du = rappelDu(e);
+      const etat = cv ? `<span class="etiq ok">✅ Convocation publiée</span>`
+        : so.lance ? `<span class="petit">${(C.sondage(e.id) || {}).lies ? "🔗 Sondage commun du week-end · " : ""}📊 ${so.oui} oui · ${so.peut} peut-être · ${so.non} non · ${so.sans} sans réponse</span><a class="btn mini prim" href="#convoc/${esc(e.id)}">Faire la convocation</a>`
+        : du ? `<span class="rappel-du">⏰ C'est le moment de lancer le sondage</span>${boutonsSondage(e, true)}`
+        : `<label class="petit rappel">⏰ Me rappeler de lancer le sondage le <input type="date" class="rappel-date" data-id="${esc(e.id)}" value="${esc(dateRappel(e))}" max="${esc(e.date)}"></label>${boutonsSondage(e, false)}`;
+      return `<li class="${du ? "du" : ""}"><button class="btn lien quand" data-a="evt" data-id="${esc(e.id)}"><b>${fJ(e.date)}</b> ${hh(e.heure)}</button><span class="qui"><b>${esc(e.titre)}</b><small>${esc(e.competition || TYPES[e.type] || "")}</small></span><span class="etat">${etat}</span></li>`; }).join("")}</ul></section>`;
+  }
   function blocCoach(eq) {
     const m = C.prochainMatch(eq), ent = C.prochainsEntrainements(eq, 3), js = C.joueurs(eq), cv = m && C.convocation(m.id);
     const alertes = js.filter((p) => p.certificat !== "ok" || p.licence.statut !== "validee");
@@ -211,6 +232,7 @@
     const taux = js.map((p) => C.tauxPresence(p.id)).filter((t) => t != null), moy = taux.length ? Math.round(taux.reduce((a, b) => a + b, 0) / taux.length) : null;
     const bas = js.map((p) => [p, C.tauxPresence(p.id)]).filter(([, t]) => t != null && t < 70).sort((a, b) => a[1] - b[1]).slice(0, 3);
     return `<h2 class="groupe-titre">${esc(C.nomEquipe(eq))} · <a href="#equipe/${esc(eq)}">fiche de l'équipe ›</a></h2>
+      ${carteAPreparer(eq)}
       <div class="grille g3">
         <section class="carte"><h2>Prochain match</h2>${m ? `<p style="margin:0 0 4px"><b>${esc(m.titre)}</b></p><p class="discret petit" style="margin:0 0 10px">${fJL(m.date)} · ${hh(m.heure)}<br>${esc(m.lieu)}<br>${esc(m.competition || "")}</p>
           ${cv ? `<div class="statut-convoc">✅ <span><b>Convocation publiée</b><br><small>${pl(cv.joueurs.length, "convoqué")} · RDV ${hh(cv.rdvHeure)}</small></span></div><a class="btn" href="#convoc/${esc(m.id)}">Voir ou modifier</a>`
@@ -694,7 +716,7 @@
       else if (cv) carteMatch = tete + `<div class="statut-convoc att">ℹ️ <span>${parent ? `${esc(j.prenom)} n'est pas convoqué${f ? "e" : ""}` : "Vous n'êtes pas convoqué" + (f ? "e" : "")} pour ce match.</span></div>`;
       else carteMatch = tete + `<p style="margin:0 0 8px"><b>${parent ? `${esc(j.prenom)} sera-t-${f ? "elle" : "il"} disponible ?` : "Serez-vous disponible ?"}</b></p>
           <div class="reponse-match">${[["present", "✓ Oui", "ok"], ["incertain", "? Peut-être", "att"], ["absent", "✕ Non", "ko"]].map(([k, l, c]) => `<button class="rep ${c}" data-a="dispo-match" data-id="${esc(m.id)}" data-v="${k}" aria-pressed="${dm ? dm.statut === k : false}">${l}</button>`).join("")}</div>
-          <p class="aide" style="margin-top:8px">${dm ? "Réponse envoyée au coach. Vous pouvez la changer." : "Le coach fera la convocation avec ces réponses."}</p>`;
+          <p class="aide" style="margin-top:8px">${(C.sondage(m.id) || {}).lies ? `🔗 Une seule réponse pour les 2 matchs du week-end (${(C.sondage(m.id).lies).map((x) => C.evenement(x)).filter(Boolean).map((x) => esc(x.adversaire || x.titre) + " " + fJ(x.date)).join(" et ")}). ` : ""}${dm ? "Réponse envoyée au coach. Vous pouvez la changer." : "Le coach fera la convocation avec ces réponses."}</p>`;
     }
     const ents = C.evenements({ equipe: j.equipe, du: auj(), au: ajout(auj(), 21), types: ["entrainement"] }).slice(0, 4);
     const autres = C.evenements({ equipe: j.equipe, du: auj(), au: ajout(auj(), 21) }).filter((x) => !["entrainement", "match"].includes(x.type) && x.id !== (m && m.id) && x.equipe);
@@ -785,6 +807,7 @@
     if (a === "choisir-joueur") { profil = { role: choix.role, joueur: id }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#moi", "C'est parti !"); }
     if (a === "dispo-match") { if (t.dataset.v === "absent") { if (!(C.dispos(id)[moiJoueur().id] || {}).motif || C.dispos(id)[moiJoueur().id].statut !== "absent") C.setDispo(id, moiJoueur().id, { statut: "absent", motif: "Absent", par: "famille" }); return ouvrirMotif(id); } C.setDispo(id, moiJoueur().id, { statut: t.dataset.v, motif: t.dataset.v === "present" ? "Disponible" : "Incertain", par: "famille" }); return toast("Réponse envoyée au coach. 👍"); }
     if (a === "absence") return ouvrirMotif(id);
+    if (a === "lancer-sondage-we") { C.lancerSondage(id, false, [t.dataset.avec]); return toast("Un seul sondage pour les deux matchs du week-end : chaque réponse compte pour les deux."); }
     if (a === "lancer-sondage") { C.lancerSondage(id); return toast("Sondage envoyé dans la messagerie de l'équipe. Les réponses arrivent ici."); }
     if (a === "relancer-sondage") { C.lancerSondage(id, true); return toast("Rappel envoyé aux familles qui n'ont pas répondu."); }
     if (a === "f-plus" || a === "f-moins") {
@@ -855,6 +878,7 @@
     if (t.id === "fQ") { filtres.q = t.value; clearTimeout(rendre.t); rendre.t = setTimeout(() => { rendre(true); const q = $("#fQ"); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }, 160); }
   });
   document.addEventListener("change", (ev) => {
+    if (ev.target.classList && ev.target.classList.contains("rappel-date")) { C.setRappel(ev.target.dataset.id, ev.target.value); toast(ev.target.value ? `Rappel noté pour le ${fJ(ev.target.value)}.` : "Rappel retiré."); return; }
     const t = ev.target;
     if (t.dataset && t.dataset.a === "f-joue") { const f = feuilles[route().a]; f.joueurs = t.checked ? [...new Set([...f.joueurs, t.dataset.id])] : f.joueurs.filter((x) => x !== t.dataset.id); return rendre(true); }
     if (t.name === "type" && t.closest("#fEvt")) { const z = $("#champsAmical"); if (z) z.hidden = t.value !== "amical"; return; }

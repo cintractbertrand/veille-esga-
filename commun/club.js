@@ -134,7 +134,7 @@
   /* ---------- état ---------- */
   let D = STOCKAGE.lire();
   if (!D || D.version !== VERSION) { D = graine(); STOCKAGE.ecrire(D); }
-  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; d.videos = d.videos || {}; d.envois = d.envois || []; return d; }; // données plus anciennes
+  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; d.videos = d.videos || {}; d.envois = d.envois || []; d.rappels = d.rappels || {}; return d; }; // données plus anciennes
   completer(D);
   let MATCHS = []; // matchs officiels (data/matchs.json)
   const abonnes = [];
@@ -289,7 +289,16 @@
     sauver();
   }
   function setPresence(evt, jid, statut) { const p = (D.presences[evt] = D.presences[evt] || {}); if ((p[jid] || null) === (statut || null)) return; if (statut) p[jid] = statut; else delete p[jid]; sauver(); }
-  function setDispo(evt, jid, info) { const p = (D.dispos[evt] = D.dispos[evt] || {}); if (!info && !p[jid]) return; if (info) p[jid] = Object.assign({ date: new Date().toISOString() }, info); else delete p[jid]; sauver(); }
+  // Sondage commun du week-end : une réponse vaut pour tous les matchs liés (choix du coach)
+  const lies = (evt) => { const s = D.sondages[evt]; return s && s.lies ? s.lies.filter((x) => x !== evt) : []; };
+  function setDispo(evt, jid, info, seul) {
+    const p = (D.dispos[evt] = D.dispos[evt] || {});
+    if (!info && !p[jid] && (seul || !lies(evt).length)) return;
+    if (info) p[jid] = Object.assign({ date: new Date().toISOString() }, info); else delete p[jid];
+    if (seul) return;
+    lies(evt).forEach((x) => setDispo(x, jid, info, true));
+    sauver();
+  }
   // Plusieurs écritures d'un coup : un seul enregistrement à la fin
   function lot(fn) { enLot++; try { fn(); } finally { enLot--; if (!enLot && sale) { sale = false; sauver(); } } }
   function publierConvocation(c) {
@@ -301,7 +310,12 @@
   // Feuille de match : { nous, eux, joueurs: [ids ayant joué], stats: { id: { buts, passes } }, notes }
   function setFeuille(evt, f) { D.feuilles[evt] = Object.assign({ saisie: new Date().toISOString() }, f); sauver(); }
   // Sondage de disponibilité d'un match : lancé depuis la console ou la messagerie, réponses dans dispos
-  function lancerSondage(evt, relance) { const s = D.sondages[evt]; if (s && !relance) return; D.sondages[evt] = Object.assign({}, s, s ? { relance: new Date().toISOString() } : { lance: new Date().toISOString() }); sauver(); }
+  function lancerSondage(evt, relance, avec) {
+    const s = D.sondages[evt]; if (s && !relance) return;
+    const groupe = avec && avec.length ? [evt, ...avec] : (s && s.lies) || null, t = new Date().toISOString();
+    (groupe || [evt]).forEach((x) => { const s0 = D.sondages[x]; D.sondages[x] = Object.assign({}, s0, s0 && relance ? { relance: t } : { lance: t }, groupe ? { lies: groupe } : {}); });
+    sauver();
+  }
   // Séance préparée dans l'Atelier, rattachée à un entraînement choisi par le coach (pas forcément le prochain)
   // s = { nom, duree, exercices: [{ titre, theme, duree, variante, note }], materiel, lien, auteur }
   function setSeance(evt, s) { if (s) D.seances[evt] = Object.assign({ maj: new Date().toISOString(), source: "atelier" }, s); else delete D.seances[evt]; sauver(); }
@@ -355,6 +369,8 @@
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
     feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,
     seance: (evt) => D.seances[evt] || null, setSeance,
+    // Rappel « lancer le sondage le… » choisi par le coach (par défaut 7 jours avant le match)
+    rappel: (evt) => D.rappels[evt] || null, setRappel: (evt, date) => { if (date) D.rappels[evt] = date; else delete D.rappels[evt]; sauver(); },
     video: (evt) => D.videos[evt] || null, setVideo, envoyerSequence, envois, envoi: (id) => D.envois.find((x) => x.id === id) || null, vuEnvoi, retirerEnvoi,
     lienEnvoi: (id) => BASE + "analyse-video/voir.html?e=" + encodeURIComponent(id),
     exporter, importer, reinitialiser, profil, setProfil, nomProfil, surChangement: (cb) => abonnes.push(cb),

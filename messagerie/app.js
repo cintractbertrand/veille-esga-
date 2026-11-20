@@ -166,7 +166,7 @@
     const cs = CLUB.sondage(m.id);
     let sl = etat.sondages.find((x) => x.type === "match" && x.match === m.id);
     if (cs && !sl) {
-      sl = { id: uid(), conv: "annonces", auteur: "coach", date: cs.lance, type: "match", match: m.id, question: `Match contre ${m.adversaire} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
+      sl = { id: uid(), conv: "annonces", auteur: "coach", date: cs.lance, type: "match", match: m.id, question: cs.lies ? `Week-end : ${cs.lies.map((x) => CLUB.evenement(x)).filter(Boolean).map((x) => `${x.adversaire || x.titre} (${fmtJour(x.date, { weekday: "short", day: "numeric" })})`).join(" et ")}. Qui est disponible pour les 2 matchs ?` : `Match contre ${m.adversaire} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
       etat.sondages.push(sl); etat.messages.push({ id: uid(), conv: "annonces", auteur: "coach", date: cs.lance, type: "sondage", sondage: sl.id });
       const eq0 = etat.convs.find((x) => x.id === "annonces"); if (eq0) eq0.epingle = etat.messages[etat.messages.length - 1].id;
     }
