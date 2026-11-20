@@ -2,7 +2,10 @@
 
 Synthèse hebdomadaire des procès-verbaux du District de Lyon et du Rhône de football pour l'**ES Genas Azieu** (n° 523341).
 
-- `index.html`, `style.css`, `app.js` : le site statique, publié par GitHub Pages depuis la racine de `main`.
+- `index.html` : la page d'accueil de l'Espace éducateurs (Analyse vidéo, Lecture des PV, Atelier entraînements).
+- `commun/charte.css` et `commun/modules.js` : la charte graphique commune et le bandeau des modules, repris par tous les modules (y compris le dépôt `atelier-foot`, par leur adresse en ligne). Les adresses des modules se changent dans la liste `MODULES` de `commun/modules.js`.
+- `analyse-video/` : la version en ligne du studio d'analyse vidéo (copie de `studio/studio.html` du projet analyse-veo du PC), avec un match de démonstration dans `demo/`.
+- `pv.html`, `style.css`, `app.js` : le module Lecture des PV, publié par GitHub Pages depuis la racine de `main`. Les anciens liens `#…` vers la racine sont renvoyés vers `pv.html`.
 - `data/pv.json` : les données, avec une entrée par PV et une fiche par mention du club.
 - `MISE_A_JOUR.md` : la procédure suivie chaque jeudi soir pour ajouter le nouveau PV.
 
@@ -16,4 +19,4 @@ Les onglets proposent ensuite les vues de tout le club :
 
 Pour tester le site en local : `python3 -m http.server`, puis ouvrir http://localhost:8000.
 
-À chaque modification de `app.js` ou `style.css`, changer le numéro `?v=` dans `index.html` pour que les navigateurs rechargent les fichiers.
+À chaque modification de `app.js` ou `style.css`, changer le numéro `?v=` dans `pv.html` pour que les navigateurs rechargent les fichiers.

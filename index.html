@@ -4,171 +4,91 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b2a6f">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%231d4ed8%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
-  <title>Veille PV ESGA</title>
-  <meta name="description" content="Synthèse hebdomadaire des PV du District de Lyon et du Rhône pour l'ES Genas Azieu">
-  <link rel="stylesheet" href="style.css?v=2026-11-19m">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230b2a6f%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
+  <title>ESGA · Espace éducateurs</title>
+  <meta name="description" content="ES Genas Azieu : analyse vidéo, lecture des PV du District et atelier d'entraînements">
+  <script>
+    // Anciens liens vers la veille des PV (#semaine, #equipe/U17…) : on les renvoie vers le module.
+    if (location.hash.length > 1) location.replace("pv.html" + location.hash);
+  </script>
+  <link rel="stylesheet" href="commun/charte.css?v=2026-11-20a">
+  <script src="commun/modules.js?v=2026-11-20a" data-module="accueil" data-bandeau="non"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.5 var(--esga-police); background: var(--esga-fond); color: var(--esga-texte); -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; width: 100%; }
+    .hero { background: var(--esga-degrade); color: #fff; padding: 44px 0 96px; border-bottom: 4px solid var(--esga-or); }
+    .brand { display: flex; align-items: center; gap: 18px; }
+    .crest { flex: 0 0 auto; width: 68px; height: 76px; border-radius: 14px 14px 30px 30px; background: #fff; color: var(--esga-marine); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,.25); border: 3px solid rgba(255,255,255,.6); outline: 2px solid var(--esga-marine); outline-offset: -7px; }
+    .crest span { font-weight: 800; font-size: 1.35rem; line-height: 1; }
+    .crest small { font-weight: 700; font-size: .78rem; letter-spacing: .2em; margin-top: 3px; color: var(--esga-bleu); }
+    h1 { margin: 4px 0 6px; font-size: clamp(1.7rem, 5vw, 2.5rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+    .intro { margin: 0; opacity: .9; max-width: 560px; }
+    main { margin-top: -64px; flex: 1; }
+    .mods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    @media (max-width: 900px) { .mods { grid-template-columns: minmax(0, 1fr); } }
+    .mod { position: relative; display: flex; flex-direction: column; background: var(--esga-carte); border: 1px solid var(--esga-ligne); border-radius: 18px; padding: 24px; box-shadow: var(--esga-ombre-l); color: inherit; text-decoration: none; transition: transform .18s, box-shadow .18s, border-color .18s; overflow: hidden; }
+    .mod::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--c, var(--esga-bleu)); }
+    .mod:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c) 45%, var(--esga-ligne)); }
+    .mod:hover .esga-btn { background: var(--c); border-color: var(--c); color: #fff; }
+    .ic { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); margin-bottom: 16px; }
+    .ic svg { width: 28px; height: 28px; }
+    .mod h2 { margin: 0 0 6px; font-size: 1.25rem; letter-spacing: -.01em; }
+    .mod p { margin: 0 0 18px; color: var(--esga-gris); }
+    .mod .info { font-size: .84rem; color: var(--esga-gris); background: var(--esga-carte-2); border: 1px solid var(--esga-ligne); border-radius: 10px; padding: 8px 12px; margin: 0 0 18px; }
+    .mod .info b { color: var(--esga-texte); }
+    .mod .esga-btn { margin-top: auto; align-self: flex-start; }
+    .m-video { --c: #c2410c; } .m-pv { --c: var(--esga-bleu); } .m-atelier { --c: var(--esga-vert); }
+    @media (prefers-color-scheme: dark) { .m-video { --c: #f97316; } .m-pv { --c: #5b8cff; } .m-atelier { --c: #2fbf7f; } }
+    .foot { color: var(--esga-gris); font-size: .82rem; padding: 32px 20px 28px; text-align: center; }
+  </style>
 </head>
 <body>
   <header class="hero">
-    <div class="wrap hero-in">
+    <div class="wrap">
       <div class="brand">
         <div class="crest" aria-hidden="true"><span>ES</span><small>GA</small></div>
         <div>
-          <p class="kicker">Veille des PV · District de Lyon et du Rhône</p>
-          <h1 id="club-nom">ES Genas Azieu</h1>
-          <p id="pv-courant" class="sub">Chargement…</p>
+          <p class="esga-kicker">ES Genas Azieu · Espace éducateurs</p>
+          <h1>Bienvenue au club</h1>
+          <p class="intro">Les outils du club, réunis au même endroit : préparer les entraînements, analyser les matchs et suivre les PV du District.</p>
         </div>
       </div>
-      <div class="stats" id="stats"></div>
     </div>
   </header>
 
-  <div class="barre">
-    <nav class="wrap equipes" aria-label="Équipes">
-      <span class="equipes-titre">Équipes</span>
-      <div class="chips" id="chips"></div>
-    </nav>
-    <nav class="tabs wrap" role="tablist">
-      <button class="tab active" data-tab="semaine">Cette semaine</button>
-      <button class="tab" data-tab="calendrier">Calendrier</button>
-      <button class="tab" data-tab="historique">Historique</button>
-      <button class="tab" data-tab="lecteur">Lecteur PV</button>
-    </nav>
-  </div>
-
   <main class="wrap">
-    <section id="tab-semaine" class="panel active">
-      <div class="resume" id="resume"></div>
-      <div class="cols">
-        <div class="col-main">
-          <div class="sec-head"><h2>Mentions du club</h2><span class="sec-note" id="semaine-note"></span></div>
-          <div id="items-semaine" class="items"></div>
-        </div>
-        <aside class="col-side">
-          <div class="side-card">
-            <h2>À ne pas manquer</h2>
-            <ul class="echeances" id="a-venir"></ul>
-          </div>
-          <div class="side-card" id="matchs-semaine-bloc" hidden>
-            <h2>Matchs des 7 prochains jours</h2>
-            <ul class="echeances compact" id="matchs-semaine"></ul>
-            <button class="btn btn-link" id="voir-cal">Voir le calendrier complet ›</button>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <section id="tab-calendrier" class="panel">
-      <div class="cal-head">
-        <div class="cal-nav">
-          <button class="btn icon" id="cal-prev" aria-label="Mois précédent">‹</button>
-          <h2 id="cal-titre"></h2>
-          <button class="btn icon" id="cal-next" aria-label="Mois suivant">›</button>
-          <button class="btn" id="cal-auj">Aujourd'hui</button>
-        </div>
-        <div class="cal-tools">
-          <select id="cal-filtre" class="select" aria-label="Filtrer par équipe"></select>
-          <button class="btn btn-primary" id="ics">Ajouter à mon agenda (.ics)</button>
-        </div>
-      </div>
-      <div class="cal-legend">
-        <span><i class="dot match"></i>Match</span>
-        <span><i class="dot urgent"></i>Échéance urgente</span>
-        <span><i class="dot attention"></i>À surveiller</span>
-        <span><i class="dot info"></i>Info</span>
-      </div>
-      <div class="cal" id="cal"></div>
-      <div id="cal-jour" class="side-card cal-jour" hidden></div>
-      <div class="sec-head"><h2 id="agenda-titre">Agenda du mois</h2></div>
-      <div id="cal-agenda" class="agenda"></div>
-    </section>
-
-    <section id="tab-equipe" class="panel">
-      <div class="eq-head">
-        <div>
-          <p class="kicker-dark" id="eq-kicker">Équipe</p>
-          <h2 id="eq-titre"></h2>
-        </div>
-        <button class="btn" id="eq-fermer">‹ Tout le club</button>
-      </div>
-      <div class="eq-stats" id="eq-stats"></div>
-      <div class="eq-equipes" id="eq-equipes" hidden></div>
-      <div class="cols">
-        <div class="col-main">
-          <div class="sec-head"><h2>Mentions dans les PV</h2></div>
-          <input id="recherche" class="search" type="search" placeholder="Rechercher (adversaire, commission, joueur, mot-clé…)">
-          <div id="items-cat" class="items"></div>
-          <div id="eq-amendes-bloc" hidden>
-            <div class="sec-head"><h2 id="eq-amendes-titre">Amendes</h2></div>
-            <div id="eq-amendes"></div>
-          </div>
-        </div>
-        <aside class="col-side">
-          <div class="side-card" id="eq-matchs-bloc" hidden>
-            <h2>Prochains matchs</h2>
-            <ul class="echeances compact" id="eq-matchs"></ul>
-            <div id="eq-matchs-passes" class="eq-passes"></div>
-          </div>
-          <div class="side-card">
-            <h2 id="eq-ech-titre">Prochaines échéances</h2>
-            <ul class="echeances" id="eq-ech"></ul>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <section id="tab-lecteur" class="panel">
-      <div class="lect-head">
-        <select id="lect-pv" class="select" aria-label="Choisir un PV"></select>
-        <div class="seg" role="tablist" aria-label="Mode de lecture">
-          <button class="seg-b on" data-mode="suivie">Lecture suivie</button>
-          <button class="seg-b" data-mode="pdf">PDF complet</button>
-        </div>
-      </div>
-      <div id="lect-suivie" class="lect-suivie"></div>
-      <div id="lect-pdf" hidden>
-        <div class="lect-bar" id="lect-bar">
-          <button class="btn" id="lect-side-btn" aria-expanded="true" title="Sommaire">☰ <span class="txt-l">Sommaire</span></button>
-          <div class="lect-nav">
-            <button class="btn icon" id="lect-prec" aria-label="Page précédente">‹</button>
-            <label class="lect-page"><span class="txt-l">Page</span> <input id="lect-page" type="number" min="1" value="1" inputmode="numeric"> <span id="lect-total"></span></label>
-            <button class="btn icon" id="lect-suiv" aria-label="Page suivante">›</button>
-          </div>
-          <div class="lect-nav lect-genas-nav" title="Passages qui citent Genas">
-            <button class="btn icon" id="lect-gprec" aria-label="Passage Genas précédent">▲</button>
-            <span class="lect-gcount" id="lect-gcount">Genas</span>
-            <button class="btn icon btn-primary" id="lect-genas" aria-label="Passage Genas suivant">▼</button>
-          </div>
-          <div class="lect-nav lect-zoom">
-            <button class="btn icon" id="lect-moins" aria-label="Zoom arrière">−</button>
-            <button class="btn icon" id="lect-plus" aria-label="Zoom avant">+</button>
-          </div>
-          <a id="lect-ext" class="btn icon" target="_blank" rel="noopener" title="Ouvrir le PDF dans un onglet" aria-label="Ouvrir le PDF dans un onglet">↗</a>
-        </div>
-        <div class="lect-body" id="lect-body">
-          <aside class="lect-side" id="lect-side">
-            <div class="lect-side-head"><b>Sommaire</b><button class="btn-link" id="lect-side-close">Fermer ✕</button></div>
-            <div id="lect-sommaire"></div>
-            <div id="lect-fiches"></div>
-            <h3>Pages où le club apparaît</h3>
-            <div id="lect-pages" class="lect-pages"><p class="empty">Recherche en cours…</p></div>
-          </aside>
-          <div class="lect-doc" id="lect-view"><p class="empty">Chargement du PV…</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="tab-historique" class="panel">
-      <ol class="timeline" id="timeline"></ol>
-    </section>
+    <div class="mods" id="mods"></div>
   </main>
 
-  <footer class="wrap foot">
-    <p>Synthèse produite automatiquement chaque jeudi soir à partir des PV officiels. En cas de doute, le PV fait foi : chaque fiche renvoie au PDF et à sa page.</p>
-  </footer>
+  <footer class="foot">ES Genas Azieu · n° 523341</footer>
 
-  <script src="vendor/pdfjs/pdf.min.js"></script>
-  <script src="app.js?v=2026-11-19m"></script>
+  <script>
+    const { MODULES, ICONES } = window.ESGA;
+    const ACTION = { video: "Essayer la démo", pv: "Lire les PV", atelier: "Préparer une séance" };
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    document.getElementById("mods").innerHTML = MODULES.map((m) => `
+      <a class="mod m-${m.id}" href="${m.url}">
+        <div class="ic">${ICONES[m.id]}</div>
+        <h2>${esc(m.nom)}</h2>
+        <p>${esc(m.desc)}</p>
+        <div class="info" id="info-${m.id}" hidden></div>
+        <span class="esga-btn">${ACTION[m.id]} ›</span>
+      </a>`).join("");
+
+    // Dernier PV publié, lu dans les données du module
+    fetch("data/pv.json").then((r) => r.json()).then((d) => {
+      const p = d.pvs && d.pvs[0];
+      if (!p) return;
+      const n = (p.items || []).length;
+      const date = new Date(p.date + "T12:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+      const el = document.getElementById("info-pv");
+      el.innerHTML = `Dernier PV : <b>n°${p.numero} du ${date}</b> · ${n} mention${n > 1 ? "s" : ""} du club`;
+      el.hidden = false;
+    }).catch(() => {});
+    const v = document.getElementById("info-video");
+    v.innerHTML = "Un <b>match de démonstration</b> est déjà chargé : rien à importer pour tester.";
+    v.hidden = false;
+  </script>
 </body>
 </html>

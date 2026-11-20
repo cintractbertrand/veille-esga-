@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b2a6f">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%231d4ed8%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
+  <title>Lecture des PV · ESGA</title>
+  <meta name="description" content="Synthèse hebdomadaire des PV du District de Lyon et du Rhône pour l'ES Genas Azieu">
+  <link rel="stylesheet" href="commun/charte.css?v=2026-11-20a">
+  <link rel="stylesheet" href="style.css?v=2026-11-20a">
+  <script src="commun/modules.js?v=2026-11-20a" data-module="pv" defer></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-in">
+      <div class="brand">
+        <div class="crest" aria-hidden="true"><span>ES</span><small>GA</small></div>
+        <div>
+          <p class="kicker">Veille des PV · District de Lyon et du Rhône</p>
+          <h1 id="club-nom">ES Genas Azieu</h1>
+          <p id="pv-courant" class="sub">Chargement…</p>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </header>
+
+  <div class="barre">
+    <nav class="wrap equipes" aria-label="Équipes">
+      <span class="equipes-titre">Équipes</span>
+      <div class="chips" id="chips"></div>
+    </nav>
+    <nav class="tabs wrap" role="tablist">
+      <button class="tab active" data-tab="semaine">Cette semaine</button>
+      <button class="tab" data-tab="calendrier">Calendrier</button>
+      <button class="tab" data-tab="historique">Historique</button>
+      <button class="tab" data-tab="lecteur">Lecteur PV</button>
+    </nav>
+  </div>
+
+  <main class="wrap">
+    <section id="tab-semaine" class="panel active">
+      <div class="resume" id="resume"></div>
+      <div class="cols">
+        <div class="col-main">
+          <div class="sec-head"><h2>Mentions du club</h2><span class="sec-note" id="semaine-note"></span></div>
+          <div id="items-semaine" class="items"></div>
+        </div>
+        <aside class="col-side">
+          <div class="side-card">
+            <h2>À ne pas manquer</h2>
+            <ul class="echeances" id="a-venir"></ul>
+          </div>
+          <div class="side-card" id="matchs-semaine-bloc" hidden>
+            <h2>Matchs des 7 prochains jours</h2>
+            <ul class="echeances compact" id="matchs-semaine"></ul>
+            <button class="btn btn-link" id="voir-cal">Voir le calendrier complet ›</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tab-calendrier" class="panel">
+      <div class="cal-head">
+        <div class="cal-nav">
+          <button class="btn icon" id="cal-prev" aria-label="Mois précédent">‹</button>
+          <h2 id="cal-titre"></h2>
+          <button class="btn icon" id="cal-next" aria-label="Mois suivant">›</button>
+          <button class="btn" id="cal-auj">Aujourd'hui</button>
+        </div>
+        <div class="cal-tools">
+          <select id="cal-filtre" class="select" aria-label="Filtrer par équipe"></select>
+          <button class="btn btn-primary" id="ics">Ajouter à mon agenda (.ics)</button>
+        </div>
+      </div>
+      <div class="cal-legend">
+        <span><i class="dot match"></i>Match</span>
+        <span><i class="dot urgent"></i>Échéance urgente</span>
+        <span><i class="dot attention"></i>À surveiller</span>
+        <span><i class="dot info"></i>Info</span>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div id="cal-jour" class="side-card cal-jour" hidden></div>
+      <div class="sec-head"><h2 id="agenda-titre">Agenda du mois</h2></div>
+      <div id="cal-agenda" class="agenda"></div>
+    </section>
+
+    <section id="tab-equipe" class="panel">
+      <div class="eq-head">
+        <div>
+          <p class="kicker-dark" id="eq-kicker">Équipe</p>
+          <h2 id="eq-titre"></h2>
+        </div>
+        <button class="btn" id="eq-fermer">‹ Tout le club</button>
+      </div>
+      <div class="eq-stats" id="eq-stats"></div>
+      <div class="eq-equipes" id="eq-equipes" hidden></div>
+      <div class="cols">
+        <div class="col-main">
+          <div class="sec-head"><h2>Mentions dans les PV</h2></div>
+          <input id="recherche" class="search" type="search" placeholder="Rechercher (adversaire, commission, joueur, mot-clé…)">
+          <div id="items-cat" class="items"></div>
+          <div id="eq-amendes-bloc" hidden>
+            <div class="sec-head"><h2 id="eq-amendes-titre">Amendes</h2></div>
+            <div id="eq-amendes"></div>
+          </div>
+        </div>
+        <aside class="col-side">
+          <div class="side-card" id="eq-matchs-bloc" hidden>
+            <h2>Prochains matchs</h2>
+            <ul class="echeances compact" id="eq-matchs"></ul>
+            <div id="eq-matchs-passes" class="eq-passes"></div>
+          </div>
+          <div class="side-card">
+            <h2 id="eq-ech-titre">Prochaines échéances</h2>
+            <ul class="echeances" id="eq-ech"></ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tab-lecteur" class="panel">
+      <div class="lect-head">
+        <select id="lect-pv" class="select" aria-label="Choisir un PV"></select>
+        <div class="seg" role="tablist" aria-label="Mode de lecture">
+          <button class="seg-b on" data-mode="suivie">Lecture suivie</button>
+          <button class="seg-b" data-mode="pdf">PDF complet</button>
+        </div>
+      </div>
+      <div id="lect-suivie" class="lect-suivie"></div>
+      <div id="lect-pdf" hidden>
+        <div class="lect-bar" id="lect-bar">
+          <button class="btn" id="lect-side-btn" aria-expanded="true" title="Sommaire">☰ <span class="txt-l">Sommaire</span></button>
+          <div class="lect-nav">
+            <button class="btn icon" id="lect-prec" aria-label="Page précédente">‹</button>
+            <label class="lect-page"><span class="txt-l">Page</span> <input id="lect-page" type="number" min="1" value="1" inputmode="numeric"> <span id="lect-total"></span></label>
+            <button class="btn icon" id="lect-suiv" aria-label="Page suivante">›</button>
+          </div>
+          <div class="lect-nav lect-genas-nav" title="Passages qui citent Genas">
+            <button class="btn icon" id="lect-gprec" aria-label="Passage Genas précédent">▲</button>
+            <span class="lect-gcount" id="lect-gcount">Genas</span>
+            <button class="btn icon btn-primary" id="lect-genas" aria-label="Passage Genas suivant">▼</button>
+          </div>
+          <div class="lect-nav lect-zoom">
+            <button class="btn icon" id="lect-moins" aria-label="Zoom arrière">−</button>
+            <button class="btn icon" id="lect-plus" aria-label="Zoom avant">+</button>
+          </div>
+          <a id="lect-ext" class="btn icon" target="_blank" rel="noopener" title="Ouvrir le PDF dans un onglet" aria-label="Ouvrir le PDF dans un onglet">↗</a>
+        </div>
+        <div class="lect-body" id="lect-body">
+          <aside class="lect-side" id="lect-side">
+            <div class="lect-side-head"><b>Sommaire</b><button class="btn-link" id="lect-side-close">Fermer ✕</button></div>
+            <div id="lect-sommaire"></div>
+            <div id="lect-fiches"></div>
+            <h3>Pages où le club apparaît</h3>
+            <div id="lect-pages" class="lect-pages"><p class="empty">Recherche en cours…</p></div>
+          </aside>
+          <div class="lect-doc" id="lect-view"><p class="empty">Chargement du PV…</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-historique" class="panel">
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Synthèse produite automatiquement chaque jeudi soir à partir des PV officiels. En cas de doute, le PV fait foi : chaque fiche renvoie au PDF et à sa page.</p>
+  </footer>
+
+  <script src="vendor/pdfjs/pdf.min.js"></script>
+  <script src="app.js?v=2026-11-20a"></script>
+</body>
+</html>
