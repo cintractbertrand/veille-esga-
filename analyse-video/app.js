@@ -261,7 +261,7 @@ async function enregistrer(s) {
   mr.onstop = async () => {
     flux.getTracks().forEach((t) => t.stop());
     video.volume = vol; el.remove(); rec = null; L.pause();
-    const blob = new Blob(morceaux, { type: 'audio/webm' });
+    const blob = new Blob(morceaux, { type: mr.mimeType || morceaux[0]?.type || 'audio/webm' }); // iPhone : audio/mp4
     if (blob.size < 2000) { toast('Commentaire trop court, rien enregistré', { erreur: true }); return; }
     try {
       await api('POST', `/api/voix?match=${E.match.id}&seq=${s.id}`, blob, true);
@@ -428,7 +428,7 @@ async function partager(s) {
     if (!url) { toast('Indiquez le lien de la vidéo en ligne : la vidéo du PC ne peut pas être envoyée', { erreur: true, duree: 5000 }); return; }
     C.setVideo(v.evt, { url, titre: E.match.nom || 'Vidéo du match', source: 'monteur' });
   }
-  C.envoyerSequence({ evt: v.evt, equipe: eq, a, debut: s.debut, fin: s.fin, nom: titreSeq(s), note: (v.note || '').trim(), genre: s.genre || null, de: st ? C.nomComplet(st) : 'Le coach', sequence: s.id });
+  C.envoyerSequence({ evt: v.evt, equipe: eq, a, debut: s.debut, fin: s.fin, nom: titreSeq(s), note: (v.note || '').trim(), genre: s.genre || null, de: st ? C.nomComplet(st) : 'Le coach', voix: s.voix && window.DEMO ? DEMO.voix(s.id) : '', sequence: s.id });
   toast(a === 'equipe' ? 'Envoyée à toute l’équipe : chacune la retrouve dans son espace' : `Envoyée à ${a.map((id) => (C.personne(id) || {}).prenom).join(', ')}`, { duree: 4000 });
 }
 let POUR = 'equipe';
@@ -457,7 +457,7 @@ async function envoyerAuClub(seqs) {
   C.lot(() => seqs.forEach((s) => {
     const a = v.equipe ? 'equipe' : (s.joueuses || []).map(duClub).filter(Boolean).map((x) => x.id);
     if (a !== 'equipe' && !a.length) return;
-    C.envoyerSequence({ evt: v.evt, equipe: eq, a, debut: s.debut, fin: s.fin, nom: titreSeq(s), note: s.note || '', genre: s.genre || null, de: st ? C.nomComplet(st) : 'Le coach', sequence: s.id }); n++;
+    C.envoyerSequence({ evt: v.evt, equipe: eq, a, debut: s.debut, fin: s.fin, nom: titreSeq(s), note: s.note || '', genre: s.genre || null, de: st ? C.nomComplet(st) : 'Le coach', voix: s.voix && window.DEMO ? DEMO.voix(s.id) : '', sequence: s.id }); n++;
   }));
   toast(n ? `${n} séquence(s) envoyée(s)${v.equipe ? ' à toute l’équipe' : ' : chaque joueuse taguée les voit dans son espace'}` : 'Rien à envoyer : taguez des joueuses ou cochez l’équipe', { erreur: !n, duree: 5000 });
 }
@@ -473,7 +473,7 @@ $('#btnEnvoyer').onclick = async () => {
   const v = await dialogue({ titre: 'Envoyer les vidéos', ok: 'Fabriquer les vidéos', corps: `
     <p><b>${jids.length}</b> joueuse(s) concernée(s) : une vidéo chacune avec ses séquences, dessins et arrêts sur image.</p>
     <p class="petit">${jids.map((j) => esc(nomJoueuse(j)) + ' (' + seqs.filter((s) => s.joueuses?.includes(j.id)).length + ')').join(' · ') || '—'}</p>
-    ${seqs.some((s) => s.voix) ? `<p class="petit">🎙 ${seqs.filter((s) => s.voix).length} séquence(s) avec commentaire au micro.</p>` : ''}
+    ${seqs.some((s) => s.voix) ? `<p class="petit">🎙 ${seqs.filter((s) => s.voix).length} séquence(s) avec commentaire au micro : la joueuse l’entend sur sa vidéo.</p>` : ''}
     <label><input type="checkbox" name="equipe" checked> Et une vidéo de l’équipe avec les ${seqs.length} séquences</label>
     <p class="petit discret">Dossier : ${esc(info.envois)}\\${esc(E.match.nom || '')}</p>` });
   if (!v) return;

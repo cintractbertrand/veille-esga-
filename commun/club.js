@@ -134,7 +134,13 @@
       document.addEventListener("visibilitychange", () => { if (!document.hidden) tirer(); });
       window.addEventListener("online", () => { tirer(); viderOps(); });
     }
-    return { suivre, marquer, tirer, op, connecter, deconnecter, fusion, surEtat: (cb) => ecoutes.push(cb),
+    // Petit document à part (commentaire audio d'une séquence) : écrit une fois, lu à la demande
+    async function ecrireSeul(cle, data) {
+      if (!code || !peutEcrire(cle)) return false;
+      try { const v = await rpc("esga_versions", { code, cles: [cle] }); await rpc("esga_ecrire", { code, cle_: cle, data_: data, version_: v[cle] || 0 }); return true; } catch (e) { erreur(e); return false; }
+    }
+    async function lireSeul(cle) { if (!code) return null; try { const r = await rpc("esga_lire", { code, cles: [cle] }); return r[cle] ? r[cle].data : null; } catch (e) { erreur(e); return null; } }
+    return { suivre, marquer, tirer, op, connecter, deconnecter, fusion, ecrireSeul, lireSeul, surEtat: (cb) => ecoutes.push(cb),
       get actif() { return !!code; }, get role() { return role; }, get etat() { return etat; } };
   })();
 
@@ -448,13 +454,21 @@
   function setVideo(evt, v) { if (v && v.url) D.videos[evt] = Object.assign({ maj: new Date().toISOString() }, v); else delete D.videos[evt]; sauver(); }
   // o = { evt, equipe, a: "equipe" | [ids joueurs], debut, fin (secondes), nom, note, genre ("bien" | "corriger"), de, sequence (id Monteur) }
   function envoyerSequence(o) {
-    const e = Object.assign({ id: uid(), date: new Date().toISOString(), vus: {} }, o);
+    const son = o.voix || "", e = Object.assign({ id: uid(), date: new Date().toISOString(), vus: {} }, o, { voix: !!son });
+    if (son) setVoix(e.id, son);
     if (o.sequence) D.envois = D.envois.filter((x) => !(x.sequence === o.sequence && x.evt === o.evt && JSON.stringify(x.a) === JSON.stringify(o.a)));
     D.envois.unshift(e); sauver(); return e.id;
   }
   const pourJoueur = (x, jid) => { const p = personne(jid); return x.a === "equipe" ? !!p && p.equipe === x.equipe : Array.isArray(x.a) && x.a.includes(jid); };
   function envois({ evt, equipe, joueur } = {}) { return D.envois.filter((x) => (!evt || x.evt === evt) && (!equipe || x.equipe === equipe) && (!joueur || pourJoueur(x, joueur))); }
   function vuEnvoi(id, jid) { const x = D.envois.find((y) => y.id === id); if (!x || !jid || x.vus[jid]) return; x.vus[jid] = new Date().toISOString(); NUAGE.op({ type: "vu", envoi: id, jid }); sauver(); }
+  // Commentaire au micro d'une séquence envoyée (audio en data URL)
+  function setVoix(id, src) { try { localStorage.setItem("esga-voix:" + id, src); } catch (e) {} NUAGE.ecrireSeul("voix:" + id, { src }); }
+  async function voixEnvoi(id) {
+    let src = null; try { src = localStorage.getItem("esga-voix:" + id); } catch (e) {}
+    if (!src) { const d = await NUAGE.lireSeul("voix:" + id); src = d && d.src; if (src) try { localStorage.setItem("esga-voix:" + id, src); } catch (e) {} }
+    return src || null;
+  }
   function retirerEnvoi(id) { D.envois = D.envois.filter((x) => x.id !== id); sauver(); }
   function statsJoueur(id) {
     const p = personne(id); if (!p) return null;
@@ -498,7 +512,7 @@
     seance: (evt) => D.seances[evt] || null, setSeance,
     // Rappel « lancer le sondage le… » choisi par le coach (par défaut 7 jours avant le match)
     rappel: (evt) => D.rappels[evt] || null, setRappel: (evt, date) => { if (date) D.rappels[evt] = date; else delete D.rappels[evt]; sauver(); },
-    video: (evt) => D.videos[evt] || null, setVideo, envoyerSequence, envois, envoi: (id) => D.envois.find((x) => x.id === id) || null, vuEnvoi, retirerEnvoi,
+    video: (evt) => D.videos[evt] || null, setVideo, envoyerSequence, envois, envoi: (id) => D.envois.find((x) => x.id === id) || null, vuEnvoi, retirerEnvoi, voixEnvoi,
     lienEnvoi: (id) => BASE + "analyse-video/voir.html?e=" + encodeURIComponent(id),
     exporter, importer, reinitialiser, profil, setProfil, nomProfil, surChangement: (cb) => abonnes.push(cb),
     outils: { iso, ajout, auj, jour, uid },

@@ -45,7 +45,9 @@
   const lire = () => { try { return JSON.parse(localStorage.getItem(CLE)) || {}; } catch { return {}; } };
   const ecrire = (d) => { try { localStorage.setItem(CLE, JSON.stringify(d)); } catch { /* navigation privée */ } };
   const etat = () => { const d = lire(); d.match ||= structuredClone(MATCH); if (!d.effectifModifie) d.effectif = depuisClub().length ? depuisClub() : structuredClone(EFFECTIF); d.seances ||= []; return d; };
-  const voix = {};          // commentaires au micro : en mémoire (URL d'objet)
+  const voix = {}, CLE_VOIX = 'montage-voix:'; // commentaires au micro : gardés dans ce navigateur (audio en data URL)
+  const voixLue = (sid) => { if (!(sid in voix)) { try { voix[sid] = localStorage.getItem(CLE_VOIX + sid) || ''; } catch { voix[sid] = ''; } } return voix[sid]; };
+  const enDataURL = (b) => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(b); });
   const taches = {};
 
   const rep = (d, code = 200) => new Response(JSON.stringify(d), { status: code, headers: { 'Content-Type': 'application/json' } });
@@ -71,14 +73,17 @@
       const mt = d.match;
       return rep({
         matchs: [{ id: ID, nom: mt.nom, video: true }],
-        sequences: mt.sequences.map((s) => ({ ...s, match: ID, matchNom: mt.nom, voix: !!voix[s.id],
+        sequences: mt.sequences.map((s) => ({ ...s, match: ID, matchNom: mt.nom, voix: !!voixLue(s.id),
           nDessins: mt.dessins.filter((x) => s.debut <= x.t && x.t < s.fin).length })),
         seances: d.seances,
       });
     }
     if (p === '/api/voix') {
       const sid = q.get('seq');
-      if (opt.body && opt.body.size) voix[sid] = URL.createObjectURL(opt.body); else delete voix[sid];
+      if (opt.body && opt.body.size) {
+        voix[sid] = await enDataURL(opt.body);
+        try { localStorage.setItem(CLE_VOIX + sid, voix[sid]); } catch { return rep({ erreur: 'Mémoire du navigateur pleine : commentaire gardé jusqu’au rechargement seulement' }, 400); }
+      } else { voix[sid] = ''; try { localStorage.removeItem(CLE_VOIX + sid); } catch { /* */ } }
       return rep({ ok: true });
     }
     if (p === '/api/calque') return rep({ ok: true });
@@ -108,7 +113,7 @@
   window.DEMO = {
     video: 'demo/duchere.mp4',
     vignette: 'demo/vignette.jpg',
-    voix: (sid) => voix[sid] || '',
+    voix: voixLue,
     reinitialiser() { try { localStorage.removeItem(CLE); localStorage.removeItem('montage-dernier'); } catch { /* */ } location.reload(); },
   };
 })();
