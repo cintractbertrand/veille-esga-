@@ -1,24 +1,28 @@
-/* Stockage de la messagerie.
-   Version démo : tout est gardé dans le navigateur (localStorage), rien n'est partagé
-   entre appareils. Les onglets d'un même navigateur se synchronisent entre eux, ce qui
-   permet de jouer le coach dans un onglet et un parent dans un autre.
-   Pour une vraie messagerie partagée, il suffira de remplacer cet objet par une version
-   Firebase qui offre les mêmes fonctions : lire, ecrire, surChangement. */
+/* Stockage de la messagerie : un état par équipe.
+   Démo : gardé dans ce navigateur (les onglets se synchronisent, on peut jouer le coach dans
+   un onglet et un parent dans un autre).
+   En ligne (code du club saisi) : chaque équipe est un document 'messagerie:<équipe>' partagé
+   par Supabase, via CLUB.enLigne (commun/club.js) ; ce navigateur en garde une copie. */
 (function () {
   const PREFIXE = "esga-messagerie:";
+  const N = () => window.CLUB && window.CLUB.enLigne;
+  const ecoutes = [];
+  const local = (equipe) => { try { return JSON.parse(localStorage.getItem(PREFIXE + equipe)) || null; } catch (e) { return null; } };
+  const garder = (equipe, etat) => { try { localStorage.setItem(PREFIXE + equipe, JSON.stringify(etat)); } catch (e) { /* stockage indisponible */ } };
+  function suivre(equipe) {
+    const n = N(); if (!n || !n.actif) return;
+    n.suivre("messagerie:" + equipe, () => local(equipe), (etat) => { garder(equipe, etat); ecoutes.forEach((cb) => cb(equipe)); });
+  }
   window.STOCKAGE = {
-    mode: "demo",
-    lire(equipe) {
-      try { return JSON.parse(localStorage.getItem(PREFIXE + equipe)) || null; } catch (e) { return null; }
-    },
-    ecrire(equipe, etat) {
-      try { localStorage.setItem(PREFIXE + equipe, JSON.stringify(etat)); } catch (e) { /* stockage indisponible */ }
-    },
+    get mode() { const n = N(); return n && n.actif ? "en-ligne" : "demo"; },
+    lire(equipe) { suivre(equipe); return local(equipe); },
+    ecrire(equipe, etat) { garder(equipe, etat); suivre(equipe); const n = N(); if (n) n.marquer("messagerie:" + equipe); },
     effacer(equipe) {
       try { localStorage.removeItem(PREFIXE + equipe); } catch (e) {}
     },
-    // Appelé quand un autre onglet modifie l'équipe
+    // Appelé quand un autre onglet, ou un autre appareil, modifie l'équipe
     surChangement(cb) {
+      ecoutes.push(cb);
       window.addEventListener("storage", (ev) => {
         if (ev.key && ev.key.startsWith(PREFIXE)) cb(ev.key.slice(PREFIXE.length));
       });

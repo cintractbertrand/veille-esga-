@@ -55,6 +55,9 @@
 
   /* ---------- profil : dirigeant, coach, parent ou joueur (partagé avec les autres modules) ---------- */
   let profil = C.profil();
+  const N = C.enLigne, famillesSeules = () => N.actif && N.role === "famille";
+  // Code famille : pas de profil coach ou dirigeant
+  if (famillesSeules() && profil && !["parent", "joueur"].includes(profil.role)) { profil = null; C.setProfil(null); }
   const sauverProfil = () => C.setProfil(profil);
   const estDirigeant = () => !!profil && profil.role === "dirigeant";
   const estCoach = () => !!profil && profil.role === "coach";
@@ -632,9 +635,10 @@
           <label>Terrains et lieux (un par ligne)<textarea name="lieux">${esc(c.lieux.join("\n"))}</textarea></label>
           <div class="pied"><button class="btn prim">Enregistrer</button></div></form></section>
         <section class="carte"><h2>Données</h2>
-          <p class="alerte info" style="margin-top:0"><b>Mode démo.</b> Les données sont gardées dans ce navigateur et partagées entre la console, la messagerie, le Monteur et les PV. Rien n'est envoyé.</p>
-          <p class="petit">Le passage sur <b>Supabase</b> (base partagée, connexion des coachs et des familles) est préparé : le schéma des tables est dans <code>supabase/schema.sql</code>, et il suffira de remplacer le stockage de <code>commun/club.js</code>. Rien n'est branché pour l'instant.</p>
-          <div class="form"><div class="pied" style="justify-content:flex-start"><button class="btn" data-a="export-json">Sauvegarder (JSON)</button><button class="btn" data-a="import-json">Restaurer</button><button class="btn danger" data-a="raz">Remettre la démo à zéro</button></div></div>
+          ${N.actif ? `<p class="alerte info" style="margin-top:0"><b>En ligne.</b> Console, messagerie, Monteur, PV et Atelier partagent les mêmes données sur tous les appareils (mise à jour toutes les 15 s). Ce navigateur en garde une copie pour fonctionner sans réseau.</p>`
+            : `<p class="alerte info" style="margin-top:0"><b>Mode démo.</b> Les données sont gardées dans ce navigateur. Entrez le code du club pour les partager avec tous les appareils.</p>`}
+          ${blocCode()}
+          <div class="form"><div class="pied" style="justify-content:flex-start"><button class="btn" data-a="export-json">Sauvegarder (JSON)</button><button class="btn" data-a="import-json">Restaurer</button>${N.actif ? "" : '<button class="btn danger" data-a="raz">Remettre la démo à zéro</button>'}</div></div>
           <input type="file" id="fichierJSON" accept="application/json,.json" hidden>
           <p class="petit discret">Dernière modification : ${new Date(C.maj).toLocaleString("fr-FR")}</p></section>
       </div>`;
@@ -669,7 +673,17 @@
   }
 
   /* ---------- profil ---------- */
-  function rendreProfils() { const el = $("#quiSuisJe"); if (el) el.textContent = profil ? C.nomProfil(profil) : "pas encore choisi"; }
+  function rendreProfils() {
+    const el = $("#quiSuisJe"); if (el) el.textContent = profil ? C.nomProfil(profil) : "pas encore choisi";
+    const m = $("#modeClub"); if (!m) return;
+    const t = { demo: ["Démo", "Les données restent dans ce navigateur. Entrez le code du club (Changer de profil) pour partager avec tout le club."], ok: ["🟢 En ligne", "Données partagées avec tout le club, mises à jour toutes les 15 secondes."], connexion: ["En ligne…", "Connexion au club…"], "hors-ligne": ["🟠 Hors ligne", "Pas de réseau : vos modifications partiront dès son retour."], erreur: ["🟠 En ligne", "Un envoi a échoué, nouvel essai bientôt."], code: ["Code à saisir", "Le code du club a changé : entrez le nouveau code."] }[N.etat] || ["Démo", ""];
+    m.textContent = t[0]; m.parentElement.title = t[1]; document.body.classList.toggle("en-ligne", N.actif);
+  }
+  function blocCode() {
+    if (N.actif) return `<p class="code-club ok">🟢 Connecté au club${N.role === "famille" ? " (accès familles)" : ""}. <button class="btn lien" data-a="deconnexion">Se déconnecter</button></p>`;
+    return `<form class="code-club" id="fCode"><label>Code du club<input name="code" type="password" autocomplete="current-password" placeholder="Donné par votre éducateur" required></label><button class="btn prim">Entrer</button>
+      <small>${N.etat === "code" ? "Le code a changé : demandez le nouveau à votre éducateur." : "Avec le code, tout le club partage les mêmes informations. Sans code, c'est une démo dans ce navigateur."}</small></form>`;
+  }
 
   /* ---------- bienvenue : qui êtes-vous ? ---------- */
   let choix = { role: null, equipe: null, q: "" };
@@ -682,8 +696,9 @@
   function pageBienvenue() {
     const tete = `<div class="bv-tete"><span class="crest" aria-hidden="true">ES<small>GA</small></span><div><p class="discret petit" style="margin:0">${esc(C.club.nom)}</p><h1>${choix.role ? "Qui êtes-vous ?" : "Bienvenue au club 👋"}</h1></div></div>`;
     if (!choix.role) return `<div class="bienvenue">${tete}<p class="bv-intro">Dites-nous qui vous êtes : l'application ne montre que ce qui vous concerne.</p>
-      <div class="roles">${ROLES_ACCUEIL.map(([k, e, t, d]) => `<button class="role" data-a="role" data-v="${k}"><span class="emoji">${e}</span><b>${t}</b><span>${d}</span></button>`).join("")}</div>
-      <p class="discret petit">Démo : choisissez librement, vous pourrez changer à tout moment. Dans la version finale, chacun se connecte avec son compte.</p></div>`;
+      ${blocCode()}
+      <div class="roles">${ROLES_ACCUEIL.filter(([k]) => !famillesSeules() || ["parent", "joueur"].includes(k)).map(([k, e, t, d]) => `<button class="role" data-a="role" data-v="${k}"><span class="emoji">${e}</span><b>${t}</b><span>${d}</span></button>`).join("")}</div>
+      <p class="discret petit">${N.actif ? "Vous pourrez changer de profil à tout moment." : "Démo : choisissez librement, vous pourrez changer à tout moment."}</p></div>`;
     const retour = `<button class="btn lien" data-a="role" data-v="">‹ Retour</button>`;
     if (choix.role === "coach") {
       const cs = C.staff().filter((x) => ["coach", "adjoint"].includes(x.role) && x.equipes.length);
@@ -857,6 +872,7 @@
     if (a === "imprimer") return window.print();
     if (a === "export-json") { telecharger(new Blob([C.exporter()], { type: "application/json" }), `club-esga-${auj()}.json`); return toast("Sauvegarde téléchargée."); }
     if (a === "import-json") return $("#fichierJSON").click();
+    if (a === "deconnexion") { if (confirmer("Se déconnecter du club ? Ce navigateur repassera en démo (les données du club restent en ligne).")) { N.deconnecter(); C.setProfil(null); location.href = location.pathname; } return; }
     if (a === "raz") { if (confirmer("Remettre toute la démo à zéro ? Les modifications faites dans la console seront perdues.")) { C.reinitialiser(); Object.keys(brouillons).forEach((k) => delete brouillons[k]); toast("Démo remise à zéro."); } return; }
   });
   function allerA(h, msg) { rendreProfils(); if (window.ESGA && ESGA.bandeau) ESGA.bandeau(); if (location.hash === h) rendre(); else location.hash = h; if (msg) toast(msg); }
@@ -891,6 +907,12 @@
   });
   document.addEventListener("submit", (ev) => {
     const f = ev.target; ev.preventDefault();
+    if (f.id === "fCode") {
+      const b = f.querySelector("button"); b.disabled = true; b.textContent = "Connexion…";
+      N.connecter(new FormData(f).get("code")).then((r) => { location.reload(); toast(r === "famille" ? "Bienvenue ! Accès familles." : "Connecté au club."); })
+        .catch((e) => { b.disabled = false; b.textContent = "Entrer"; toast(e.message); });
+      return;
+    }
     if (f.id === "fConvoc") {
       const id = f.dataset.id, b = lireConvoc(f), mx = maxConv(C.evenement(id));
       if (!b.joueurs.length) return toast("Cochez au moins un joueur.");

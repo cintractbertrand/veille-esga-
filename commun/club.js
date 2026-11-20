@@ -6,9 +6,10 @@
    Les licenciés, le staff et les équipes sont disponibles tout de suite (CLUB.joueurs(…)) ;
    les matchs officiels arrivent avec CLUB.pret (lus dans data/matchs.json, issu des PV).
 
-   Version démo : tout est gardé dans ce navigateur (localStorage, onglets synchronisés).
-   Pour passer sur Supabase, remplacer seulement l'objet STOCKAGE ci-dessous par une version
-   qui lit et écrit les tables de supabase/schema.sql (mêmes noms de champs). Rien n'est branché. */
+   Sans code : démo, tout est gardé dans ce navigateur (localStorage, onglets synchronisés).
+   Avec le code du club (CLUB.enLigne.connecter) : les données sont partagées par Supabase
+   (supabase/esga_en_ligne.sql). Le navigateur garde une copie pour aller vite et tenir sans réseau ;
+   les modifications partent toutes seules et celles des autres arrivent toutes les 15 s. */
 (function () {
   "use strict";
   const script = document.currentScript;
@@ -17,11 +18,131 @@
   const VERSION = 1;
   const SAISON = { libelle: "2026-2027", debut: "2026-07-01", fin: "2027-06-30", annee: 2027 };
 
-  /* ---------- stockage (à remplacer pour Supabase) ---------- */
+  /* ---------- en ligne : un document par sujet ('club', 'messagerie:<équipe>'), avec version ----------
+     Si deux appareils écrivent en même temps, le second relit et fusionne (champ par champ,
+     listes par identifiant) avant de renvoyer : personne ne perd sa modification. */
+  const NUAGE = (function () {
+    const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } };
+    const URL_ = ls("esga-nuage-url") || "https://bkebcwjkorqdpckcqtwq.supabase.co";
+    const CLE_API = "sb_publishable_x_SzQDiP3WP28PGi8Y1OPw_-eKd9HQq"; // clé publique : sans le code du club, elle n'ouvre rien
+    let code = ls("esga-code") || null, role = code ? ls("esga-role") : null, etat = code ? "connexion" : "demo";
+    const docs = {}, ops = [], ecoutes = [];
+    const changer = (e) => { if (e !== etat) { etat = e; ecoutes.forEach((cb) => { try { cb(); } catch (x) {} }); } };
+    const canon = (x) => JSON.stringify(x, (k, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.keys(v).sort().reduce((o, c) => ((o[c] = v[c]), o), {}) : v));
+    const pareil = (a, b) => a === b || canon(a) === canon(b);
+    const copie = (x) => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
+    const objet = (x) => x && typeof x === "object" && !Array.isArray(x);
+    const avecId = (x) => Array.isArray(x) && x.every((y) => objet(y) && y.id != null);
+    function fusion(b, l, s) { // b = dernière version lue, l = ici, s = en ligne
+      if (pareil(l, b)) return s; if (pareil(s, b) || pareil(l, s)) return l;
+      if (avecId(l) && avecId(s) && (b === undefined || avecId(b))) {
+        const ix = (t) => Object.fromEntries((t || []).map((y) => [y.id, y])), m = fusion(ix(b), ix(l), ix(s));
+        return [...new Set(s.map((y) => y.id).concat(l.map((y) => y.id)))].filter((id) => id in m).map((id) => m[id]);
+      }
+      if (objet(l) && objet(s) && (b === undefined || objet(b))) {
+        const r = {}; new Set(Object.keys(l).concat(Object.keys(s))).forEach((k) => { const v = fusion(b && b[k], l[k], s[k]); if (v !== undefined) r[k] = v; }); return r;
+      }
+      return l;
+    }
+    async function rpc(fn, corps) {
+      const h = { "Content-Type": "application/json", apikey: CLE_API }; if (!CLE_API.startsWith("sb_")) h.Authorization = "Bearer " + CLE_API;
+      let r; try { r = await fetch(URL_ + "/rest/v1/rpc/" + fn, { method: "POST", headers: h, body: JSON.stringify(corps) }); } catch (e) { const x = new Error("hors ligne"); x.reseau = true; throw x; }
+      const j = await r.json().catch(() => null);
+      if (!r.ok) { const x = new Error((j && j.message) || "erreur " + r.status); x.conflit = /conflit/.test(x.message); x.code = /code du club/.test(x.message); throw x; }
+      return j;
+    }
+    const peutEcrire = (cle) => role === "staff" || (role === "famille" && cle.startsWith("messagerie:"));
+    const meta = (cle) => { try { return JSON.parse(ls("esga-nuage:" + cle)) || {}; } catch (e) { return {}; } };
+    const garder = (cle, d) => ls("esga-nuage:" + cle, JSON.stringify({ version: d.version, sale: d.sale }));
+    function erreur(e) {
+      if (e.code) { code = role = null; ls("esga-code", null); ls("esga-role", null); changer("code"); return; }
+      changer(e.reseau ? "hors-ligne" : "erreur"); console.warn("Club en ligne :", e.message);
+    }
+    function suivre(cle, lire, appliquer) {
+      if (docs[cle]) return; const m = meta(cle);
+      docs[cle] = { lire, appliquer, version: m.version || 0, sale: !!m.sale, base: undefined, connu: false };
+      if (code) { clearTimeout(suivre.t); suivre.t = setTimeout(tirer, 30); }
+    }
+    function marquer(cle) {
+      const d = docs[cle]; if (!d || !code || !peutEcrire(cle)) return;
+      d.sale = true; garder(cle, d); clearTimeout(d.t); d.t = setTimeout(() => pousser(cle), 800);
+    }
+    function recevoir(cle, s) {
+      const d = docs[cle]; if (cle === "club" && ops.length) return; // réponses de la famille pas encore parties
+      const sv = s ? s.version : 0, sd = s ? s.data : undefined, local = d.lire();
+      let res = sd;
+      if (peutEcrire(cle) && local) { // pas encore en ligne : on publie la copie de cet appareil
+        if (sd === undefined) res = local; else if (d.sale) res = fusion(d.connu ? d.base : undefined, local, sd);
+      }
+      d.version = sv; d.base = copie(sd); d.connu = true;
+      if (res !== undefined && !pareil(res, local)) d.appliquer(copie(res));
+      d.sale = peutEcrire(cle) && res !== undefined && !pareil(res, sd); garder(cle, d);
+      return d.sale ? pousser(cle) : null;
+    }
+    async function pousser(cle) {
+      const d = docs[cle]; if (!code || !d || !d.sale || !peutEcrire(cle)) return;
+      if (d.envoi) { d.encore = true; return; }
+      d.envoi = true; clearTimeout(d.t); const data = copie(d.lire());
+      try {
+        d.version = await rpc("esga_ecrire", { code, cle_: cle, data_: data, version_: d.version });
+        d.base = data; d.connu = true; d.essais = 0; d.sale = !pareil(d.lire(), data); garder(cle, d); changer("ok");
+      } catch (e) {
+        if (e.conflit && (d.essais = (d.essais || 0) + 1) < 5) { d.envoi = false; if (enCours) encore = true; else setTimeout(tirer, 0); return; } // relire, fusionner, renvoyer
+        erreur(e);
+      } finally { d.envoi = false; if (d.encore) { d.encore = false; if (d.sale) marquer(cle); } }
+    }
+    let enCours = null, encore = false;
+    function tirer(force) {
+      if (!code) return Promise.resolve();
+      if (enCours) { encore = true; return enCours; }
+      enCours = (async () => {
+        const cles = Object.keys(docs);
+        try {
+          const v = await rpc("esga_versions", { code, cles }); role = v._role; ls("esga-role", role);
+          const a = cles.filter((k) => !docs[k].connu || (v[k] || 0) !== docs[k].version);
+          const envois = [];
+          if (a.length) { const r = await rpc("esga_lire", { code, cles: a }); a.forEach((k) => envois.push(recevoir(k, r[k]))); }
+          cles.filter((k) => !a.includes(k) && docs[k].sale).forEach((k) => envois.push(pousser(k)));
+          await Promise.all(envois);
+          changer("ok");
+        } catch (e) { erreur(e); }
+      })().finally(() => { enCours = null; if (encore) { encore = false; tirer(); } });
+      return enCours;
+    }
+    async function viderOps() {
+      if (viderOps.c) return; viderOps.c = true;
+      while (ops.length && code) {
+        try { await rpc("esga_famille", { code, op: ops[0] }); ops.shift(); }
+        catch (e) { if (e.reseau) { erreur(e); break; } console.warn("Club en ligne :", e.message); ops.shift(); }
+      }
+      viderOps.c = false; if (!ops.length) tirer(true);
+    }
+    function op(o) { if (!code || role !== "famille") return false; ops.push(o); viderOps(); return true; }
+    async function connecter(c) {
+      c = String(c || "").trim(); if (!c) throw new Error("Tapez le code du club.");
+      let r; try { r = await rpc("esga_versions", { code: c, cles: [] }); } catch (e) { throw new Error(e.code ? "Code incorrect." : e.reseau ? "Pas de réseau." : e.message); }
+      code = c; role = r._role; ls("esga-code", c); ls("esga-role", role);
+      Object.keys(docs).forEach((k) => { Object.assign(docs[k], { version: 0, sale: false, connu: false, base: undefined }); garder(k, docs[k]); });
+      changer("connexion"); await tirer(true); return role;
+    }
+    function deconnecter() {
+      try { Object.keys(localStorage).filter((k) => k.startsWith("esga-nuage:") || k.startsWith("esga-messagerie:") || k === CLE).forEach((k) => localStorage.removeItem(k)); } catch (e) {}
+      ls("esga-code", null); ls("esga-role", null); code = role = null; changer("demo");
+    }
+    if (code) {
+      setInterval(() => { if (!document.hidden) tirer(); }, 15000);
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) tirer(); });
+      window.addEventListener("online", () => { tirer(); viderOps(); });
+    }
+    return { suivre, marquer, tirer, op, connecter, deconnecter, fusion, surEtat: (cb) => ecoutes.push(cb),
+      get actif() { return !!code; }, get role() { return role; }, get etat() { return etat; } };
+  })();
+
+  /* ---------- copie locale (et démo) ---------- */
   const STOCKAGE = {
-    mode: "demo",
+    get mode() { return NUAGE.actif ? "en-ligne" : "demo"; },
     lire() { try { return JSON.parse(localStorage.getItem(CLE)); } catch (e) { return null; } },
-    ecrire(d) { try { localStorage.setItem(CLE, JSON.stringify(d)); return true; } catch (e) { return false; } },
+    ecrire(d, recu) { if (!recu) NUAGE.marquer("club"); try { localStorage.setItem(CLE, JSON.stringify(d)); return true; } catch (e) { return false; } },
     effacer() { try { localStorage.removeItem(CLE); } catch (e) {} },
     surChangement(cb) { window.addEventListener("storage", (ev) => { if (ev.key === CLE) cb(); }); },
   };
@@ -142,6 +263,8 @@
   let enLot = 0, sale = false;
   function sauver() { if (enLot) { sale = true; return; } D.maj = new Date().toISOString(); STOCKAGE.ecrire(D); notifier(); }
   STOCKAGE.surChangement(() => { const n = STOCKAGE.lire(); if (n && n.version === VERSION) { D = completer(n); notifier(); } });
+  NUAGE.suivre("club", () => D, (n) => { n.version = VERSION; D = completer(n); STOCKAGE.ecrire(D, true); notifier(); });
+  NUAGE.surEtat(notifier);
 
   /* ---------- calendrier : matchs des PV + entraînements des créneaux + événements ---------- */
   function matchEvt(m) {
@@ -183,6 +306,7 @@
 
   /* ---------- historique de démo : présences des entraînements passés ---------- */
   function presencesDemo() {
+    if (NUAGE.actif) return; // en ligne : les vraies données du club, pas d'exemples ajoutés
     seancesDemo(); videosDemo();
     if (D.presencesDemo) { if (!D.matchsDemo) { matchsDemo(alea("matchs")); STOCKAGE.ecrire(D); } return; }
     const r = alea("presences");
@@ -296,6 +420,7 @@
     if (!info && !p[jid] && (seul || !lies(evt).length)) return;
     if (info) p[jid] = Object.assign({ date: new Date().toISOString() }, info); else delete p[jid];
     if (seul) return;
+    NUAGE.op({ type: "dispo", evt, jid, info: info || null }); // famille : la réponse part seule (le reste du club est en lecture)
     lies(evt).forEach((x) => setDispo(x, jid, info, true));
     sauver();
   }
@@ -329,7 +454,7 @@
   }
   const pourJoueur = (x, jid) => { const p = personne(jid); return x.a === "equipe" ? !!p && p.equipe === x.equipe : Array.isArray(x.a) && x.a.includes(jid); };
   function envois({ evt, equipe, joueur } = {}) { return D.envois.filter((x) => (!evt || x.evt === evt) && (!equipe || x.equipe === equipe) && (!joueur || pourJoueur(x, joueur))); }
-  function vuEnvoi(id, jid) { const x = D.envois.find((y) => y.id === id); if (!x || !jid || x.vus[jid]) return; x.vus[jid] = new Date().toISOString(); sauver(); }
+  function vuEnvoi(id, jid) { const x = D.envois.find((y) => y.id === id); if (!x || !jid || x.vus[jid]) return; x.vus[jid] = new Date().toISOString(); NUAGE.op({ type: "vu", envoi: id, jid }); sauver(); }
   function retirerEnvoi(id) { D.envois = D.envois.filter((x) => x.id !== id); sauver(); }
   function statsJoueur(id) {
     const p = personne(id); if (!p) return null;
@@ -341,7 +466,7 @@
   }
   function exporter() { return JSON.stringify(D, null, 1); }
   function importer(txt) { const n = JSON.parse(txt); if (!n || !Array.isArray(n.personnes) || !Array.isArray(n.equipes)) throw new Error("Fichier non reconnu"); n.version = VERSION; D = completer(n); sauver(); }
-  function reinitialiser() { STOCKAGE.effacer(); D = completer(graine()); STOCKAGE.ecrire(D); presencesDemo(); notifier(); }
+  function reinitialiser() { if (NUAGE.actif) { NUAGE.deconnecter(); location.reload(); return; } STOCKAGE.effacer(); D = completer(graine()); STOCKAGE.ecrire(D); presencesDemo(); notifier(); }
 
   /* ---------- profil de la personne qui utilise l'appli (le même pour tous les modules) ----------
      { role: "dirigeant" } | { role: "coach", staff } | { role: "parent", joueur } | { role: "joueur", joueur }
@@ -357,10 +482,12 @@
     return p.role === "parent" ? `Parent de ${j.prenom}` : `${j.prenom} ${j.nom}`;
   }
 
-  const pret = fetch(BASE + "data/matchs.json").then((r) => r.json()).catch(() => []).then((m) => { MATCHS = Array.isArray(m) ? m : []; presencesDemo(); return window.CLUB; });
+  // En ligne : on attend la première lecture (6 s au plus, sinon on part de la copie locale)
+  const premier = NUAGE.actif ? Promise.race([NUAGE.tirer(), new Promise((r) => setTimeout(r, 6000))]) : null;
+  const pret = Promise.all([fetch(BASE + "data/matchs.json").then((r) => r.json()).catch(() => []), premier]).then(([m]) => { MATCHS = Array.isArray(m) ? m : []; presencesDemo(); return window.CLUB; });
 
   window.CLUB = {
-    mode: STOCKAGE.mode, BASE, SAISON, pret, LIEUX,
+    get mode() { return STOCKAGE.mode; }, enLigne: NUAGE, BASE, SAISON, pret, LIEUX,
     get donnees() { return D; }, get club() { return D.club; }, get maj() { return D.maj; },
     equipes: () => D.equipes.slice(), equipe, nomEquipe, joueurs, personne, nomComplet, staff: () => D.staff.slice(), staffDe, coachDe,
     creneaux: (eq) => D.creneaux.filter((c) => !eq || c.equipe === eq),
