@@ -42,7 +42,16 @@
     atelier: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 9h3v6H3M21 9h-3v6h3"/><circle cx="12" cy="12" r="2.5"/>',
   };
   const svg = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
-  const URL_MOD = { messagerie: (eq) => C.BASE + "messagerie/" + (eq ? "?equipe=" + encodeURIComponent(eq) : ""), video: () => C.BASE + "analyse-video/", pv: (eq) => C.BASE + "pv.html" + (eq ? "#equipe/" + encodeURIComponent(C.equipe(eq) ? C.equipe(eq).categorie : eq) : ""), atelier: () => "https://cintractbertrand.github.io/atelier-foot/site/" };
+  const URL_MOD = { messagerie: (eq) => C.BASE + "messagerie/" + (eq ? "?equipe=" + encodeURIComponent(eq) : ""), video: () => C.BASE + "analyse-video/", pv: (eq) => C.BASE + "pv.html" + (eq ? "#equipe/" + encodeURIComponent(C.equipe(eq) ? C.equipe(eq).categorie : eq) : ""), atelier: (evt, eq) => "https://cintractbertrand.github.io/atelier-foot/site/" + (evt ? `?pour=${encodeURIComponent(evt)}&equipe=${encodeURIComponent(eq || "")}` : "") };
+  // Séance préparée dans l'Atelier pour un entraînement : résumé, ouverture, changement
+  function seanceHTML(e, peut, court) {
+    const s = C.seance(e.id), prep = `href="${URL_MOD.atelier(e.id, e.equipe)}" target="_blank" rel="noopener"`;
+    if (!s) return peut ? `<div class="seance vide-s">📋 <span>Séance pas encore préparée.</span><a class="btn" ${prep}>Préparer la séance ↗</a></div>` : "";
+    const tot = s.exercices.reduce((a, x) => a + (+x.duree || 0), 0);
+    return `<div class="seance"><p class="st">📋 <b>${esc(s.nom || "Séance")}</b><small>${pl(s.exercices.length, "exercice")} · ${tot} min${s.auteur ? " · " + esc(s.auteur) : ""}</small></p>
+      ${court ? "" : `<ol>${s.exercices.map((x) => `<li>${esc(x.titre)} <small>${x.duree ? x.duree + " min" : ""}${x.variante ? " · " + esc(x.variante) : ""}</small>${x.note ? `<small class="nt">📝 ${esc(x.note)}</small>` : ""}</li>`).join("")}</ol>${s.materiel ? `<p class="petit discret" style="margin:4px 0 0">🎒 ${esc(s.materiel)}</p>` : ""}`}
+      <p class="sa">${s.lien ? `<a class="btn prim" href="${esc(s.lien)}" target="_blank" rel="noopener">Ouvrir la séance ↗</a>` : ""}${peut ? `<a class="btn" ${prep}>Changer</a>${court ? "" : `<button class="btn lien" data-a="seance-retirer" data-id="${esc(e.id)}">Retirer</button>`}` : ""}</p></div>`;
+  }
 
   /* ---------- profil : dirigeant, coach, parent ou joueur (partagé avec les autres modules) ---------- */
   let profil = C.profil();
@@ -74,7 +83,7 @@
     const cv = estMatch(e) ? C.convocation(e.id) : null;
     const entEq = e.type === "entrainement" && avecEquipe && e.equipe;
     const sous = entEq ? `Entraînement · ${e.lieu}` : [avecEquipe && e.equipe ? C.nomEquipe(e.equipe) : e.equipe ? "" : "Club", estMatch(e) ? e.competition : TYPES[e.type] !== e.titre ? TYPES[e.type] : "", e.lieu].filter(Boolean).join(" · ");
-    const badge = e.statut === "annule" ? '<span class="etiq ko">Annulé</span>' : estMatch(e) && e.date >= auj() ? (cv ? '<span class="etiq ok">Convoqués</span>' : '<span class="etiq att">À convoquer</span>') : "";
+    const badge = e.statut === "annule" ? '<span class="etiq ko">Annulé</span>' : estMatch(e) && e.date >= auj() ? (cv ? '<span class="etiq ok">Convoqués</span>' : '<span class="etiq att">À convoquer</span>') : e.type === "entrainement" && C.seance(e.id) ? '<span class="etiq bleu" title="Séance préparée">📋 Séance</span>' : "";
     return `<button class="evt t-${e.type}${e.statut === "annule" ? " annule" : ""}" data-a="evt" data-id="${esc(e.id)}"><span class="h">${hh(e.heure)}</span><span class="t"><b>${esc(entEq ? C.nomEquipe(e.equipe) : e.type === "entrainement" ? "Entraînement" : e.titre)}</b><small>${esc(sous)}</small></span>${badge}</button>`;
   }
   function agenda(evts, avecEquipe = true, vide = "Rien de prévu.") {
@@ -187,7 +196,9 @@
             return `<p class="dernier petit">Dernier match : <b>${esc(d.adversaire || d.titre)}</b> ${scoreHTML(d, f)} <a href="#feuille/${esc(d.id)}">${f ? "voir" : "saisir le score ›"}</a></p>`; })()}</section>
         <section class="carte"><h2>Prochain entraînement</h2>${prochain ? `<p style="margin:0 0 4px"><b>${fJL(prochain.date)} · ${hh(prochain.heure)}</b></p><p class="discret petit" style="margin:0 0 10px">${esc(prochain.lieu)} · ${prochain.duree} min</p>
           ${abs.length ? `<div class="alerte">${pl(abs.length, "absence signalée", "absences signalées")} : ${abs.map((id) => `<b>${esc((C.personne(id) || {}).prenom)}</b> (${esc(dispo[id].motif || "")})`).join(", ")}</div>` : '<p class="discret petit">Aucune absence signalée par les familles.</p>'}
-          <p style="margin:10px 0 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" data-a="appel" data-id="${esc(prochain.id)}">Faire l'appel</button><a class="btn" href="${URL_MOD.atelier()}" target="_blank" rel="noopener">Préparer la séance ↗</a></p>` : '<p class="vide">Pas d\'entraînement prévu (vacances ?).</p>'}</section>
+          <p style="margin:10px 0 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" data-a="appel" data-id="${esc(prochain.id)}">Faire l'appel</button></p>
+          <div style="margin-top:12px">${seanceHTML(prochain, true, true)}</div>
+          ${ent.length > 1 ? `<p class="petit discret" style="margin:10px 0 4px">Séances suivantes :</p><ul class="suivantes">${ent.slice(1).map((x) => { const s = C.seance(x.id); return `<li><button class="btn lien" data-a="evt" data-id="${esc(x.id)}">${fJ(x.date)} ${hh(x.heure)}</button> ${s ? `📋 ${esc(s.nom || "Séance prête")}` : `<a href="${URL_MOD.atelier(x.id, eq)}" target="_blank" rel="noopener">préparer ↗</a>`}</li>`; }).join("")}</ul>` : ""}` : '<p class="vide">Pas d\'entraînement prévu (vacances ?).</p>'}</section>
         <section class="carte"><h2>Effectif</h2><p style="margin:0 0 6px"><b>${pl(js.length, "joueur")}</b> · présence moyenne ${moy != null ? moy + " %" : "–"}</p>
           ${alertes.length ? `<div class="alerte ko" style="margin-bottom:8px">${alertes.map((p) => `<b>${esc(p.prenom)} ${esc(p.nom[0])}.</b> ${p.certificat !== "ok" ? "certificat" : "licence"}`).join(", ")}</div>` : '<p class="discret petit">Licences et certificats en règle.</p>'}
           ${bas.length ? `<p class="petit discret" style="margin:6px 0">Peu présents ces dernières semaines : ${bas.map(([p, t]) => `${esc(p.prenom)} (${t} %)`).join(", ")}</p>` : ""}
@@ -410,6 +421,7 @@
         ${e.notes ? `<dt>Notes</dt><dd>${esc(e.notes)}</dd>` : ""}
         ${estMatch(e) ? `<dt>Convocation</dt><dd>${cv ? `✅ ${pl(cv.joueurs.length, "convoqué")}, RDV ${hh(cv.rdvHeure)} · ${esc(cv.rdvLieu)}` : "⏳ pas encore faite"}</dd>` : ""}
         ${e.type === "entrainement" ? `<dt>Présences</dt><dd>${Object.keys(pres).length ? `${nP} / ${C.joueurs(e.equipe).length} présents` : passe ? "appel non fait" : "à venir"}${Object.keys(dispo).length ? ` · ${pl(Object.keys(dispo).length, "absence signalée", "absences signalées")}` : ""}</dd>` : ""}</dl>
+      ${e.type === "entrainement" && e.statut !== "annule" ? seanceHTML(e, peut) : ""}
       <div class="form"><div class="pied" style="justify-content:flex-start">${actions}${e.equipe ? `<a class="btn" href="${URL_MOD.messagerie(e.equipe)}">Messagerie</a>` : ""}</div></div>`);
   }
 
@@ -451,6 +463,7 @@
       const n = (k) => js.filter((p) => etatDe(p) === k).length;
       $("#tiroirCorps").innerHTML = `<p class="discret" style="margin:-4px 0 12px">${esc(C.nomEquipe(e.equipe))} · ${fJL(e.date)} · ${hh(e.heure)}</p>
         <div class="outils-liste"><button class="btn prim" data-a="tous-presents" data-id="${esc(id)}">✓ Tous les autres sont présents</button><span class="discret petit" style="margin-left:auto">${n("present") + n("retard")} présents · ${n("excuse") + n("absent")} absents · ${js.filter((p) => !etatDe(p)).length} à cocher</span></div>
+        ${C.seance(id) ? seanceHTML(e, peutVoir(e.equipe), true) : ""}
         <p class="aide" style="margin:-4px 0 8px">Les absences prévenues par les familles sont déjà indiquées. Touchez seulement les exceptions, puis « Tous les autres sont présents ».</p>
         <ul class="appel">${js.map((p) => `<li><span class="n"><b>${esc(p.prenom)}</b> ${esc(p.nom)}${dispo[p.id] ? `<small>Absence signalée : ${esc(dispo[p.id].motif || "")}${dispo[p.id].precision ? " · " + esc(dispo[p.id].precision) : ""}</small>` : ""}</span>
           <span class="seg">${Object.entries(PRES).map(([k, [l, c]]) => `<button class="${c}" data-a="pres" data-evt="${esc(id)}" data-j="${esc(p.id)}" data-v="${k}" aria-pressed="${etatDe(p) === k}">${l}</button>`).join("")}</span></li>`).join("")}</ul>
@@ -771,6 +784,7 @@
     if (a === "retablir") { C.modifierEvenement(id, { statut: "prevu" }); toast("Rétabli."); return ouvrirEvt(id); }
     if (a === "suppr-evt") { if (confirmer("Supprimer cet événement du calendrier ?")) { C.supprimer("evenements", id); fermer(); toast("Événement supprimé."); } return; }
     if (a === "appel") return ouvrirAppel(id);
+    if (a === "seance-retirer") { if (!confirm("Retirer la séance prévue pour cet entraînement ?")) return; C.setSeance(id, null); toast("Séance retirée de cet entraînement."); return ouvrirEvt(id); }
     if (a === "pres") { const cur = C.presences(t.dataset.evt)[t.dataset.j]; C.setPresence(t.dataset.evt, t.dataset.j, cur === t.dataset.v ? null : t.dataset.v); return ouvrirAppel.rendre && ouvrirAppel.rendre(); }
     if (a === "tous-presents") { const e = C.evenement(id), d = C.dispos(id), p = C.presences(id); C.joueurs(e.equipe).forEach((j) => { if (!p[j.id]) C.setPresence(id, j.id, d[j.id] ? "excuse" : "present"); }); return ouvrirAppel.rendre(); }
     if (a === "creneau") return ouvrirCreneau(id, t.dataset.equipe);
