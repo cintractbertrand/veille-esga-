@@ -18,6 +18,15 @@
 
   let data, all = [], pvById = {}, matchs = [], dossiers = [], sommaire = {};
   let calMonth, catActive = null, query = "";
+  // préférences de l'utilisateur, gardées sur son appareil (rien n'est envoyé)
+  const store = {
+    get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+  const traites = new Set(store.get("esga-pv-traites", []));
+  let favoris = store.get("esga-pv-favoris", []);
+  let nouveauxPv = new Set();
+  const aTraiter = (i) => i.gravite !== "info" || (i.echeances || []).some((e) => joursAvant(e.date) >= 0);
 
   // matchs.json et dossiers.json sont facultatifs : le site fonctionne sans eux
   const charger = (f) => fetch(f, { cache: "no-store" }).then((r) => r.ok ? r.json() : []).catch(() => []);
@@ -46,6 +55,9 @@
     all.forEach((i) => {
       if (i.gravite === "urgent" && i.pv !== (last && last.numero) && (i.echeances || []).every((e) => joursAvant(e.date) < 0)) i.gravite = "attention";
     });
+    const vu = store.get("esga-pv-dernier", null);
+    if (vu != null) nouveauxPv = new Set(data.pvs.filter((p) => p.numero > vu).map((p) => p.numero));
+    if (last) store.set("esga-pv-dernier", last.numero);
     $("#club-nom").textContent = data.club.nom;
     $("#pv-courant").innerHTML = last
       ? `Dernier PV : <a href="${esc(last.url)}" target="_blank" rel="noopener">n°${last.numero} du ${fmtD(last.date)}</a> · club n°${esc(data.club.numero)}`
@@ -123,17 +135,23 @@
     const m = it.match;
     const match = m ? `<p class="match">⚽ <b>${esc(m.domicile)}</b> – <b>${esc(m.exterieur)}</b> · ${esc(m.competition || "")}${m.date ? " · " + fmtD(m.date) : ""}${m.numero ? " · match n°" + esc(m.numero) : ""}</p>` : "";
     const ech = (it.echeances || []).map((e) => `<span class="badge ${joursAvant(e.date) >= 0 && joursAvant(e.date) <= 7 ? "urgent" : ""}">📅 ${fmtD(e.date)}${e.heure ? " " + e.heure.replace(":", "h") : ""}</span>`).join("");
-    return `<article class="item ${esc(it.gravite)}" data-fiche="${esc(it.id)}">
-      <div class="meta"><span class="badge cat">${esc(it.categorie)}</span><span class="badge">${esc(it.commission)}</span>${it.gravite !== "info" ? `<span class="badge ${esc(it.gravite)}">${it.gravite === "urgent" ? "Urgent" : "À surveiller"}</span>` : ""}${ech}</div>
+    const fait = traites.has(it.id);
+    return `<article class="item ${esc(it.gravite)}${fait ? " traite" : ""}" data-fiche="${esc(it.id)}">
+      <div class="meta">${nouveauxPv.has(it.pv) ? '<span class="badge nouveau">Nouveau</span>' : ""}${fait ? '<span class="badge fait">✓ Traité</span>' : ""}<span class="badge cat">${esc(it.categorie)}</span><span class="badge">${esc(it.commission)}</span>${it.gravite !== "info" ? `<span class="badge ${esc(it.gravite)}">${it.gravite === "urgent" ? "Urgent" : "À surveiller"}</span>` : ""}${ech}</div>
       <h3>${esc(it.titre)}</h3>
       ${match}
       <p>${esc(it.detail)}</p>
       ${it.page ? `<button class="btn-extrait" type="button" aria-expanded="false">Voir l'extrait du PV ▾</button><div class="extrait" hidden></div>` : ""}
+      <div class="actions">
+        ${aTraiter(it) || fait ? `<button class="act act-fait" type="button" data-act="traite" aria-pressed="${fait}">${fait ? "↺ Remettre à traiter" : "✓ Marquer comme traité"}</button>` : ""}
+        <button class="act" type="button" data-act="partager" title="Envoyer cette fiche à un coach ou un dirigeant">↗ Partager</button>
+        ${(it.echeances || []).some((e) => joursAvant(e.date) >= 0) ? `<button class="act" type="button" data-act="agenda" title="Ajouter les dates de cette fiche à mon agenda">📅 Agenda</button>` : ""}
+      </div>
       <p class="src">Source : <a href="${esc(it.pvUrl)}${it.page ? "#page=" + it.page : ""}" class="lire" data-pv="${it.pv}" data-page="${it.page || 1}">PV n°${it.pv}${it.page ? ", page " + it.page : ""}</a>${showPv ? " du " + fmtD(it.pvDate) : ""} · <a href="${esc(it.pvUrl)}" target="_blank" rel="noopener">PDF ↗</a></p>
     </article>`;
   }
 
-  const sortItems = (a, b) => (GRAV_ORDRE[a.gravite] - GRAV_ORDRE[b.gravite]) || b.pvDate.localeCompare(a.pvDate);
+  const sortItems = (a, b) => (traites.has(a.id) - traites.has(b.id)) || (GRAV_ORDRE[a.gravite] - GRAV_ORDRE[b.gravite]) || b.pvDate.localeCompare(a.pvDate);
 
   function renderSemaine(last) {
     if (!last) return;
@@ -141,11 +159,12 @@
     const items = all.filter((i) => i.pv === last.numero).sort(sortItems);
     $("#semaine-note").textContent = `PV n°${last.numero} du ${fmtD(last.date)} · ${items.length} fiche${items.length > 1 ? "s" : ""}`;
     $("#items-semaine").innerHTML = items.map((i) => itemHTML(i)).join("") || `<p class="empty">Aucune mention du club cette semaine 🎉</p>`;
-    const ev = prochaines(all);
+    renderBord(items);
+    const ev = prochaines(all).filter((e) => !traites.has(e.it.id));
     const mw = matchs.filter((m) => joursAvant(m.date) >= 0 && joursAvant(m.date) <= 7);
     $("#matchs-semaine").innerHTML = matchsHTML(mw.slice(0, 8), true) + (mw.length > 8 ? `<li class="empty">… et ${mw.length - 8} autres matchs</li>` : "");
     $("#matchs-semaine-bloc").hidden = !matchs.length;
-    $("#a-venir").innerHTML = echeancesHTML(ev);
+    $("#a-venir").innerHTML = echeancesHTML(ev.slice(0, 5)) + (ev.length > 5 ? `<li class="plus"><details><summary>Voir les ${ev.length - 5} autres échéances</summary><ul class="echeances">${echeancesHTML(ev.slice(5))}</ul></details></li>` : "");
     $("#a-venir").querySelectorAll("[data-id]").forEach((li) => li.onclick = () => ouvrirFiche(li.dataset.id));
   }
 
@@ -328,10 +347,11 @@
   function renderChips() {
     const nUrg = all.filter((i) => i.gravite === "urgent").length;
     $("#chips").innerHTML = `<button class="chip tout ${catActive ? "" : "active"}" data-c="">Tout le club</button>`
-      + [...(nUrg ? ["Urgentes"] : []), ...(all.some(estInscr) ? ["Inscriptions"] : []), ...catList()].map((c) => {
+      + [...(nUrg ? ["Urgentes"] : []), ...(all.some(estInscr) ? ["Inscriptions"] : []), ...favoris.filter((c) => catList().includes(c)), ...catList().filter((c) => !favoris.includes(c))].map((c) => {
       const its = itemsDe(c);
       const urg = !SPECIAL[c] && its.some((i) => i.gravite === "urgent");
-      return `<button class="chip ${c === catActive ? "active" : ""}" data-c="${esc(c)}" aria-pressed="${c === catActive}" title="${its.length} mention${its.length > 1 ? "s" : ""} dans les PV">${urg ? '<i class="dot urgent" title="Urgence en cours"></i>' : ""}${esc(c)}${its.length ? ` <small>${its.length}</small>` : ""}</button>`;
+      const fav = favoris.includes(c);
+      return `<button class="chip ${c === catActive ? "active" : ""}${fav ? " fav" : ""}" data-c="${esc(c)}" aria-pressed="${c === catActive}" title="${its.length} mention${its.length > 1 ? "s" : ""} dans les PV">${fav ? '<span class="etoile" aria-label="Mon équipe">★</span>' : ""}${urg ? '<i class="dot urgent" title="Urgence en cours"></i>' : ""}${esc(c)}${its.length ? ` <small>${its.length}</small>` : ""}</button>`;
     }).join("");
     $("#chips").querySelectorAll(".chip").forEach((b) => b.onclick = () => {
       if (!b.dataset.c || b.dataset.c === catActive) { if (catActive) showTab("semaine"); } else ouvrirEquipe(b.dataset.c);
@@ -350,6 +370,11 @@
     const lastD = its.map((i) => i.pvDate).sort().pop();
     $("#eq-titre").textContent = c === "Urgentes" ? "Urgences en cours" : c === "Inscriptions" ? "Coupes, tournois et inscriptions" : c === "Club" ? "Vie du club" : c;
     $("#eq-kicker").textContent = SPECIAL[c] ? "Toutes équipes" : c === "Club" ? "Administratif · arbitrage · général" : "Équipe";
+    const bf = $("#eq-fav"), fav = favoris.includes(c);
+    bf.hidden = !!SPECIAL[c];
+    bf.setAttribute("aria-pressed", fav);
+    bf.textContent = fav ? "★ Mon équipe" : "☆ Suivre cette équipe";
+    bf.title = fav ? "Retirer de mes équipes" : "Mettre cette équipe en tête de la barre, sur cet appareil";
     const nAm = (c === "Club" ? dossiers : dossiers.filter((d) => d.categorie === c)).reduce((t, d) => t + (+d.montant || 0), 0);
     const nMa = SPECIAL[c] || c === "Club" ? 0 : matchs.filter((m) => m.categorie === c && joursAvant(m.date) >= 0).length;
     // on n'affiche que les chiffres utiles (la mention reste toujours visible)
@@ -404,8 +429,25 @@
   }
   $("#recherche").addEventListener("input", (e) => { query = e.target.value; renderItemsEquipe(); });
   $("#eq-fermer").onclick = () => showTab("semaine");
+  $("#eq-fav").onclick = () => {
+    const c = catActive;
+    favoris = favoris.includes(c) ? favoris.filter((x) => x !== c) : [...favoris, c];
+    store.set("esga-pv-favoris", favoris);
+    renderChips(); renderEquipe();
+    toast(favoris.includes(c) ? `${c} est en tête de la barre des équipes` : `${c} retirée de vos équipes`);
+  };
 
   function renderTimeline() {
+    const q = norm($("#histo-q").value.trim());
+    const res = $("#histo-res");
+    $("#timeline").hidden = !!q; res.hidden = !q;
+    if (q) {
+      const mots = q.split(/\s+/);
+      const its = all.filter((i) => { const t = norm([i.titre, i.detail, i.categorie, i.commission, i.match && (i.match.domicile + " " + i.match.exterieur + " " + i.match.competition)].join(" ")); return mots.every((m) => t.includes(m)); })
+        .sort((a, b) => b.pvDate.localeCompare(a.pvDate));
+      res.innerHTML = `<p class="sec-note">${its.length} fiche${its.length > 1 ? "s" : ""} sur ${data.pvs.length} PV</p><div class="items">${its.map((i) => itemHTML(i, true)).join("") || `<p class="empty">Aucune fiche ne correspond.</p>`}</div>`;
+      return;
+    }
     $("#timeline").innerHTML = data.pvs.map((pv, k) => {
       const its = all.filter((i) => i.pv === pv.numero).sort(sortItems);
       return `<li><details ${k === 0 ? "open" : ""}><summary class="card"><strong>PV n°${pv.numero}</strong> · ${fmtD(pv.date)} · ${its.length} mention${its.length > 1 ? "s" : ""}
@@ -491,7 +533,7 @@
 
   document.addEventListener("click", (e) => {
     const art = e.target.closest("article.item");
-    if (!art || e.target.closest("a, .extrait") || window.getSelection().toString()) return;
+    if (!art || e.target.closest("a, .extrait, .actions") || window.getSelection().toString()) return;
     const btn = art.querySelector(".btn-extrait"), box = art.querySelector(".extrait");
     if (!btn) return;
     const ouvrir = box.hidden;
@@ -880,6 +922,91 @@
     e.preventDefault(); e.stopPropagation();
     lire(+a.dataset.pv, +a.dataset.page || 1);
   }, true);
+
+  // ---- Tableau de bord de la semaine : ce qui reste à faire
+  function renderBord(items) {
+    const act = items.filter((i) => aTraiter(i) || traites.has(i.id));
+    const faits = act.filter((i) => traites.has(i.id)).length, reste = act.length - faits;
+    const nouv = all.filter((i) => nouveauxPv.has(i.pv)).length;
+    const pct = act.length ? Math.round((faits / act.length) * 100) : 100;
+    $("#bord").innerHTML = `
+      <div class="bord-suivi">
+        <div><b>${reste ? `${reste} action${reste > 1 ? "s" : ""} à traiter` : "Tout est traité ✓"}</b>
+          <span>${faits} sur ${act.length} marquée${faits > 1 ? "s" : ""} comme traitée${faits > 1 ? "s" : ""}${nouv ? ` · <em>${nouv} nouvelle${nouv > 1 ? "s" : ""} fiche${nouv > 1 ? "s" : ""} depuis votre dernière visite</em>` : ""}</span></div>
+        <div class="bord-jauge" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+      </div>
+      <div class="bord-outils">
+        <button class="btn" id="bord-partager" title="Envoyer le résumé de la semaine">↗ Partager la synthèse</button>
+        <button class="btn" id="bord-imprimer" title="Imprimer ou enregistrer en PDF pour la réunion">🖨 Imprimer</button>
+      </div>`;
+    $("#bord-imprimer").onclick = () => window.print();
+    $("#bord-partager").onclick = () => {
+      const last = data.pvs[0];
+      const lignes = items.filter((i) => !traites.has(i.id)).map((i) => `• [${i.categorie}] ${i.titre}${(i.echeances || []).filter((e) => joursAvant(e.date) >= 0).map((e) => ` (avant le ${fmtD(e.date)})`).join("")}`);
+      partager(`PV District n°${last.numero} du ${fmtD(last.date)}`, `${last.resume}\n\n${lignes.join("\n")}`, lienPage("semaine"));
+    };
+  }
+
+  const lienPage = (h) => location.href.split("#")[0] + "#" + h;
+  let toastT;
+  function toast(msg) {
+    let t = $("#toast");
+    if (!t) { t = document.createElement("div"); t.id = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600);
+  }
+  async function partager(titre, texte, url) {
+    if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
+      try { await navigator.share({ title: titre, text: texte, url }); return; } catch (e) { if (e.name === "AbortError") return; }
+    }
+    const tout = `${titre}\n${texte}\n${url}`;
+    try { await navigator.clipboard.writeText(tout); toast("Copié : collez-le dans WhatsApp, un mail ou la messagerie"); }
+    catch (e) { window.prompt("Copiez ce texte :", tout); }
+  }
+  function icsTelecharger(evts, nom) {
+    const stamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const ie = (s) => String(s).replace(/[\\,;]/g, (c) => "\\" + c).replace(/\n/g, "\\n");
+    const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//veille-esga//FR", "CALSCALE:GREGORIAN"];
+    evts.forEach(({ it, e, n }) => {
+      const d = e.date.replace(/-/g, "");
+      L.push("BEGIN:VEVENT", `UID:${it.id}-${n}@veille-esga`, `DTSTAMP:${stamp}`);
+      if (e.heure) { const t = e.heure.replace(":", "") + "00"; L.push(`DTSTART;TZID=Europe/Paris:${d}T${t}`, `DTEND;TZID=Europe/Paris:${d}T${t}`); }
+      else { const nx = parseD(e.date); nx.setDate(nx.getDate() + 1); L.push(`DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${isoD(nx).replace(/-/g, "")}`); }
+      L.push(`SUMMARY:${ie("ESGA · " + e.libelle)}`, `DESCRIPTION:${ie(it.titre + " — " + it.detail + " (PV n°" + it.pv + ")")}`, `URL:${it.pvUrl}`, "BEGIN:VALARM", "TRIGGER:-P1D", "ACTION:DISPLAY", `DESCRIPTION:${ie(e.libelle)}`, "END:VALARM", "END:VEVENT");
+    });
+    L.push("END:VCALENDAR");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([L.join("\r\n")], { type: "text/calendar" })); a.download = nom; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  // un changement d'état d'une fiche se répercute partout (semaine, équipe, historique)
+  function rafraichirTout() {
+    const y = window.scrollY;
+    renderSemaine(data.pvs[0]); renderTimeline();
+    if (catActive) renderEquipe();
+    window.scrollTo(0, y);
+  }
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest(".actions .act");
+    if (!b) return;
+    const it = all.find((i) => i.id === b.closest("article.item").dataset.fiche);
+    if (!it) return;
+    const a = b.dataset.act;
+    if (a === "traite") {
+      const fait = !traites.has(it.id);
+      fait ? traites.add(it.id) : traites.delete(it.id);
+      store.set("esga-pv-traites", [...traites]);
+      rafraichirTout();
+      toast(fait ? "Fiche marquée comme traitée" : "Fiche remise à traiter");
+    } else if (a === "partager") {
+      const ech = (it.echeances || []).filter((e) => joursAvant(e.date) >= 0).map((e) => `📅 ${e.libelle} : ${fmtD(e.date)}${e.heure ? " " + hm(e.heure) : ""}`);
+      partager(`[${it.categorie}] ${it.titre}`, [it.detail, ...ech, `Source : PV n°${it.pv}${it.page ? ", page " + it.page : ""}`].join("\n"), it.pvUrl + (it.page ? "#page=" + it.page : ""));
+    } else if (a === "agenda") {
+      icsTelecharger((it.echeances || []).map((e, n) => ({ it, e, n })).filter(({ e }) => joursAvant(e.date) >= 0), `esga-${it.id}.ics`);
+      toast("Fichier agenda téléchargé : ouvrez-le pour ajouter la date");
+    }
+  });
+  $("#histo-q").addEventListener("input", () => renderTimeline());
 
   function bindTabs() {
     document.querySelectorAll(".tab").forEach((b) => b.onclick = () => showTab(b.dataset.tab));
