@@ -17,7 +17,7 @@
   };
 
   const MODULES = [
-    { id: "console", nom: "Console du club", court: "Console", url: BASE + "console/",
+    { id: "console", nom: "Console du club", court: "Console", url: BASE,
       desc: "Licenciés, éducateurs, équipes, calendrier, présences et convocations : tout le club au même endroit, partagé par tous les modules." },
     { id: "video", nom: "Analyse vidéo", court: "Vidéo", url: BASE + "analyse-video/",
       desc: "Revoir un match, marquer une joueuse, dessiner flèches et cercles sur l'image, monter des séquences et les envoyer." },
