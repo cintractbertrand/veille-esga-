@@ -214,3 +214,115 @@ body > main { height: auto; flex: 1; min-height: 0; }
 .demo #bandeauDemo { display: flex; }
 #bandeauDemo .espace { flex: 1; }
 body.presente .esga-bar, body.presente #bandeauDemo { display: none !important; }
+
+/* ---- téléphone et petite tablette : tout en colonne, la page défile, outils au doigt */
+.txt-tel { display: none; }
+@media (max-width: 820px), (max-height: 520px) {
+  html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; font-size: 14px; }
+  body { display: block; }
+  .txt-pc { display: none; } .txt-tel { display: inline; }
+  /* défilement horizontal discret pour les rangées d'outils */
+  #barre, #transport, #listeOutils, .bi-filtres, .bi-pied { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  #barre::-webkit-scrollbar, #transport::-webkit-scrollbar, #listeOutils::-webkit-scrollbar { display: none; }
+
+  #bandeauDemo { padding: 6px 12px; font-size: 12px; gap: 6px; flex-wrap: nowrap; }
+  #bandeauDemo > span:first-child { flex: 1; min-width: 0; line-height: 1.35; }
+  #bandeauDemo .espace { display: none; }
+  #bandeauDemo button { padding: 4px 8px; font-size: 11.5px; white-space: normal; text-align: right; max-width: 96px; }
+
+  #barre { height: 52px; gap: 6px; padding: 0 10px; position: sticky; top: 0; z-index: 20; }
+  #barre .logo { margin-right: 2px; font-size: 0; gap: 0; }
+  .logo-ic { width: 32px; height: 32px; }
+  #choixVideo { flex: 1; min-width: 120px; max-width: none; height: 38px; }
+  #ajoutVideo, #nomMatch, #btnDossier, #btnAide, #etatSauve { display: none !important; }
+  #barre .espace { display: none; }
+  #barre > button { height: 38px; min-width: 40px; padding: 0 9px; font-size: 0; gap: 0; flex: none; }
+
+  main, body > main { display: flex; flex-direction: column; height: auto; }
+  /* ordre : vidéo, lecture, outils de dessin, frise, effectif */
+  #centre { display: contents; }
+  #cadre { order: 1; } #transport { order: 2; } #outils { order: 3; } #frise { order: 4; } #cote { order: 5; }
+
+  /* vidéo : pleine largeur, au format de l'image */
+  #cadre { flex: none; width: 100%; aspect-ratio: 16 / 9; max-height: 70vh; }
+  #bandeauDessin { left: 6px; top: 6px; max-width: calc(100% - 12px); padding: 5px 8px; gap: 6px; font-size: 12px; }
+  #bandeauDessin .petit.discret { display: none; }
+  #info { right: 6px; top: 6px; max-width: 70%; padding: 6px 9px; font-size: 12px; }
+
+  /* commandes de lecture : boutons de 40 px, sur deux rangées */
+  #transport { flex-wrap: wrap; justify-content: center; gap: 6px 4px; padding: 6px 8px; overflow: visible; }
+  #transport [data-saut="-30"], #transport [data-saut="30"] { display: none; }
+  #transport > *, #transport .groupe > * { flex: none; }
+  #transport > button { height: 40px; min-width: 40px; }
+  #transport .groupe > button { height: 34px; min-width: 36px; padding: 0 8px; font-size: 13px; }
+  #tLecture { width: 44px !important; height: 44px !important; }
+  #tTemps { font-size: 14px; min-width: 84px; padding: 6px 8px; }
+  #tVitesse:empty { display: none; }
+  #transport .espace { display: none; }
+
+  #frise { height: 96px; }
+  .frise-boutons button { height: 28px; min-width: 32px; font-size: 13px; }
+
+  /* outils de dessin : bande horizontale sous la vidéo */
+  #outils { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px; border-right: 0; border-top: 1px solid var(--ligne); border-bottom: 1px solid var(--ligne); overflow: visible; }
+  #outils .groupe { flex-direction: row; gap: 4px; }
+  #listeOutils { flex: 1 1 100%; flex-wrap: nowrap; padding-bottom: 2px; }
+  #outils button { width: 42px; height: 42px; flex: none; }
+  #outils .sep { width: 1px; height: 26px; margin: 0 2px; flex: none; }
+  #couleurs { display: flex !important; flex-direction: row; gap: 8px !important; padding: 0 4px; border: 0; }
+  #couleurs button { width: 30px !important; height: 30px !important; }
+  #outils .groupe.ligne button { width: 40px; height: 36px; }
+  #outils .groupe.ligne svg { width: 22px; }
+  #outils #btnSol { width: auto; padding: 0 10px; flex-direction: row; gap: 6px; font-size: 13px; }
+
+  /* effectif et séquences sous les outils */
+  #cote { border-left: 0; min-height: auto; }
+  .titre-bloc { padding: 12px 12px 6px; }
+  #effectif { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); padding: 4px 12px 12px; }
+  #effectif button { padding: 9px 8px; }
+  .onglets { margin: 0 12px; }
+  .onglets button { padding: 9px; }
+  .liste { flex: none; overflow: visible; padding: 12px; }
+  .carte .bt { padding: 6px 9px; }
+  .carte .l1 button { min-width: 38px; min-height: 36px; }
+
+  /* bibliothèque et fenêtres */
+  #biblio { position: fixed; inset: 0; z-index: 1000; }
+  #lecteurSeance { z-index: 1001; }
+  .bi-filtres, .bi-pied { flex-wrap: nowrap; padding: 8px 10px; }
+  .bi-filtres > *, .bi-pied > * { flex: none; }
+  .bi-filtres .espace, .bi-pied .espace { display: none; }
+  #biSel { white-space: normal; max-width: 220px; font-size: 12px; }
+  #biNom { width: 160px; }
+  #biGrille { padding: 10px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .bi-carte .bi-ouvrir { opacity: 1; }
+  dialog { min-width: 0; width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto; padding: 16px; }
+  #toasts { bottom: 16px; width: calc(100% - 24px); }
+  #toasts .toast { max-width: 100%; }
+}
+
+/* téléphone couché : la vidéo prend toute la hauteur, les outils restent à gauche */
+@media (max-height: 520px) and (orientation: landscape) {
+  #bandeauDemo { display: none !important; }
+  #barre { position: static; height: 46px; }
+  main, body > main { display: grid; grid-template-columns: 58px minmax(0, 1fr); }
+  #outils { grid-row: 1; grid-column: 1; flex-direction: column; flex-wrap: nowrap; height: 100dvh; overflow-y: auto; position: sticky; top: 0; border-top: 0; border-right: 1px solid var(--ligne); padding: 6px; scrollbar-width: none; }
+  #outils .groupe, #listeOutils { flex-direction: column; flex: none; }
+  #outils button { width: 44px; height: 40px; }
+  #outils .sep { width: auto; height: 1px; margin: 2px 4px; }
+  #couleurs { display: grid !important; grid-template-columns: 1fr; justify-items: center; }
+  #couleurs button { width: 26px !important; height: 26px !important; }
+  #outils .groupe.ligne button { width: 44px; height: 30px; }
+  #outils #btnSol { width: 44px; padding: 0; flex-direction: column; gap: 0; font-size: 10px; }
+  #centre { display: flex; grid-row: 1; grid-column: 2; height: 100dvh; position: sticky; top: 0; }
+  #cadre { flex: 1; aspect-ratio: auto; max-height: none; min-height: 0; }
+  #frise { height: 72px; }
+  #transport { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; }
+  #cote { grid-column: 1 / -1; }
+}
+
+/* écran tactile : pas d'effet de survol qui reste collé */
+@media (hover: none) {
+  .bi-carte:hover { transform: none; }
+  .bi-carte:hover .bi-genre { opacity: 1; }
+}
