@@ -347,6 +347,7 @@ on('gel', rafraichir);
 on('duree', rafraichir);
 
 // ================= édition
+const TACTILE = matchMedia('(hover: none)').matches;
 function bandeau() {
   const b = $('#bandeauDessin');
   if (!edit) { b.hidden = true; return; }
@@ -357,10 +358,10 @@ function bandeau() {
       <option value="pause" ${edit.mode !== 'vivant' ? 'selected' : ''}>Fige l'image</option>
       <option value="vivant" ${edit.mode === 'vivant' ? 'selected' : ''}>Reste pendant la lecture</option></select>
     <input id="dDuree" type="number" min="0.5" max="30" step="0.5" value="${edit.mode === 'vivant' ? edit.duree || 4 : edit.pause || 4}"> s
-    <span class="petit discret">${Z.s > 1.01 ? `zoom ${Z.s.toFixed(1)}× mémorisé` : 'molette : zoomer'}</span>
+    <span class="petit discret">${Z.s > 1.01 ? `zoom ${Z.s.toFixed(1)}× mémorisé` : TACTILE ? 'boutons − + : zoomer' : 'molette : zoomer'}</span>
     ${r ? `<span class="petit" title="${esc(r.nom)}">▱ sol calé</span>` : ''}
     ${edit.mode !== 'vivant' ? `<label class="petit" title="Les flèches, cercles et zones passent sous les joueuses (détection automatique sur l'image)"><input type="checkbox" id="dSous" ${edit.sousJoueuses ? 'checked' : ''}> sous les joueuses</label>` : ''}
-    <button id="dFini" class="principal">Terminer (Échap)</button>`;
+    <button id="dFini" class="principal">${TACTILE ? 'Terminer' : 'Terminer (Échap)'}</button>`;
   $('#dMode').onchange = (e) => { edit.mode = e.target.value; if (edit.mode === 'vivant') edit.sousJoueuses = 0; bandeau(); changer(false); };
   $('#dDuree').onchange = (e) => { const v = Math.max(0.5, +e.target.value || 4); if (edit.mode === 'vivant') edit.duree = v; else edit.pause = v; changer(false); };
   $('#dFini').onclick = terminer;
@@ -487,6 +488,8 @@ function choisirOutil(o) {
 }
 $('#listeOutils').addEventListener('click', (e) => {
   const b = e.target.closest('[data-outil]'); if (!b) return;
+  // téléphone : ramener la vidéo à l'écran pour dessiner
+  if (matchMedia('(max-width: 820px)').matches) { const r = $('#cadre').getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) scrollBy({ top: r.top - 56, behavior: 'smooth' }); }
   if (!commencer()) return;
   choisirOutil(b.dataset.outil);
 });
