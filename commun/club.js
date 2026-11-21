@@ -140,7 +140,9 @@
       try { const v = await rpc("esga_versions", { code, cles: [cle] }); await rpc("esga_ecrire", { code, cle_: cle, data_: data, version_: v[cle] || 0 }); return true; } catch (e) { erreur(e); return false; }
     }
     async function lireSeul(cle) { if (!code) return null; try { const r = await rpc("esga_lire", { code, cles: [cle] }); return r[cle] ? r[cle].data : null; } catch (e) { erreur(e); return null; } }
-    return { suivre, marquer, tirer, op, connecter, deconnecter, fusion, ecrireSeul, lireSeul, surEtat: (cb) => ecoutes.push(cb),
+    // Plusieurs documents lus d'un coup, sans les suivre (récapitulatif de la console : messageries des équipes)
+    async function lireDocs(cles) { const o = {}; if (!code || !cles.length) return o; try { const r = await rpc("esga_lire", { code, cles }); cles.forEach((k) => { if (r && r[k]) o[k] = r[k].data; }); } catch (e) { erreur(e); } return o; }
+    return { suivre, marquer, tirer, op, connecter, deconnecter, fusion, ecrireSeul, lireSeul, lireDocs, surEtat: (cb) => ecoutes.push(cb),
       get actif() { return !!code; }, get role() { return role; }, get etat() { return etat; } };
   })();
 
@@ -424,13 +426,14 @@
   const COLL = { personnes: "j", staff: "s", equipes: "eq", creneaux: "cr", evenements: "ev" };
   function enregistrer(coll, obj) {
     const t = D[coll]; if (!t) throw new Error("Collection inconnue : " + coll);
-    if (!obj.id) obj.id = uid(COLL[coll]);
+    if (!obj.id) { obj.id = uid(COLL[coll]); if (coll === "evenements") obj.cree = new Date().toISOString(); } // date de création : récapitulatif « depuis votre dernière connexion »
     const i = t.findIndex((x) => x.id === obj.id);
     if (i >= 0) t[i] = Object.assign({}, t[i], obj); else t.push(obj);
     sauver(); return obj.id;
   }
   function supprimer(coll, id) { D[coll] = D[coll].filter((x) => x.id !== id); sauver(); }
   function modifierEvenement(id, champs) {
+    champs = Object.assign({}, champs, { modifie: new Date().toISOString() });
     if (id.startsWith("m-") || id.startsWith("e-")) D.exceptions[id] = Object.assign({}, D.exceptions[id], champs);
     else { const e = D.evenements.find((x) => x.id === id); if (e) Object.assign(e, champs); }
     sauver();
@@ -514,6 +517,30 @@
     return p.role === "parent" ? `Parent de ${j.prenom}` : `${j.prenom} ${j.nom}`;
   }
 
+  /* ---------- dernière connexion (récapitulatif de la console) ----------
+     Gardée pour chaque personne de ce navigateur ({ derniere, precedente, pv, pvPrecedent }) et recopiée dans le profil.
+     Une nouvelle connexion = un nouvel onglet ou une nouvelle session du navigateur, ou un retour après 3 h sans venir.
+     « precedente » est la date de la connexion d'avant : le récapitulatif montre tout ce qui s'est passé depuis. */
+  const CLE_CNX = "esga-connexions", PAUSE = 3 * 3600e3;
+  const cleProfil = (p) => !p ? "" : p.role === "dirigeant" ? "dirigeant" : p.role === "coach" ? "coach:" + p.staff : p.role + ":" + p.joueur;
+  const lireCnx = () => { try { return JSON.parse(localStorage.getItem(CLE_CNX)) || {}; } catch (e) { return {}; } };
+  function ecrireCnx(k, c) {
+    const t = lireCnx(); t[k] = c; try { localStorage.setItem(CLE_CNX, JSON.stringify(t)); } catch (e) {}
+    const p = profil(); if (p && cleProfil(p) === k) { p.derniere = c.derniere; p.precedente = c.precedente || null; setProfil(p); }
+  }
+  function connexion() {
+    const p = profil(), k = cleProfil(p); if (!k) return null;
+    const c = Object.assign({}, lireCnx()[k]), now = new Date().toISOString();
+    let ses = null; try { ses = sessionStorage.getItem("esga-session"); } catch (e) {}
+    const nouvelle = ses !== k || !c.derniere || Date.now() - new Date(c.derniere) > PAUSE;
+    if (nouvelle) { c.precedente = c.derniere || null; c.pvPrecedent = c.pv == null ? null : c.pv; try { sessionStorage.setItem("esga-session", k); } catch (e) {} }
+    if (nouvelle || Date.now() - new Date(c.derniere) > 60e3) { c.derniere = now; ecrireCnx(k, c); }
+    return c;
+  }
+  // « J'ai tout vu » : le récapitulatif repart de maintenant ; pv = dernier PV connu
+  function toutVu(pv) { const k = cleProfil(profil()); if (!k) return; const c = Object.assign({}, lireCnx()[k]); c.precedente = new Date().toISOString(); if (pv != null) c.pv = c.pvPrecedent = pv; ecrireCnx(k, c); }
+  function noterPV(n) { const k = cleProfil(profil()); if (!k || n == null) return; const c = Object.assign({}, lireCnx()[k]); if (c.pv === n) return; c.pv = n; if (c.pvPrecedent === undefined) c.pvPrecedent = null; ecrireCnx(k, c); }
+
   // En ligne : on attend la première lecture (6 s au plus, sinon on part de la copie locale)
   const premier = NUAGE.actif ? Promise.race([NUAGE.tirer(), new Promise((r) => setTimeout(r, 6000))]) : null;
   const pret = Promise.all([fetch(BASE + "data/matchs.json").then((r) => r.json()).catch(() => []), premier]).then(([m]) => { MATCHS = Array.isArray(m) ? m : []; presencesDemo(); return window.CLUB; });
@@ -532,7 +559,7 @@
     rappel: (evt) => D.rappels[evt] || null, setRappel: (evt, date) => { if (date) D.rappels[evt] = date; else delete D.rappels[evt]; sauver(); },
     video: (evt) => D.videos[evt] || null, setVideo, envoyerSequence, envois, envoi: (id) => D.envois.find((x) => x.id === id) || null, vuEnvoi, retirerEnvoi, voixEnvoi,
     lienEnvoi: (id) => BASE + "analyse-video/voir.html?e=" + encodeURIComponent(id),
-    exporter, importer, reinitialiser, profil, setProfil, nomProfil, surChangement: (cb) => abonnes.push(cb),
+    exporter, importer, reinitialiser, profil, setProfil, nomProfil, connexion, toutVu, noterPV, surChangement: (cb) => abonnes.push(cb),
     outils: { iso, ajout, auj, jour, uid },
   };
 })();

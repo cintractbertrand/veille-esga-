@@ -145,6 +145,7 @@
     const we = C.evenements({ du: auj(), au: ajout(auj(), 6), types: ["match", "plateau", "tournoi", "reunion", "amical", "autre"] });
     return `<div class="entete"><div><p class="fil-ariane discret">${esc(C.club.nom)} · saison ${C.SAISON.libelle}</p><h1>Tableau de bord</h1><p class="sous">${fJL(auj())}</p></div>
       <div class="actions"><button class="btn" data-a="nouvel-evt">+ Événement</button><button class="btn prim" data-a="nouveau-joueur">+ Licencié</button></div></div>
+      ${recapHTML()}
       <div class="kpis">
         <a class="kpi" href="#licencies"><b>${js.length}</b><span>licenciés</span>${attente.length ? `<small class="att">${attente.length} licences à finaliser</small>` : '<small class="ok">Toutes validées</small>'}</a>
         <a class="kpi" href="#equipes"><b>${eqs.length}</b><span>équipes</span>${sansCoach.length ? `<small class="ko">${pl(sansCoach.length, "sans éducateur", "sans éducateur")}</small>` : '<small class="ok">Toutes encadrées</small>'}</a>
@@ -179,12 +180,135 @@
     }).catch(() => { const q = el.querySelector("p"); if (q) q.textContent = "PV indisponibles hors ligne."; });
   }
 
+  /* ---------- récapitulatif : tout ce qui s'est passé depuis la dernière connexion (coach et dirigeant) ----------
+     Messages des équipes, PV du District, réponses aux sondages, convocations, absences, scores,
+     vidéos et séquences, séances de l'Atelier, annulations. La date de la connexion est gardée par CLUB.connexion(). */
+  let periode = "connexion"; // connexion | 24h | 7j
+  function cnx() { const k = profil ? profil.role + ":" + (profil.staff || "") : ""; if (cnx.k !== k) { cnx.k = k; cnx.v = profil ? C.connexion() : null; } return cnx.v || {}; }
+  const ilYa = (h) => new Date(Date.now() - h * 3600e3).toISOString();
+  function depuis() { const c = cnx(); return periode === "24h" ? ilYa(24) : periode === "7j" ? ilYa(168) : c.precedente || ilYa(168); }
+  const fDH = (t) => { const d = new Date(t), j = iso(d); return `${j === auj() ? "aujourd'hui" : j === ajout(auj(), -1) ? "hier" : fmt(j, { weekday: "long", day: "numeric", month: "long" })} à ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`; };
+  const fCourt = (e) => `${fJ(e.date)}${e.type === "entrainement" ? " " + hh(e.heure) : ""}`;
+  const nomEvt = (e) => e.type === "entrainement" ? "Entraînement " + fCourt(e) : `${e.titre} · ${fJ(e.date)}`;
+  // Messageries des équipes : copie de ce navigateur (démo) ou documents en ligne, relus au plus toutes les minutes
+  let MSGS = {}, msgsT = 0, msgsP = null;
+  function lireLocal(eq) { try { return JSON.parse(localStorage.getItem("esga-messagerie:" + eq)) || null; } catch (e) { return null; } }
+  function chargerMessages() {
+    const eqs = mesEquipes();
+    if (!N.actif) { MSGS = Object.fromEntries(eqs.map((eq) => [eq, lireLocal(eq)]).filter(([, v]) => v)); return Promise.resolve(false); }
+    if (msgsP || Date.now() - msgsT < 60e3) return Promise.resolve(false);
+    msgsP = N.lireDocs(eqs.map((eq) => "messagerie:" + eq)).then((o) => { MSGS = {}; eqs.forEach((eq) => { const d = o["messagerie:" + eq] || lireLocal(eq); if (d) MSGS[eq] = d; }); msgsT = Date.now(); msgsP = null; return true; });
+    return msgsP;
+  }
+  function maSigne() { if (estDirigeant()) return "Dirigeant du club"; const s = moiStaff(); return !s ? "" : s.role === "coach" ? "Coach " + s.prenom : `${s.prenom} ${s.nom[0]}. (${s.role || "staff"})`; }
+  function recapMessages(S) {
+    const moi = maSigne(), lignes = [];
+    Object.entries(MSGS).forEach(([eq, d]) => {
+      if (!peutVoir(eq) || !d || !Array.isArray(d.messages)) return;
+      const convs = Object.fromEntries((d.convs || []).map((c) => [c.id, c])), nomJ = (a) => { const j = (d.joueurs || []).find((x) => "p-" + x.id === a); return !j ? "" : /Seniors|Vétérans|U20/.test((C.equipe(eq) || {}).categorie || "") ? j.nom : "Parent de " + j.nom; };
+      const l = d.messages.filter((m) => m.date > S && !m.supprime && ["texte", "photo", "absence", "empechement"].includes(m.type) && !(m.auteur === "coach" && (m.signe === moi || (!m.signe && estCoach())))
+        && convs[m.conv] && (convs[m.conv].type !== "perso" && convs[m.conv].type !== "groupe" || convs[m.conv].annonces || (convs[m.conv].membres || []).includes("coach")));
+      if (!l.length) return;
+      const par = {}; l.forEach((m) => { const c = convs[m.conv], n = c.annonces ? "Annonces" : c.type === "equipe" ? "Blabla" : c.type === "perso" ? "Privé" : c.nom || "Groupe"; par[n] = (par[n] || 0) + 1; });
+      const der = l[l.length - 1], qui = der.signe || (der.auteur === "coach" ? "Le staff" : nomJ(der.auteur) || "Une famille");
+      const txt = der.type === "photo" ? "📷 Photo" : der.type === "absence" ? `Absence : ${der.motif || ""}` : der.type === "empechement" ? "Ne peut plus venir au match" : (der.texte || "").slice(0, 70) + ((der.texte || "").length > 70 ? "…" : "");
+      const abs = l.filter((m) => m.type === "absence" || m.type === "empechement").length;
+      lignes.push({ k: abs ? "" : "info", t: `${C.nomEquipe(eq)} : ${pl(l.length, "nouveau message", "nouveaux messages")}`, s: `${Object.entries(par).map(([n, x]) => `${n} ${x}`).join(" · ")} — dernier : ${qui}, « ${txt} »`, a: `<a class="btn mini" href="${URL_MOD.messagerie(eq)}">Lire</a>`, n: l.length });
+    });
+    return lignes.sort((a, b) => b.n - a.n);
+  }
+  function recapPV(S) {
+    if (!PVS) return null;
+    const c = cnx(), cats = estDirigeant() ? null : new Set(mesEquipes().map((eq) => (C.equipe(eq) || {}).categorie));
+    const neuf = (p) => periode === "connexion" && c.pvPrecedent != null ? p.numero > c.pvPrecedent : p.date >= S.slice(0, 10);
+    return PVS.filter(neuf).map((p) => {
+      const its = (p.items || []).filter((i) => !cats || cats.has(i.categorie)), urg = its.filter((i) => i.gravite === "urgent");
+      if (!its.length) return { k: "ok", t: `PV n°${p.numero} du ${fmt(p.date, { day: "numeric", month: "long" })}`, s: cats ? `Rien pour ${[...cats].join(", ")}` : "Le club n'est pas cité", a: `<a class="btn mini lien" href="${URL_MOD.pv()}">Lire</a>` };
+      const ech = its.flatMap((i) => i.echeances || []).filter((x) => x.date >= auj()).sort((a, b) => a.date.localeCompare(b.date))[0];
+      return { k: urg.length ? "ko" : "", t: `PV n°${p.numero} du ${fmt(p.date, { day: "numeric", month: "long" })} : ${pl(its.length, "mention")}${cats ? "" : " du club"}${urg.length ? `, dont ${pl(urg.length, "urgente")}` : ""}`,
+        s: its.slice(0, 3).map((i) => `${i.categorie ? i.categorie + " : " : ""}${i.titre}`).join(" · ") + (ech ? ` — à faire avant le ${fJ(ech.date)}` : ""), a: `<a class="btn mini${urg.length ? " prim" : ""}" href="${URL_MOD.pv(estDirigeant() ? "" : mesEquipes()[0])}">Lire</a>` };
+    });
+  }
+  function recapMatchs(S) {
+    const D = C.donnees, lignes = [], vu = (eq) => !!eq && peutVoir(eq);
+    // Réponses des familles aux sondages et empêchements après convocation
+    Object.entries(D.dispos).forEach(([id, rep]) => {
+      const e = C.evenement(id); if (!e || !convocable(e) || !vu(e.equipe) || e.date < auj()) return;
+      const neuves = Object.entries(rep).filter(([, x]) => x.date > S); if (!neuves.length) return;
+      const cv = C.convocation(id), fem = (C.equipe(e.equipe) || {}).genre === "F";
+      if (cv) {
+        const abs = neuves.filter(([j, x]) => x.statut === "absent" && cv.joueurs.includes(j) && x.date > cv.publiee);
+        if (abs.length) lignes.push({ k: "ko", t: `${abs.map(([j]) => (C.personne(j) || {}).prenom).join(", ")} ${abs.length > 1 ? "ne peuvent" : "ne peut"} plus venir`, s: `${C.nomEquipe(e.equipe)} · ${nomEvt(e)} · convoqué${fem ? "e" : ""}${abs.length > 1 ? "s" : ""}`, a: `<a class="btn mini prim" href="#convoc/${esc(id)}">Remplacer</a>`, o: 0 });
+        return;
+      }
+      const tout = Object.values(rep), n = (s) => tout.filter((x) => x.statut === s).length, sans = C.joueurs(e.equipe).length - tout.length;
+      lignes.push({ k: "", t: `${pl(neuves.length, "réponse")} au sondage · ${C.nomEquipe(e.equipe)}`, s: `${nomEvt(e)} — ${n("present")} présent${fem ? "e" : ""}s · ${n("incertain")} peut-être · ${n("absent")} absent${fem ? "e" : ""}s${sans > 0 ? ` · ${sans} sans réponse` : ""}`, a: `<a class="btn mini prim" href="#convoc/${esc(id)}">Convoquer</a>`, o: 1 });
+    });
+    // Sondages lancés et convocations publiées (par un autre éducateur, ou vus par le dirigeant)
+    Object.entries(D.sondages).forEach(([id, s]) => { const e = C.evenement(id); const t = [s.relance, s.lance].filter(Boolean).sort().pop();
+      if (e && vu(e.equipe) && t > S && (!s.lies || s.lies[0] === id) && estDirigeant()) lignes.push({ k: "info", t: `Sondage ${s.relance > S ? "relancé" : "lancé"} · ${C.nomEquipe(e.equipe)}`, s: s.lies ? `${s.lies.length} matchs du week-end` : nomEvt(e), a: `<a class="btn mini" href="#convoc/${esc(id)}">Voir</a>`, o: 3 }); });
+    const cvs = D.convocations.filter((c) => c.publiee > S && vu(c.equipe) && C.evenement(c.evenement) && C.convocation(c.evenement) === c);
+    if (cvs.length > 2) lignes.push({ k: "ok", t: `${pl(cvs.length, "convocation publiée", "convocations publiées")}`, s: cvs.map((c) => C.nomEquipe(c.equipe)).join(", "), a: `<a class="btn mini" href="#convocations">Voir</a>`, o: 2, n: cvs.length });
+    else cvs.forEach((c) => { const e = C.evenement(c.evenement);
+      lignes.push({ k: "ok", t: `Convocation publiée · ${C.nomEquipe(c.equipe)}`, s: `${nomEvt(e)} — ${pl(c.joueurs.length, "convoqué")}, RDV ${hh(c.rdvHeure)}`, a: `<a class="btn mini" href="#convoc/${esc(e.id)}">Voir</a>`, o: 2 }); });
+    // Scores saisis
+    Object.entries(D.feuilles).forEach(([id, f]) => { const e = C.evenement(id); if (e && vu(e.equipe) && f.saisie > S)
+      lignes.push({ k: f.nous > f.eux ? "ok" : f.nous < f.eux ? "ko" : "", t: `Score : ESGA ${f.nous} – ${f.eux} ${e.adversaire || ""}`, s: `${C.nomEquipe(e.equipe)} · ${fJ(e.date)}${Object.values(f.stats || {}).some((x) => x.buts) ? " · " + buteursHTML(f).replace(/<[^>]+>/g, "") : ""}`, a: `<a class="btn mini" href="#feuille/${esc(id)}">Voir</a>`, o: 4 }); });
+    return lignes.sort((a, b) => a.o - b.o);
+  }
+  function recapEntrainements(S) {
+    const D = C.donnees, lignes = [];
+    Object.entries(D.dispos).forEach(([id, rep]) => {
+      if (!id.startsWith("e-")) return; const e = C.evenement(id); if (!e || !peutVoir(e.equipe) || e.date < auj()) return;
+      const abs = Object.entries(rep).filter(([, x]) => x.date > S && x.statut === "absent"); if (!abs.length) return;
+      lignes.push({ k: "", t: `${pl(abs.length, "absence signalée", "absences signalées")} · ${C.nomEquipe(e.equipe)}`, s: `${nomEvt(e)} — ${abs.map(([j, x]) => `${(C.personne(j) || {}).prenom} (${x.motif || "absent"})`).join(", ")}`, a: `<button class="btn mini" data-a="appel" data-id="${esc(id)}">Appel</button>` });
+    });
+    Object.entries(D.seances).forEach(([id, s]) => { const e = C.evenement(id); if (!e || !peutVoir(e.equipe) || !(s.maj > S)) return;
+      const moi = estCoach() && s.auteur === C.nomComplet(moiStaff());
+      lignes.push({ k: "ok", t: `Séance ${moi ? "préparée" : "prête"} dans l'Atelier · ${C.nomEquipe(e.equipe)}`, s: `${nomEvt(e)} — « ${s.nom || "Séance"} »${s.exercices ? `, ${pl(s.exercices.length, "exercice")}` : ""}${s.auteur && !moi ? ` · ${s.auteur}` : ""}`, a: `<button class="btn mini" data-a="evt" data-id="${esc(id)}">Voir</button>` }); });
+    // Annulations, déplacements et nouveaux événements
+    Object.entries(D.exceptions).forEach(([id, x]) => { if (!(x.modifie > S)) return; const e = C.evenement(id); if (!e || !peutVoir(e.equipe))  return;
+      lignes.push({ k: x.statut === "annule" ? "ko" : "info", t: `${x.statut === "annule" ? "Annulé" : "Modifié"} · ${C.nomEquipe(e.equipe)}`, s: nomEvt(e) + (e.lieu ? ` · ${e.lieu}` : ""), a: `<button class="btn mini" data-a="evt" data-id="${esc(id)}">Voir</button>` }); });
+    D.evenements.filter((e) => (e.cree > S || e.modifie > S) && (e.equipe ? peutVoir(e.equipe) : true) && e.date >= auj()).forEach((e) =>
+      lignes.push({ k: e.statut === "annule" ? "ko" : "info", t: `${e.statut === "annule" ? "Annulé" : e.cree > S ? "Nouveau" : "Modifié"} : ${e.titre}`, s: `${e.equipe ? C.nomEquipe(e.equipe) + " · " : ""}${fJ(e.date)} ${hh(e.heure)}${e.lieu ? " · " + e.lieu : ""}`, a: `<button class="btn mini" data-a="evt" data-id="${esc(e.id)}">Voir</button>` }));
+    return lignes;
+  }
+  function recapVideos(S) {
+    const D = C.donnees, lignes = [];
+    Object.entries(D.videos).forEach(([id, v]) => { const e = C.evenement(id); if (e && peutVoir(e.equipe) && v.maj > S)
+      lignes.push({ k: "info", t: `Vidéo du match reliée · ${C.nomEquipe(e.equipe)}`, s: `${e.titre} · ${fJ(e.date)}${v.source === "monteur" ? " · depuis le Monteur" : ""}`, a: `<a class="btn mini" href="#feuille/${esc(id)}">Voir</a>` }); });
+    const env = D.envois.filter((x) => peutVoir(x.equipe));
+    const nouv = env.filter((x) => x.date > S);
+    if (nouv.length) lignes.push({ k: "info", t: `${pl(nouv.length, "séquence envoyée", "séquences envoyées")} aux joueurs`, s: nouv.slice(0, 3).map((x) => `« ${x.nom || "Séquence"} » → ${destEnvoi(x)}`).join(" · "), a: `<a class="btn mini" href="#feuille/${esc(nouv[0].evt)}">Voir</a>` });
+    const vues = env.flatMap((x) => Object.entries(x.vus || {}).filter(([, t]) => t > S).map(([j]) => [x, j]));
+    if (vues.length) { const qui = [...new Set(vues.map(([, j]) => (C.personne(j) || {}).prenom).filter(Boolean))];
+      lignes.push({ k: "ok", t: `${pl(vues.length, "séquence regardée", "séquences regardées")}`, s: `par ${qui.slice(0, 6).join(", ")}${qui.length > 6 ? ` et ${qui.length - 6} autres` : ""}`, a: `<a class="btn mini" href="#feuille/${esc(vues[0][0].evt)}">Voir</a>` }); }
+    return lignes;
+  }
+  function recapHTML() {
+    if (estFamille()) return "";
+    if (!N.actif) chargerMessages(); // démo : messageries gardées dans ce navigateur
+    const c = cnx(), S = depuis();
+    // [icône, titre, lignes, mot de la puce]
+    const sections = [["messagerie", "Messages", recapMessages(S), ["message", "messages"]], ["convocations", "Matchs : sondages, convocations, scores", recapMatchs(S), ["match", "matchs"]], ["calendrier", "Entraînements, séances et calendrier", recapEntrainements(S), ["entraînement", "entraînements"]], ["video", "Vidéos", recapVideos(S), ["vidéo", "vidéos"]], ["pv", "PV du District", recapPV(S), ["PV", "PV"]]];
+    const total = sections.reduce((n, [, , l]) => n + (l ? l.length : 0), 0);
+    const quand = periode === "24h" ? "ces dernières 24 heures" : periode === "7j" ? "ces 7 derniers jours" : c.precedente ? `depuis votre dernière visite, ${fDH(c.precedente)}` : "ces 7 derniers jours (première visite)";
+    const choixP = `<select class="recap-periode" aria-label="Période">${[["connexion", "Depuis ma dernière visite"], ["24h", "Dernières 24 h"], ["7j", "7 derniers jours"]].map(([k, l]) => `<option value="${k}"${periode === k ? " selected" : ""}>${l}</option>`).join("")}</select>`;
+    const puces = sections.filter(([, , l]) => l && l.length).map(([ic, t, l, [un, des]]) => { const m = ic === "messagerie" ? l.reduce((x, y) => x + y.n, 0) : 0;
+      return `<button class="recap-puce" data-a="recap-aller" data-id="${ic}">${svg(ic)}${m ? `<b>${m}</b> ${m > 1 ? des : un}` : `${esc(t.split(/ :|,/)[0])} <b>${l.length}</b>`}</button>`; }).join("");
+    const tete = `<div class="recap-tete"><div><h2>Récapitulatif</h2><p>${total ? `<b>${pl(total, "nouveauté")}</b> ${esc(quand)}` : `Rien de nouveau ${esc(quand)}. 👌`}</p></div><div class="recap-actions">${choixP}${total ? '<button class="btn mini or" data-a="recap-vu">✓ J\'ai tout vu</button>' : ""}</div></div>`;
+    if (!total) return `<section class="recap vide-recap">${tete}${PVS ? "" : '<p class="discret petit" style="margin:8px 0 0">PV du District : chargement…</p>'}</section>`;
+    const bloc = ([ic, t, l]) => { if (!l || !l.length) return ""; const max = 5, li = (x) => `<li><span class="pt ${x.k}"></span><span class="tx">${esc(x.t)}<small>${esc(x.s)}</small></span>${x.a}</li>`;
+      return `<div class="recap-bloc" id="recap-${ic}"><h3>${svg(ic)} ${esc(t)} <span class="etiq">${l.length}</span></h3><ul class="taches">${l.slice(0, max).map(li).join("")}</ul>${l.length > max ? `<details><summary class="btn lien">+ ${pl(l.length - max, "autre", "autres")}</summary><ul class="taches">${l.slice(max).map(li).join("")}</ul></details>` : ""}</div>`; };
+    return `<section class="recap">${tete}<nav class="recap-puces">${puces}</nav><div class="recap-grille">${sections.map(bloc).join("")}</div></section>`;
+  }
+
   function pageAccueilCoach() {
     const s = moiStaff(); if (!s) return `<p class="vide">Profil introuvable.</p>`;
     const eqs = s.equipes;
     if (!eqs.length) return `<div class="entete"><h1>Bonjour ${esc(s.prenom)}</h1></div><p class="vide">Aucune équipe ne vous est confiée pour l'instant. Le responsable sportif peut vous en affecter une.</p>`;
     return `<div class="entete"><div><p class="fil-ariane discret">${fJL(auj())}</p><h1>Bonjour ${esc(s.prenom)} 👋</h1><p class="sous">${eqs.map(C.nomEquipe).join(" · ")}</p></div></div>`
-      + carteWeekend(eqs) + eqs.map((eq) => blocCoach(eq, eqs.length > 1)).join("")
+      + recapHTML() + carteWeekend(eqs) + eqs.map((eq) => blocCoach(eq, eqs.length > 1)).join("")
       + `<section class="carte" style="margin-top:14px"><h2>Vos outils</h2>${modulesHTML(eqs[0])}</section>`;
   }
   /* ---------- vidéos : séquences envoyées aux joueurs ---------- */
@@ -845,7 +969,11 @@
     else html = pageAccueil();
     $("#contenu").innerHTML = html;
     document.title = `${($("#contenu h1") || {}).textContent || "Console"} · Console ESGA`;
-    if (r.page === "accueil") { chargerPV(); if (estCoach() && !PVS) chargerPVs().then(() => { if (route().page === "accueil") rendre(true); }); }
+    if (r.page === "accueil") {
+      chargerPV(); if (!PVS) chargerPVs().then(() => { if (route().page === "accueil") rendre(true); });
+      else if (PVS[0]) C.noterPV(Math.max(...PVS.map((p) => p.numero)));
+      if (!estFamille()) chargerMessages().then((neuf) => { if (neuf && route().page === "accueil") rendre(true); });
+    }
     const cle = location.hash;
     if (garderDefil && cle === derniere) window.scrollTo(0, y); else if (cle !== derniere) window.scrollTo(0, 0);
     // Lien d'un autre module (retour de l'Atelier…) : #calendrier?evt=<id> ouvre la fiche de l'événement, une fois
@@ -863,6 +991,8 @@
     if (a === "f-joue") return; // case à cocher : gérée à l'événement « change »
     ev.preventDefault();
     if (a === "fermer") return fermer();
+    if (a === "recap-aller") { const el = document.getElementById("recap-" + id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    if (a === "recap-vu") { C.toutVu(PVS && PVS[0] ? Math.max(...PVS.map((p) => p.numero)) : null); cnx.k = null; periode = "connexion"; toast("C'est noté : le récapitulatif repart de maintenant."); return rendre(true); }
     if (a === "role") {
       if (t.dataset.v === "dirigeant") { profil = { role: "dirigeant" }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#accueil", "Bienvenue ! Vous voyez tout le club."); }
       choix = { role: t.dataset.v || null, equipe: t.dataset.v === "joueur" ? "Seniors F-1" : "U15F-2", q: "" }; return rendre();
@@ -947,6 +1077,7 @@
     if (t.id === "fQ") { filtres.q = t.value; clearTimeout(rendre.t); rendre.t = setTimeout(() => { rendre(true); const q = $("#fQ"); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }, 160); }
   });
   document.addEventListener("change", (ev) => {
+    if (ev.target.classList && ev.target.classList.contains("recap-periode")) { periode = ev.target.value; return rendre(true); }
     if (ev.target.classList && ev.target.classList.contains("rappel-date")) { C.setRappel(ev.target.dataset.id, ev.target.value); toast(ev.target.value ? `Rappel noté pour le ${fJ(ev.target.value)}.` : "Rappel retiré."); return; }
     const t = ev.target;
     if (t.dataset && t.dataset.a === "f-joue") { const f = feuilles[route().a]; f.joueurs = t.checked ? [...new Set([...f.joueurs, t.dataset.id])] : f.joueurs.filter((x) => x !== t.dataset.id); return rendre(true); }
