@@ -263,7 +263,7 @@
   /* ---------- état ---------- */
   let D = STOCKAGE.lire();
   if (!D || D.version !== VERSION) { D = graine(); STOCKAGE.ecrire(D); }
-  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; d.videos = d.videos || {}; d.envois = d.envois || []; d.rappels = d.rappels || {}; return d; }; // données plus anciennes
+  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; d.videos = d.videos || {}; d.envois = d.envois || []; d.rappels = d.rappels || {}; d.connexions = d.connexions || {}; return d; }; // données plus anciennes
   completer(D);
   let MATCHS = []; // matchs officiels (data/matchs.json)
   const abonnes = [];
@@ -511,26 +511,32 @@
   function setProfil(p) { try { if (p) localStorage.setItem(CLE_PROFIL, JSON.stringify(p)); else localStorage.removeItem(CLE_PROFIL); } catch (e) {} }
   function nomProfil(p) {
     p = p || profil(); if (!p) return "";
-    if (p.role === "dirigeant") return "Dirigeant du club";
+    if (p.role === "dirigeant") { const s = p.staff && D.staff.find((x) => x.id === p.staff); return s ? `${s.prenom} ${s.nom} · dirigeant` : "Dirigeant du club"; }
     if (p.role === "coach") { const s = D.staff.find((x) => x.id === p.staff); return s ? `${s.prenom} ${s.nom}` : "Éducateur"; }
     const j = personne(p.joueur); if (!j) return "";
     return p.role === "parent" ? `Parent de ${j.prenom}` : `${j.prenom} ${j.nom}`;
   }
 
   /* ---------- dernière connexion (récapitulatif de la console) ----------
-     Gardée pour chaque personne de ce navigateur ({ derniere, precedente, pv, pvPrecedent }) et recopiée dans le profil.
-     Une nouvelle connexion = un nouvel onglet ou une nouvelle session du navigateur, ou un retour après 3 h sans venir.
-     « precedente » est la date de la connexion d'avant : le récapitulatif montre tout ce qui s'est passé depuis. */
+     Gardée pour chaque personne ({ derniere, precedente, pv, pvPrecedent }) dans les données du club (D.connexions) :
+     en ligne, elle suit la personne d'un appareil à l'autre (Supabase). Ce navigateur en garde aussi une copie,
+     et elle est recopiée dans le profil. Une nouvelle connexion = un nouvel onglet ou une nouvelle session du navigateur,
+     ou un retour après 3 h sans venir. « precedente » est la date de la connexion d'avant : le récapitulatif montre
+     tout ce qui s'est passé depuis. */
   const CLE_CNX = "esga-connexions", PAUSE = 3 * 3600e3;
-  const cleProfil = (p) => !p ? "" : p.role === "dirigeant" ? "dirigeant" : p.role === "coach" ? "coach:" + p.staff : p.role + ":" + p.joueur;
-  const lireCnx = () => { try { return JSON.parse(localStorage.getItem(CLE_CNX)) || {}; } catch (e) { return {}; } };
+  const cleProfil = (p) => !p ? "" : p.role === "dirigeant" ? "dirigeant" + (p.staff ? ":" + p.staff : "") : p.role === "coach" ? "coach:" + p.staff : p.role + ":" + p.joueur;
+  const lireLocalCnx = () => { try { return JSON.parse(localStorage.getItem(CLE_CNX)) || {}; } catch (e) { return {}; } };
+  const partage = () => !NUAGE.actif || NUAGE.role === "staff"; // un code familles ne peut pas écrire les données du club
+  // La plus récente des deux copies (club en ligne, ce navigateur)
+  function lireCnx(k) { const a = lireLocalCnx()[k], b = (D.connexions || {})[k]; return Object.assign({}, !a ? b : !b ? a : (b.derniere || "") >= (a.derniere || "") ? b : a); }
   function ecrireCnx(k, c) {
-    const t = lireCnx(); t[k] = c; try { localStorage.setItem(CLE_CNX, JSON.stringify(t)); } catch (e) {}
+    const t = lireLocalCnx(); t[k] = c; try { localStorage.setItem(CLE_CNX, JSON.stringify(t)); } catch (e) {}
     const p = profil(); if (p && cleProfil(p) === k) { p.derniere = c.derniere; p.precedente = c.precedente || null; setProfil(p); }
+    if (partage()) { D.connexions = D.connexions || {}; D.connexions[k] = Object.assign({}, c); sauver(); }
   }
   function connexion() {
     const p = profil(), k = cleProfil(p); if (!k) return null;
-    const c = Object.assign({}, lireCnx()[k]), now = new Date().toISOString();
+    const c = lireCnx(k), now = new Date().toISOString();
     let ses = null; try { ses = sessionStorage.getItem("esga-session"); } catch (e) {}
     const nouvelle = ses !== k || !c.derniere || Date.now() - new Date(c.derniere) > PAUSE;
     if (nouvelle) { c.precedente = c.derniere || null; c.pvPrecedent = c.pv == null ? null : c.pv; try { sessionStorage.setItem("esga-session", k); } catch (e) {} }
@@ -538,8 +544,8 @@
     return c;
   }
   // « J'ai tout vu » : le récapitulatif repart de maintenant ; pv = dernier PV connu
-  function toutVu(pv) { const k = cleProfil(profil()); if (!k) return; const c = Object.assign({}, lireCnx()[k]); c.precedente = new Date().toISOString(); if (pv != null) c.pv = c.pvPrecedent = pv; ecrireCnx(k, c); }
-  function noterPV(n) { const k = cleProfil(profil()); if (!k || n == null) return; const c = Object.assign({}, lireCnx()[k]); if (c.pv === n) return; c.pv = n; if (c.pvPrecedent === undefined) c.pvPrecedent = null; ecrireCnx(k, c); }
+  function toutVu(pv) { const k = cleProfil(profil()); if (!k) return; const c = lireCnx(k); c.precedente = new Date().toISOString(); if (pv != null) c.pv = c.pvPrecedent = pv; ecrireCnx(k, c); }
+  function noterPV(n) { const k = cleProfil(profil()); if (!k || n == null) return; const c = lireCnx(k); if (c.pv === n) return; c.pv = n; if (c.pvPrecedent === undefined) c.pvPrecedent = null; ecrireCnx(k, c); }
 
   // En ligne : on attend la première lecture (6 s au plus, sinon on part de la copie locale)
   const premier = NUAGE.actif ? Promise.race([NUAGE.tirer(), new Promise((r) => setTimeout(r, 6000))]) : null;

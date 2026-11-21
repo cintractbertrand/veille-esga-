@@ -862,6 +862,11 @@
       <div class="roles">${ROLES_ACCUEIL.filter(([k]) => !famillesSeules() || ["parent", "joueur"].includes(k)).map(([k, e, t, d]) => `<button class="role" data-a="role" data-v="${k}"><span class="emoji">${e}</span><b>${t}</b><span>${d}</span></button>`).join("")}</div>
       <p class="discret petit">${N.actif ? "Vous pourrez changer de profil à tout moment." : "Démo : choisissez librement, vous pourrez changer à tout moment."}</p></div>`;
     const retour = `<button class="btn lien" data-a="role" data-v="">‹ Retour</button>`;
+    if (choix.role === "dirigeant") { // le nom sert à retrouver « depuis votre dernière visite » sur tous vos appareils
+      const ds = C.staff().filter((x) => !["coach", "adjoint"].includes(x.role));
+      return `<div class="bienvenue">${tete}${retour}<p class="bv-intro">Choisissez votre nom : vous retrouverez votre récapitulatif sur tous vos appareils.</p><div class="choix-liste">${ds.map((x) => `<button class="pers" data-a="choisir-dirigeant" data-id="${esc(x.id)}">${avatarP(x)}<span><b>${esc(C.nomComplet(x))}</b><small>${esc(x.fonction || ROLES[x.role] || "Dirigeant")}</small></span></button>`).join("")}
+        <button class="pers" data-a="choisir-dirigeant" data-id=""><span class="avatar" aria-hidden="true">🏛️</span><span><b>Autre dirigeant</b><small>Sans nom (récapitulatif commun)</small></span></button></div></div>`;
+    }
     if (choix.role === "coach") {
       const cs = C.staff().filter((x) => ["coach", "adjoint"].includes(x.role) && x.equipes.length);
       return `<div class="bienvenue">${tete}${retour}<p class="bv-intro">Choisissez votre nom.</p><div class="choix-liste">${cs.map((x) => `<button class="pers" data-a="choisir-coach" data-id="${esc(x.id)}">${avatarP(x)}<span><b>${esc(C.nomComplet(x))}</b><small>${esc(x.equipes.map(C.nomEquipe).join(", "))}</small></span></button>`).join("")}</div></div>`;
@@ -994,10 +999,10 @@
     if (a === "recap-aller") { const el = document.getElementById("recap-" + id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
     if (a === "recap-vu") { C.toutVu(PVS && PVS[0] ? Math.max(...PVS.map((p) => p.numero)) : null); cnx.k = null; periode = "connexion"; toast("C'est noté : le récapitulatif repart de maintenant."); return rendre(true); }
     if (a === "role") {
-      if (t.dataset.v === "dirigeant") { profil = { role: "dirigeant" }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#accueil", "Bienvenue ! Vous voyez tout le club."); }
       choix = { role: t.dataset.v || null, equipe: t.dataset.v === "joueur" ? "Seniors F-1" : "U15F-2", q: "" }; return rendre();
     }
     if (a === "choix-equipe") { choix.equipe = t.dataset.v; choix.q = ""; return rendre(true); }
+    if (a === "choisir-dirigeant") { profil = id ? { role: "dirigeant", staff: id } : { role: "dirigeant" }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#accueil", `Bienvenue${moiStaff() ? " " + moiStaff().prenom : ""} ! Vous voyez tout le club.`); }
     if (a === "choisir-coach") { profil = { role: "coach", staff: id }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#accueil", `Bonjour ${moiStaff().prenom} ! Voici votre équipe.`); }
     if (a === "choisir-joueur") { profil = { role: choix.role, joueur: id }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#moi", "C'est parti !"); }
     if (a === "dispo-match") { if (t.dataset.v === "absent") { if (!(C.dispos(id)[moiJoueur().id] || {}).motif || C.dispos(id)[moiJoueur().id].statut !== "absent") C.setDispo(id, moiJoueur().id, { statut: "absent", motif: "Absent", par: "famille" }); return ouvrirMotif(id); } C.setDispo(id, moiJoueur().id, { statut: t.dataset.v, motif: DISPO[t.dataset.v], par: "famille" }); return toast("Réponse envoyée au coach. 👍"); }
