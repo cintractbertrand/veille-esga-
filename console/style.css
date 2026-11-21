@@ -467,3 +467,18 @@ fieldset label.tout { display: inline-flex; gap: 6px; margin-right: 14px; font-w
 .code-club small { flex: 1 1 100%; opacity: .75; }
 .code-club.ok { align-items: center; }
 body.en-ligne .demo-bandeau { background: color-mix(in srgb, #2e9e5b 14%, var(--esga-carte)); border-bottom-color: color-mix(in srgb, #2e9e5b 40%, transparent); }
+
+/* Accueil du coach : matchs du week-end, PV de la catégorie ; espace famille : plusieurs matchs */
+.weekend { border-top: 3px solid var(--esga-or); }
+.weekend h2 .etiq { margin-left: 6px; }
+.a-preparer .dernier { margin: 10px 0 0; }
+.a-preparer .btn.lien { text-decoration: underline; }
+.pv-eq .taches small b { font-weight: 700; }
+hr.sep-match { border: 0; border-top: 1px dashed var(--esga-ligne); margin: 16px 0; }
+
+/* Agenda replié (coach de plusieurs équipes) */
+details.repli > summary { cursor: pointer; list-style: none; font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+details.repli > summary::-webkit-details-marker { display: none; }
+details.repli > summary::after { content: "›"; margin-left: auto; transition: transform .15s; font-size: 1.2rem; color: var(--esga-gris); }
+details.repli[open] > summary { margin-bottom: 10px; }
+details.repli[open] > summary::after { transform: rotate(90deg); }
