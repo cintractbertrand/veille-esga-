@@ -22,7 +22,9 @@ h3 { margin: 16px 0 8px; font-size: .95rem; }
 
 /* Bandeau démo */
 .demo-bandeau { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 6px 16px; background: color-mix(in srgb, var(--esga-or) 22%, var(--esga-carte)); border-bottom: 1px solid color-mix(in srgb, var(--esga-or) 45%, transparent); font-size: .8rem; }
-.demo-bandeau > span { flex: 1 1 320px; }
+.demo-bandeau > .b-mode { flex: 1 1 320px; }
+.demo-bandeau > .b-qui { flex: 0 1 auto; }
+body.en-ligne .demo-bandeau { background: color-mix(in srgb, #2e9e5b 14%, var(--esga-carte)); border-bottom-color: color-mix(in srgb, #2e9e5b 40%, transparent); }
 .demo-bandeau label { display: flex; gap: 6px; align-items: center; font-weight: 600; }
 .demo-bandeau select { border: 1px solid color-mix(in srgb, var(--esga-or) 60%, transparent); border-radius: 8px; padding: 3px 6px; background: var(--esga-carte); font-size: .82rem; max-width: 180px; }
 body.coach #choixProfil { background: var(--esga-or); color: #1b1400; font-weight: 700; }
@@ -283,7 +285,7 @@ fieldset.grille2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 /* Téléphone : la liste, puis la conversation en plein écran */
 @media (max-width: 760px) {
-  .demo-bandeau > span { display: none; }
+  .demo-bandeau > .b-mode { display: none; }
   .demo-bandeau select { max-width: 130px; }
   .discussions { grid-template-columns: minmax(0, 1fr); }
   .conv.active { background: none; }
@@ -370,3 +372,10 @@ button.sem-l:hover { background: var(--esga-carte); }
 
 /* Seuls les coachs et dirigeants créent les groupes */
 body:not(.coach) #btnGroupe { display: none; }
+
+/* Choix de la rencontre (Espace coach) et case « exceptionnellement » */
+.choix-match { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; margin-bottom: 4px; }
+.choix-match .chip { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 7px 12px; border-radius: 12px; border: 1px solid var(--esga-ligne); background: var(--esga-carte); color: inherit; font: inherit; font-size: .82rem; cursor: pointer; text-align: left; max-width: 220px; }
+.choix-match .chip span { color: var(--esga-gris); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 196px; }
+.choix-match .chip.actif { border-color: var(--esga-bleu); box-shadow: 0 0 0 2px color-mix(in srgb, var(--esga-bleu) 25%, transparent); }
+.case.exception { margin: 0 0 8px; font-weight: 600; }

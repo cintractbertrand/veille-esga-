@@ -21,7 +21,9 @@
   const couleur = (t) => { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COUL[h % COUL.length]; };
   const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
-  const estMatch = (e) => e.type === "match" || e.type === "amical";
+  const estMatch = (e) => e.type === "match" || e.type === "amical"; // a un score (feuille de match)
+  const convocable = (e) => C.RENCONTRES.includes(e.type) && !!e.equipe; // sondage et convocation (plateaux et tournois compris)
+  const DISPO = { present: "Présent", incertain: "Peut-être", absent: "Absent" }; // mêmes mots dans la console et la messagerie
   const TYPES = { match: "Match", entrainement: "Entraînement", amical: "Match amical", plateau: "Plateau", tournoi: "Tournoi", reunion: "Réunion", autre: "Événement" };
   const ROLES = { president: "Président", secretaire: "Secrétariat", tresorier: "Trésorier", dirigeant: "Dirigeant", coach: "Éducateur principal", adjoint: "Éducateur adjoint" };
   const LICENCE = { validee: ["Validée", "ok"], en_attente: ["En attente", "att"], a_renouveler: ["À renouveler", "ko"] };
@@ -83,10 +85,10 @@
   function jauge(t) { if (t == null) return '<span class="discret">–</span>'; const c = t >= 80 ? "var(--ok)" : t >= 60 ? "var(--att)" : "var(--ko)"; return `<span class="jauge"><i style="--p:${t}%;--cj:${c}"></i>${t} %</span>`; }
   const avatarP = (p) => `<span class="avatar" style="background:${couleur(p.prenom + p.nom)}">${esc(initiales(p))}</span>`;
   function ligneEvt(e, avecEquipe = true) {
-    const cv = estMatch(e) ? C.convocation(e.id) : null;
+    const cv = convocable(e) ? C.convocation(e.id) : null;
     const entEq = e.type === "entrainement" && avecEquipe && e.equipe;
     const sous = entEq ? `Entraînement · ${e.lieu}` : [avecEquipe && e.equipe ? C.nomEquipe(e.equipe) : e.equipe ? "" : "Club", estMatch(e) ? e.competition : TYPES[e.type] !== e.titre ? TYPES[e.type] : "", e.lieu].filter(Boolean).join(" · ");
-    const badge = e.statut === "annule" ? '<span class="etiq ko">Annulé</span>' : estMatch(e) && e.date >= auj() ? (cv ? '<span class="etiq ok">Convoqués</span>' : '<span class="etiq att">À convoquer</span>') : e.type === "entrainement" && C.seance(e.id) ? '<span class="etiq bleu" title="Séance préparée">📋 Séance</span>' : "";
+    const badge = e.statut === "annule" ? '<span class="etiq ko">Annulé</span>' : convocable(e) && e.date >= auj() ? (cv ? '<span class="etiq ok">Convoqués</span>' : '<span class="etiq att">À convoquer</span>') : e.type === "entrainement" && C.seance(e.id) ? '<span class="etiq bleu" title="Séance préparée">📋 Séance</span>' : "";
     return `<button class="evt t-${e.type}${e.statut === "annule" ? " annule" : ""}" data-a="evt" data-id="${esc(e.id)}"><span class="h">${hh(e.heure)}</span><span class="t"><b>${esc(entEq ? C.nomEquipe(e.equipe) : e.type === "entrainement" ? "Entraînement" : e.titre)}</b><small>${esc(sous)}</small></span>${badge}</button>`;
   }
   function agenda(evts, avecEquipe = true, vide = "Rien de prévu.") {
@@ -111,7 +113,7 @@
     const items = dir
       ? [["accueil", "Tableau de bord", 0, "Accueil"], ["calendrier", "Calendrier"], ["equipes", "Équipes"], ["licencies", "Licenciés"], ["staff", "Éducateurs et bureau", 0, "Staff"], ["convocations", "Matchs", nbConv], ["parametres", "Réglages"]]
       : [["accueil", "Aujourd'hui", 0, "Accueil"], ["equipes", mesEquipes().length > 1 ? "Mes équipes" : "Mon équipe", 0, "Équipe"], ["calendrier", "Calendrier"], ["convocations", "Matchs", nbConv], ["staff", "Contacts du club", 0, "Contacts"]];
-    const ext = [["messagerie", "Messagerie", URL_MOD.messagerie(dir ? "" : mesEquipes()[0])], ["atelier", "Atelier entraînements", URL_MOD.atelier()], ["video", "Monteur vidéo", URL_MOD.video()], ["pv", "PV du District", URL_MOD.pv()], ["equipe", "MyFootSquad", "https://myfootsquad.com/"]];
+    const ext = [["messagerie", "Messagerie", URL_MOD.messagerie(dir ? "" : mesEquipes()[0])], ["atelier", "Atelier entraînements", URL_MOD.atelier()], ["video", "Monteur vidéo", URL_MOD.video()], ["pv", "PV du District", URL_MOD.pv(dir ? "" : mesEquipes()[0])], ["equipe", "MyFootSquad", "https://myfootsquad.com/"]];
     $("#menu").innerHTML = `<div class="profil"><b>${dir ? "Console du club" : esc(C.nomComplet(s))}</b><span>${dir ? "Vue dirigeant · tout le club" : esc((s.equipes || []).map(C.nomEquipe).join(", ") || "Aucune équipe")}</span><a class="changer" href="#bienvenue">Changer de profil</a></div>`
       + items.map(([id, l, n, c]) => `<a href="#${id}"${page === id ? ' aria-current="page"' : ""}>${svg(id)}<span class="long">${l}</span><span class="court">${c || l}</span>${n ? `<span class="compte">${n}</span>` : ""}</a>`).join("")
       + `<div class="sep">Modules</div>` + ext.map(([id, l, u]) => `<a class="ext" href="${u}"${["atelier", "equipe"].includes(id) ? ' target="_blank" rel="noopener"' : ""}>${svg(id)}<span>${l}</span></a>`).join("");
@@ -119,7 +121,7 @@
 
   /* ---------- données calculées ---------- */
   function convocationsAFaire() {
-    return C.evenements({ du: auj(), au: ajout(auj(), 8), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule" && !C.convocation(e.id));
+    return C.rencontres(null, auj(), ajout(auj(), 8)).filter((e) => peutVoir(e.equipe) && !C.convocation(e.id));
   }
   const portee = () => C.joueurs().filter((p) => peutVoir(p.equipe));
 
@@ -153,7 +155,7 @@
         <section class="carte"><h2>À traiter <span class="etiq ${taches.length ? "att" : "ok"}">${taches.length || "Rien"}</span></h2>
           ${taches.length ? `<ul class="taches">${taches.map((t) => `<li><span class="pt ${t.k}"></span><span class="tx">${esc(t.t)}<small>${esc(t.s)}</small></span>${t.a}</li>`).join("")}</ul>` : '<p class="vide">Tout est à jour. 👌</p>'}
         </section>
-        <section class="carte"><h2>Les 7 prochains jours <span class="etiq">${pl(we.filter((e) => estMatch(e)).length, "match", "matchs")}</span><a class="plus" href="#calendrier">Calendrier ›</a></h2>${agenda(we.slice(0, 14), true, "Aucun match dans les 7 jours.")}${we.length > 14 ? `<p style="margin:6px 0 0"><a class="btn lien" href="#calendrier">+ ${we.length - 14} autres dans le calendrier ›</a></p>` : ""}</section>
+        <section class="carte"><h2>Les 7 prochains jours <span class="etiq">${pl(we.filter((e) => estMatch(e)).length, "match", "matchs")}</span><a class="plus" href="#calendrier">Calendrier ›</a></h2>${agenda(we.slice(0, 14), true, "Aucun match dans les 7 jours.")}${we.length > 14 ? `<p style="margin:6px 0 0"><a class="btn lien" href="#calendrier">+ ${pl(we.length - 14, "autre", "autres")} dans le calendrier ›</a></p>` : ""}</section>
       </div>
       <div class="grille g2" style="margin-top:14px">
         <section class="carte" id="cartePV"><h2>${svg("pv")} Dernier PV du District <a class="plus" href="${URL_MOD.pv()}">Lire les PV ›</a></h2><p class="discret petit">Chargement…</p></section>
@@ -181,7 +183,9 @@
     const s = moiStaff(); if (!s) return `<p class="vide">Profil introuvable.</p>`;
     const eqs = s.equipes;
     if (!eqs.length) return `<div class="entete"><h1>Bonjour ${esc(s.prenom)}</h1></div><p class="vide">Aucune équipe ne vous est confiée pour l'instant. Le responsable sportif peut vous en affecter une.</p>`;
-    return `<div class="entete"><div><p class="fil-ariane discret">${fJL(auj())}</p><h1>Bonjour ${esc(s.prenom)} 👋</h1><p class="sous">${eqs.map(C.nomEquipe).join(" · ")}</p></div></div>` + eqs.map((eq) => blocCoach(eq)).join("");
+    return `<div class="entete"><div><p class="fil-ariane discret">${fJL(auj())}</p><h1>Bonjour ${esc(s.prenom)} 👋</h1><p class="sous">${eqs.map(C.nomEquipe).join(" · ")}</p></div></div>`
+      + carteWeekend(eqs) + eqs.map((eq) => blocCoach(eq, eqs.length > 1)).join("")
+      + `<section class="carte" style="margin-top:14px"><h2>Vos outils</h2>${modulesHTML(eqs[0])}</section>`;
   }
   /* ---------- vidéos : séquences envoyées aux joueurs ---------- */
   const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
@@ -207,57 +211,85 @@
           <div class="pied"><button class="btn prim">Envoyer</button></div></form></details>` : '<p class="aide">Reliez la vidéo pour envoyer des séquences aux joueurs. Depuis le Monteur vidéo, le bouton « Partager » d\'une séquence fait la même chose.</p>'}
       ${env.length ? `<h3>Séquences envoyées</h3><ul class="envois">${env.map((x) => ligneEnvoi(x)).join("")}</ul>` : ""}</section>`;
   }
-  /* ---------- matchs à préparer : le coach lance le sondage quand il veut, avec un rappel ---------- */
-  // Par défaut : le lundi qui précède le match (règle de Bertrand)
-  const dateRappel = (e) => C.rappel(e.id) || ajout(e.date, -(((jour(e.date).getDay() + 6) % 7) || 7));
-  const rappelDu = (e) => !C.convocation(e.id) && !etatSondage(e).lance && dateRappel(e) <= auj();
-  function matchsAPreparer(eq) { return C.evenements({ equipe: eq, du: auj(), au: ajout(auj(), 42), types: ["match", "amical"] }).filter((e) => e.statut !== "annule" && e.equipe === eq); }
+  /* ---------- matchs à préparer : le coach lance le sondage (10 jours avant au plus tôt), avec un rappel ---------- */
+  // Rappel par défaut : le lundi qui précède le match (règle de Bertrand), jamais avant l'ouverture du sondage
+  const dateRappel = (e) => { const r = C.rappel(e.id) || ajout(e.date, -(((jour(e.date).getDay() + 6) % 7) || 7)), o = C.ouvertureSondage(e); return r < o ? o : r; };
+  const rappelDu = (e) => !C.convocation(e.id) && !etatSondage(e).lance && C.sondagePossible(e) && dateRappel(e) <= auj();
+  // Week-end affiché sur l'accueil du coach : celui en cours (ven. → dim.), sinon le prochain
+  const ceWeekend = () => C.weekend(auj());
+  const dansWeekend = (e) => { const w = ceWeekend(); return e.date >= w.du && e.date <= w.au; };
+  function matchsAPreparer(eq) { return C.rencontres(eq, auj(), ajout(auj(), 42)); }
   const memeWeekend = (a, b) => a.id !== b.id && Math.abs((jour(a.date) - jour(b.date)) / 864e5) <= 2 && [5, 6, 0].includes(jour(a.date).getDay()) && [5, 6, 0].includes(jour(b.date).getDay());
   const jumeau = (e) => matchsAPreparer(e.equipe).find((x) => memeWeekend(e, x)) || null;
   function boutonsSondage(e, prim) {
-    const j = jumeau(e), libre = j && !C.convocation(j.id) && !etatSondage(j).lance;
+    const j = jumeau(e), libre = j && !C.convocation(j.id) && !etatSondage(j).lance && C.sondagePossible(j);
     return libre ? `<button class="btn mini${prim ? " prim" : ""}" data-a="lancer-sondage-we" data-id="${esc(e.id)}" data-avec="${esc(j.id)}" title="Une seule réponse des familles pour les deux matchs">Un sondage pour les 2 matchs du week-end</button><button class="btn mini" data-a="lancer-sondage" data-id="${esc(e.id)}">Ce match seulement</button>`
       : `<button class="btn mini${prim ? " prim" : ""}" data-a="lancer-sondage" data-id="${esc(e.id)}">${prim ? "Lancer le sondage" : "Lancer maintenant"}</button>`;
   }
-  function carteAPreparer(eq) {
-    const l = matchsAPreparer(eq); if (!l.length) return "";
-    return `<section class="carte a-preparer"><h2>📋 Matchs à préparer <a class="plus" href="#convocations">Tous les matchs ›</a></h2><ul>${l.map((e) => {
-      const cv = C.convocation(e.id), so = etatSondage(e), du = rappelDu(e);
-      const etat = cv ? `<span class="etiq ok">✅ Convocation publiée</span>`
-        : so.lance ? `<span class="petit">${(C.sondage(e.id) || {}).lies ? "🔗 Sondage commun du week-end · " : ""}📊 ${so.oui} oui · ${so.peut} peut-être · ${so.non} non · ${so.sans} sans réponse</span><a class="btn mini prim" href="#convoc/${esc(e.id)}">Faire la convocation</a>`
-        : du ? `<span class="rappel-du">⏰ C'est le moment de lancer le sondage</span>${boutonsSondage(e, true)}`
-        : `<label class="petit rappel">⏰ Me rappeler de lancer le sondage le <input type="date" class="rappel-date" data-id="${esc(e.id)}" value="${esc(dateRappel(e))}" max="${esc(e.date)}"></label>${boutonsSondage(e, false)}`;
-      return `<li class="${du ? "du" : ""}"><button class="btn lien quand" data-a="evt" data-id="${esc(e.id)}"><b>${fJ(e.date)}</b> ${hh(e.heure)}</button><span class="qui"><b>${esc(e.titre)}</b><small>${esc(e.competition || TYPES[e.type] || "")}</small></span><span class="etat">${etat}</span></li>`; }).join("")}</ul></section>`;
+  // État d'une rencontre pour le coach, avec l'action suivante : sondage (dès 10 jours avant), convocation, score
+  function etatRencontre(e, avecRappel) {
+    const cv = C.convocation(e.id), so = etatSondage(e), f = estMatch(e) ? C.feuille(e.id) : null;
+    if (e.date < auj()) return estMatch(e) ? `${scoreHTML(e, f)}<a class="btn mini${f ? "" : " prim"}" href="#feuille/${esc(e.id)}">${f ? "Voir" : "Saisir le score"}</a>` : `<span class="etiq">Joué</span>`;
+    if (cv) return `<span class="etiq ok">✅ ${pl(cv.joueurs.length, "convoqué")} · RDV ${hh(cv.rdvHeure)}</span><a class="btn mini" href="#convoc/${esc(e.id)}">Voir</a>`;
+    if (so.lance) return `<span class="petit">${(C.sondage(e.id) || {}).lies ? "🔗 Sondage commun · " : "📊 "}${compteDispo(so, e)}</span><a class="btn mini prim" href="#convoc/${esc(e.id)}">Faire la convocation</a>`;
+    if (!C.sondagePossible(e)) return `<span class="petit discret">📅 Sondage à partir du ${fJ(C.ouvertureSondage(e))}</span>${avecRappel ? `<label class="petit rappel">⏰ Rappel le <input type="date" class="rappel-date" data-id="${esc(e.id)}" value="${esc(dateRappel(e))}" min="${esc(C.ouvertureSondage(e))}" max="${esc(e.date)}"></label>` : ""}`;
+    if (rappelDu(e) || !avecRappel) return `<span class="rappel-du">⏰ C'est le moment de lancer le sondage</span>${boutonsSondage(e, true)}<a class="btn mini lien" href="#convoc/${esc(e.id)}">ou convoquer directement</a>`;
+    return `<label class="petit rappel">⏰ Rappel le <input type="date" class="rappel-date" data-id="${esc(e.id)}" value="${esc(dateRappel(e))}" min="${esc(C.ouvertureSondage(e))}" max="${esc(e.date)}"></label>${boutonsSondage(e, false)}`;
   }
-  function blocCoach(eq) {
-    const m = C.prochainMatch(eq), ent = C.prochainsEntrainements(eq, 3), js = C.joueurs(eq), cv = m && C.convocation(m.id);
+  const ligneRencontre = (e, avecEquipe, avecRappel) => `<li class="${rappelDu(e) ? "du" : ""}"><button class="btn lien quand" data-a="evt" data-id="${esc(e.id)}"><b>${fJ(e.date)}</b> ${hh(e.heure)}</button><span class="qui"><b>${esc(e.titre)}</b><small>${esc([avecEquipe ? C.nomEquipe(e.equipe) : "", e.competition || TYPES[e.type] || "", e.lieu].filter(Boolean).join(" · "))}</small></span><span class="etat">${etatRencontre(e, avecRappel)}</span></li>`;
+  // Tous les matchs du week-end, toutes équipes du coach (même deux matchs pour une équipe)
+  function carteWeekend(eqs) {
+    const w = ceWeekend(), l = eqs.flatMap((eq) => C.rencontres(eq, w.du, w.au)).sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
+    const titre = auj() >= w.du ? "Ce week-end" : `Le week-end du ${fmt(w.du, { day: "numeric" })} au ${fmt(w.au, { day: "numeric", month: "long" })}`;
+    if (!l.length) {
+      const n = eqs.map((eq) => C.prochainMatch(eq)).filter(Boolean).sort((a, b) => a.date.localeCompare(b.date))[0];
+      return `<section class="carte a-preparer weekend"><h2>⚽ ${titre} <a class="plus" href="#convocations">Tous les matchs ›</a></h2><p class="vide" style="padding:6px 0">Pas de match ce week-end.${n ? ` Prochain : <b>${fJ(n.date)}</b>, ${esc(n.titre)}${eqs.length > 1 ? " (" + esc(C.nomEquipe(n.equipe)) + ")" : ""}.` : ""}</p></section>`;
+    }
+    return `<section class="carte a-preparer weekend"><h2>⚽ ${titre} <span class="etiq bleu">${pl(l.length, "match", "matchs")}</span><a class="plus" href="#convocations">Tous les matchs ›</a></h2><ul>${l.map((e) => ligneRencontre(e, eqs.length > 1, false)).join("")}</ul></section>`;
+  }
+  function carteAPreparer(eq) {
+    const l = matchsAPreparer(eq).filter((e) => !dansWeekend(e));
+    const d = C.evenements({ equipe: eq, du: C.SAISON.debut, au: ajout(auj(), -1), types: ["match", "amical"] }).filter((x) => x.statut !== "annule" && x.equipe === eq && !dansWeekend(x)).pop(), f = d && C.feuille(d.id);
+    const dernier = d ? `<p class="dernier petit">Dernier match : <b>${esc(d.adversaire || d.titre)}</b> ${scoreHTML(d, f)} <a href="#feuille/${esc(d.id)}">${f ? "voir" : "saisir le score ›"}</a>${C.video(d.id) ? ` · <a href="#feuille/${esc(d.id)}">🎬 vidéo${C.envois({ evt: d.id }).length ? ` (${pl(C.envois({ evt: d.id }).length, "séquence envoyée", "séquences envoyées")})` : ""}</a>` : ""}</p>` : "";
+    return `<section class="carte a-preparer"><h2>📋 Matchs à préparer <a class="plus" href="#convocations">Tous les matchs ›</a></h2>${l.length ? `<ul>${l.map((e) => ligneRencontre(e, false, true)).join("")}</ul>` : `<p class="discret petit" style="margin:0">Rien d'autre dans les 6 prochaines semaines.</p>`}${dernier}</section>`;
+  }
+  // Ce que les PV du District disent de la catégorie de l'équipe (lu dans data/pv.json)
+  let PVS = null;
+  function chargerPVs() { if (!chargerPVs.p) chargerPVs.p = fetch(C.BASE + "data/pv.json").then((r) => r.json()).then((d) => (PVS = d.pvs || [])).catch(() => (PVS = [])); return chargerPVs.p; }
+  function cartePVEquipe(eq) {
+    const cat = (C.equipe(eq) || {}).categorie || "", lien = URL_MOD.pv(eq);
+    const tete = `<h2>${svg("pv")} PV du District · ${esc(cat)} <a class="plus" href="${lien}">Lire ›</a></h2>`;
+    if (!PVS) return `<section class="carte pv-eq" data-eq="${esc(eq)}">${tete}<p class="discret petit">Chargement…</p></section>`;
+    const its = PVS.slice(0, 4).flatMap((p) => (p.items || []).filter((i) => i.categorie === cat).map((i) => Object.assign({ pv: p }, i)))
+      .sort((a, b) => ({ urgent: 0, attention: 1 }[a.gravite] ?? 2) - ({ urgent: 0, attention: 1 }[b.gravite] ?? 2) || b.pv.date.localeCompare(a.pv.date)).slice(0, 4);
+    if (!its.length) return `<section class="carte pv-eq">${tete}<p class="discret petit" style="margin:0">Rien pour ${esc(cat)} dans les derniers PV. 👍</p></section>`;
+    return `<section class="carte pv-eq">${tete}<ul class="taches">${its.map((i) => { const ech = (i.echeances || []).filter((x) => x.date >= auj()).sort((a, b) => a.date.localeCompare(b.date))[0];
+      return `<li><span class="pt ${i.gravite === "urgent" ? "ko" : i.gravite === "attention" ? "" : "info"}"></span><span class="tx">${esc(i.titre)}<small>PV du ${fmt(i.pv.date, { day: "numeric", month: "short" })}${ech ? ` · <b style="color:var(--ko)">avant le ${fJ(ech.date)}${ech.heure ? " " + hh(ech.heure) : ""}</b>` : ""}</small></span></li>`; }).join("")}</ul></section>`;
+  }
+  function blocCoach(eq, plusieurs) {
+    const ent = C.prochainsEntrainements(eq, 3), js = C.joueurs(eq);
     const alertes = js.filter((p) => p.certificat !== "ok" || p.licence.statut !== "validee");
-    const prochain = ent[0], dispo = prochain ? C.dispos(prochain.id) : {}, abs = Object.keys(dispo);
+    const prochain = ent[0], dispo = prochain ? C.dispos(prochain.id) : {}, abs = Object.keys(dispo).filter((id) => dispo[id].statut === "absent");
     const taux = js.map((p) => C.tauxPresence(p.id)).filter((t) => t != null), moy = taux.length ? Math.round(taux.reduce((a, b) => a + b, 0) / taux.length) : null;
     const bas = js.map((p) => [p, C.tauxPresence(p.id)]).filter(([, t]) => t != null && t < 70).sort((a, b) => a[1] - b[1]).slice(0, 3);
+    const fem = (C.equipe(eq) || {}).genre === "F";
     return `<h2 class="groupe-titre">${esc(C.nomEquipe(eq))} · <a href="#equipe/${esc(eq)}">fiche de l'équipe ›</a></h2>
       ${carteAPreparer(eq)}
       <div class="grille g3">
-        <section class="carte"><h2>Prochain match</h2>${m ? `<p style="margin:0 0 4px"><b>${esc(m.titre)}</b></p><p class="discret petit" style="margin:0 0 10px">${fJL(m.date)} · ${hh(m.heure)}<br>${esc(m.lieu)}<br>${esc(m.competition || "")}</p>
-          ${cv ? `<div class="statut-convoc">✅ <span><b>Convocation publiée</b><br><small>${pl(cv.joueurs.length, "convoqué")} · RDV ${hh(cv.rdvHeure)}</small></span></div><a class="btn" href="#convoc/${esc(m.id)}">Voir ou modifier</a>`
-            : (() => { const so = etatSondage(m); return so.lance ? `<div class="statut-convoc att">📊 <span><b>Sondage : ${so.oui} oui · ${so.peut} peut-être · ${so.non} non</b><br><small>${so.sans} sans réponse</small></span></div><a class="btn prim" href="#convoc/${esc(m.id)}">Faire la convocation</a>`
-              : `<div class="statut-convoc att">⏳ <span><b>Qui sera disponible ?</b><br><small>Lancez le sondage, les familles répondent en un clic.</small></span></div><p style="margin:0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" data-a="lancer-sondage" data-id="${esc(m.id)}">Lancer le sondage</button><a class="btn" href="#convoc/${esc(m.id)}">Convoquer directement</a></p>`; })()}` : '<p class="vide">Aucun match à venir.</p>'}
-          ${(() => { const d = C.evenements({ equipe: eq, du: C.SAISON.debut, au: ajout(auj(), -1), types: ["match", "amical"] }).filter((x) => x.statut !== "annule").pop(); if (!d) return ""; const f = C.feuille(d.id);
-            return `<p class="dernier petit">Dernier match : <b>${esc(d.adversaire || d.titre)}</b> ${scoreHTML(d, f)} <a href="#feuille/${esc(d.id)}">${f ? "voir" : "saisir le score ›"}</a>${C.video(d.id) ? ` · <a href="#feuille/${esc(d.id)}">🎬 vidéo${C.envois({ evt: d.id }).length ? ` (${pl(C.envois({ evt: d.id }).length, "séquence envoyée", "séquences envoyées")})` : ""}</a>` : ""}</p>`; })()}</section>
         <section class="carte"><h2>Prochain entraînement</h2>${prochain ? `<p style="margin:0 0 4px"><b>${fJL(prochain.date)} · ${hh(prochain.heure)}</b></p><p class="discret petit" style="margin:0 0 10px">${esc(prochain.lieu)} · ${prochain.duree} min</p>
           ${abs.length ? `<div class="alerte">${pl(abs.length, "absence signalée", "absences signalées")} : ${abs.map((id) => `<b>${esc((C.personne(id) || {}).prenom)}</b> (${esc(dispo[id].motif || "")})`).join(", ")}</div>` : '<p class="discret petit">Aucune absence signalée par les familles.</p>'}
           <p style="margin:10px 0 0;display:flex;gap:8px;flex-wrap:wrap"><button class="btn prim" data-a="appel" data-id="${esc(prochain.id)}">Faire l'appel</button></p>
           <div style="margin-top:12px">${seanceHTML(prochain, true, true)}</div>
           ${ent.length > 1 ? `<p class="petit discret" style="margin:10px 0 4px">Séances suivantes :</p><ul class="suivantes">${ent.slice(1).map((x) => { const s = C.seance(x.id); return `<li><button class="btn lien" data-a="evt" data-id="${esc(x.id)}">${fJ(x.date)} ${hh(x.heure)}</button> ${s ? `📋 ${esc(s.nom || "Séance prête")}` : `<a href="${URL_MOD.atelier(x.id, eq)}" target="_blank" rel="noopener">préparer ↗</a>`}</li>`; }).join("")}</ul>` : ""}` : '<p class="vide">Pas d\'entraînement prévu (vacances ?).</p>'}</section>
-        <section class="carte"><h2>Effectif</h2><p style="margin:0 0 6px"><b>${pl(js.length, (C.equipe(eq) || {}).genre === "F" ? "joueuse" : "joueur")}</b> · présence moyenne ${moy != null ? moy + " %" : "–"}</p>
+        <section class="carte"><h2>Effectif</h2><p style="margin:0 0 6px"><b>${pl(js.length, fem ? "joueuse" : "joueur")}</b> · présence moyenne ${moy != null ? moy + " %" : "–"}</p>
           ${alertes.length ? `<div class="alerte ko" style="margin-bottom:8px">${alertes.map((p) => `<b>${esc(p.prenom)} ${esc(p.nom[0])}.</b> ${p.certificat !== "ok" ? "certificat" : "licence"}`).join(", ")}</div>` : '<p class="discret petit">Licences et certificats en règle.</p>'}
-          ${bas.length ? `<p class="petit discret" style="margin:6px 0">Peu présents ces dernières semaines : ${bas.map(([p, t]) => `${esc(p.prenom)} (${t} %)`).join(", ")}</p>` : ""}
-          <a class="btn" href="#equipe/${esc(eq)}">Voir l'effectif</a></section>
+          ${bas.length ? `<p class="petit discret" style="margin:6px 0">Peu présent${fem ? "e" : ""}s ces dernières semaines : ${bas.map(([p, t]) => `${esc(p.prenom)} (${t} %)`).join(", ")}</p>` : ""}
+          <p style="margin:10px 0 0;display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="#equipe/${esc(eq)}">Voir l'effectif</a><a class="btn" href="${URL_MOD.messagerie(eq)}">💬 Messagerie</a></p></section>
+        ${cartePVEquipe(eq)}
       </div>
-      <div class="grille g2" style="margin-top:14px">
-        <section class="carte"><h2>Les 2 prochaines semaines <a class="plus" href="#calendrier">Calendrier ›</a></h2>${agenda(C.evenements({ equipe: eq, du: auj(), au: ajout(auj(), 14) }), false)}</section>
-        <section class="carte"><h2>Outils de l'équipe</h2>${modulesHTML(eq)}</section>
-      </div>`;
+      ${plusieurs // plusieurs équipes : l'agenda de chacune est replié pour garder l'accueil court
+        ? `<details class="carte repli" style="margin-top:14px"><summary>Les 2 prochaines semaines · ${esc(C.nomEquipe(eq))}</summary>${agenda(C.evenements({ equipe: eq, du: auj(), au: ajout(auj(), 14) }), false)}<p style="margin:8px 0 0"><a class="btn lien" href="#calendrier">Calendrier ›</a></p></details>`
+        : `<section class="carte" style="margin-top:14px"><h2>Les 2 prochaines semaines <a class="plus" href="#calendrier">Calendrier ›</a></h2>${agenda(C.evenements({ equipe: eq, du: auj(), au: ajout(auj(), 14) }), false)}</section>`}`;
   }
 
   /* ---------- équipes ---------- */
@@ -372,7 +404,7 @@
     const ents = C.evenements({ equipe: p.equipe, du: ajout(auj(), -42), au: ajout(auj(), -1), types: ["entrainement"] }).filter((e) => e.statut !== "annule" && Object.keys(C.presences(e.id)).length).slice(-10);
     return `<div class="bilan"><div><b>${st.joues}</b><span>matchs joués</span></div><div><b>${st.buts}</b><span>buts</span></div><div><b>${st.passes}</b><span>passes déc.</span></div><div><b>${st.presence != null ? st.presence + "%" : "–"}</b><span>présence</span></div></div>
       <h3>Matchs et convocations</h3>${ms.length ? `<ul class="hist">${ms.map((e) => { const cv = C.convocation(e.id), f = C.feuille(e.id), x = f && f.stats[p.id], d = C.dispos(e.id)[p.id];
-        const etat = e.date >= auj() ? (cv ? (cv.joueurs.includes(p.id) ? '<span class="etiq ok">Convoqué</span>' : '<span class="etiq">Non convoqué</span>') : d ? `<span class="etiq ${d.statut === "present" ? "ok" : d.statut === "absent" ? "ko" : "att"}">${d.statut === "present" ? "Dispo" : d.statut === "absent" ? "Absent" : "Incertain"}</span>` : '<span class="etiq">À venir</span>')
+        const etat = e.date >= auj() ? (cv ? (cv.joueurs.includes(p.id) ? '<span class="etiq ok">Convoqué</span>' : '<span class="etiq">Non convoqué</span>') : d ? `<span class="etiq ${d.statut === "present" ? "ok" : d.statut === "absent" ? "ko" : "att"}">${DISPO[d.statut] || ""}</span>` : '<span class="etiq">À venir</span>')
           : f ? (f.joueurs.includes(p.id) ? `<span class="etiq ok">A joué</span>${x && x.buts ? ` <span class="etiq or">⚽ ${x.buts}</span>` : ""}${x && x.passes ? ` <span class="etiq bleu">PD ${x.passes}</span>` : ""}` : cv && cv.joueurs.includes(p.id) ? '<span class="etiq att">Convoqué, pas joué</span>' : '<span class="etiq">Non convoqué</span>') : cv ? (cv.joueurs.includes(p.id) ? '<span class="etiq">Convoqué</span>' : '<span class="etiq">Non convoqué</span>') : "";
         return `<li><a href="#${e.date < auj() ? "feuille" : "convoc"}/${esc(e.id)}"><span>${fJ(e.date)} · ${esc(e.adversaire || e.titre)}</span>${e.date < auj() && f ? scoreHTML(e, f) : ""}</a><span class="et">${etat}</span></li>`; }).join("")}</ul>` : '<p class="discret petit">Aucun match.</p>'}
       <h3>Présence aux entraînements</h3>${ents.length ? `<div class="pastilles">${ents.map((e) => { const s = C.presences(e.id)[p.id]; return `<span class="pres ${s || "vide"}" title="${fJ(e.date)} · ${s ? PRES[s][0] : "non renseigné"}">${s ? PRES[s][2] : "·"}</span>`; }).join("")}</div><p class="aide">P présent · R retard · E excusé · A absent</p>` : '<p class="discret petit">Aucun entraînement.</p>'}`;
@@ -455,11 +487,11 @@
 
   function ouvrirEvt(id) {
     const e = C.evenement(id); if (!e) return toast("Événement introuvable.");
-    const cv = estMatch(e) ? C.convocation(e.id) : null, peut = !e.equipe ? estDirigeant() : peutVoir(e.equipe);
+    const cv = convocable(e) ? C.convocation(e.id) : null, peut = !e.equipe ? estDirigeant() : peutVoir(e.equipe);
     const pres = C.presences(e.id), nP = Object.values(pres).filter((s) => s === "present" || s === "retard").length, dispo = C.dispos(e.id);
     const passe = e.date <= auj();
     let actions = "";
-    if (estMatch(e)) actions = peut && e.statut !== "annule" ? `<a class="btn prim" href="#convoc/${esc(e.id)}">${cv ? "Voir la convocation" : "Préparer la convocation"}</a>` : "";
+    if (convocable(e)) actions = peut && e.statut !== "annule" && e.date >= auj() ? `<a class="btn prim" href="#convoc/${esc(e.id)}">${cv ? "Voir la convocation" : "Préparer la convocation"}</a>` : estMatch(e) && peut && e.date <= auj() && e.statut !== "annule" ? `<a class="btn prim" href="#feuille/${esc(e.id)}">${C.feuille(e.id) ? "Voir la feuille de match" : "Saisir le score"}</a>` : "";
     if (e.type === "entrainement" && peut) actions = (e.statut !== "annule" ? `<button class="btn prim" data-a="appel" data-id="${esc(e.id)}">${Object.keys(pres).length ? "Modifier l'appel" : "Faire l'appel"}</button>` : "") + `<button class="btn" data-a="modifier-evt" data-id="${esc(e.id)}">Déplacer</button>`;
     if (e.source === "manuel" && peut) actions += `<button class="btn" data-a="modifier-evt" data-id="${esc(e.id)}">Modifier</button>${e.type !== "match" ? `<button class="btn" data-a="appel" data-id="${esc(e.id)}">Présences</button>` : ""}`;
     if (peut && e.source !== "manuel") actions += e.statut === "annule" ? `<button class="btn" data-a="retablir" data-id="${esc(e.id)}">Rétablir</button>` : `<button class="btn danger" data-a="annuler-evt" data-id="${esc(e.id)}">Annuler ${estMatch(e) ? "(report)" : "la séance"}</button>`;
@@ -469,7 +501,7 @@
       <dl class="detail"><dt>Équipe</dt><dd>${e.equipe ? `<a href="#equipe/${esc(e.equipe)}">${esc(C.nomEquipe(e.equipe))}</a>` : "Tout le club"}</dd><dt>Date</dt><dd>${fJL(e.date)} · ${hh(e.heure)} (${e.duree} min)</dd><dt>Lieu</dt><dd>${esc(e.lieu || "–")}</dd>
         ${e.competition ? `<dt>Compétition</dt><dd>${esc(e.competition)}</dd>` : ""}${e.source === "pv" ? `<dt>Source</dt><dd>PV du District n°${esc(e.pv)} · <a href="${URL_MOD.pv(e.equipe)}">voir</a></dd>` : ""}
         ${e.notes ? `<dt>Notes</dt><dd>${esc(e.notes)}</dd>` : ""}
-        ${estMatch(e) ? `<dt>Convocation</dt><dd>${cv ? `✅ ${pl(cv.joueurs.length, "convoqué")}, RDV ${hh(cv.rdvHeure)} · ${esc(cv.rdvLieu)}` : "⏳ pas encore faite"}</dd>` : ""}
+        ${convocable(e) ? `<dt>Convocation</dt><dd>${cv ? `✅ ${pl(cv.joueurs.length, "convoqué")}, RDV ${hh(cv.rdvHeure)} · ${esc(cv.rdvLieu)}` : "⏳ pas encore faite"}</dd>` : ""}
         ${e.type === "entrainement" ? `<dt>Présences</dt><dd>${Object.keys(pres).length ? `${nP} / ${C.joueurs(e.equipe).length} présents` : passe ? "appel non fait" : "à venir"}${Object.keys(dispo).length ? ` · ${pl(Object.keys(dispo).length, "absence signalée", "absences signalées")}` : ""}</dd>` : ""}</dl>
       ${e.type === "entrainement" && e.statut !== "annule" ? seanceHTML(e, peut) : ""}
       <div class="form"><div class="pied" style="justify-content:flex-start">${actions}${e.equipe ? `<a class="btn" href="${URL_MOD.messagerie(e.equipe)}">Messagerie</a>` : ""}</div></div>`);
@@ -524,10 +556,14 @@
 
   /* ---------- convocations ---------- */
   /* ---------- matchs : à venir (sondage puis convocation) et joués (score, buts, passes) ---------- */
+  // Le sondage est « lancé » seulement par le coach ; les absences prévenues avant comptent déjà dans les réponses
   function etatSondage(e) {
     const js = C.joueurs(e.equipe), d = C.dispos(e.id), n = (k) => js.filter((p) => d[p.id] && d[p.id].statut === k).length;
-    return { lance: !!C.sondage(e.id) || js.some((p) => d[p.id]), oui: n("present"), peut: n("incertain"), non: n("absent"), sans: js.filter((p) => !d[p.id]).length, total: js.length };
+    return { lance: !!C.sondage(e.id), oui: n("present"), peut: n("incertain"), non: n("absent"), sans: js.filter((p) => !d[p.id]).length, total: js.length };
   }
+  // « 12 présentes · 1 peut-être · 2 absentes · 1 sans réponse » (les mêmes mots que dans la messagerie)
+  const compteDispo = (so, e) => { const f = (C.equipe(e.equipe) || {}).genre === "F" ? "e" : "", s = (n) => (n > 1 ? "s" : "");
+    return `${so.oui} présent${f}${s(so.oui)} · ${so.peut} peut-être · ${so.non} absent${f}${s(so.non)} · ${so.sans} sans réponse`; };
   function scoreHTML(e, f) {
     if (!f) return '<span class="etiq att">Score à saisir</span>';
     const r = f.nous > f.eux ? "ok" : f.nous < f.eux ? "ko" : "";
@@ -540,7 +576,7 @@
   function pageConvocations(onglet) {
     const joues = onglet === "joues";
     const tabs = `<nav class="onglets"><a href="#convocations"${joues ? "" : ' aria-current="page"'}>À venir</a><a href="#convocations/joues"${joues ? ' aria-current="page"' : ""}>Joués</a></nav>`;
-    const tete = `<div class="entete"><div><h1>Matchs</h1><p class="sous">${joues ? "Saisissez le score, les buts et les passes décisives : les fiches des joueurs se remplissent toutes seules." : "Pour chaque match : 1. le sondage aux familles, 2. la convocation. Tout arrive dans la messagerie de l'équipe."}</p></div>
+    const tete = `<div class="entete"><div><h1>Matchs</h1><p class="sous">${joues ? "Saisissez le score, les buts et les passes décisives : les fiches des joueurs se remplissent toutes seules." : `Pour chaque match ou plateau : 1. le sondage aux familles (ouvert ${C.JOURS_SONDAGE} jours avant), 2. la convocation. Les deux sont publiés dans les Annonces de l'équipe (messagerie).`}</p></div>
       ${estFamille() ? "" : '<div class="actions"><button class="btn" data-a="nouvel-evt" data-type="amical">+ Match amical</button></div>'}</div>`;
     if (joues) {
       const evs = C.evenements({ du: C.SAISON.debut, au: ajout(auj(), -1), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule").reverse();
@@ -549,15 +585,17 @@
           return `<tr data-a="lien" data-href="#feuille/${esc(e.id)}"><td>${fJ(e.date)}</td>${estDirigeant() ? `<td><b>${esc(C.nomEquipe(e.equipe))}</b></td>` : ""}<td>${esc(e.titre)}${C.video(e.id) ? " 🎬" : ""}<br><small class="discret">${esc(e.competition || "")}</small><span class="seul-m"> ${scoreHTML(e, f)}</span></td><td class="cache-m">${scoreHTML(e, f)}</td><td class="cache-m petit">${buteursHTML(f)}</td><td><a class="btn mini${f ? "" : " prim"}" href="#feuille/${esc(e.id)}">${f ? "Voir" : "Saisir"}</a></td></tr>`; }).join("") || `<tr><td colspan="6" class="vide">Aucun match joué cette saison.</td></tr>`}
         </tbody></table></div>`;
     }
-    const evs = C.evenements({ du: auj(), au: ajout(auj(), 35), types: ["match", "amical"] }).filter((e) => peutVoir(e.equipe) && e.statut !== "annule");
+    const evs = C.rencontres(null, auj(), ajout(auj(), 35)).filter((e) => peutVoir(e.equipe));
     return tete + tabs + (evs.length ? `<div class="matchs">${evs.map((e) => {
       const so = etatSondage(e), cv = C.convocation(e.id);
       const etape1 = so.lance ? `<div class="etape fait"><span class="num">1</span><span class="txt"><b>Sondage</b><small><span class="v">✓ ${so.oui}</span> · <span class="o">? ${so.peut}</span> · <span class="r">✕ ${so.non}</span> · ${so.sans} sans réponse</small></span>${so.sans && !cv ? `<button class="btn mini" data-a="relancer-sondage" data-id="${esc(e.id)}">Relancer</button>` : ""}</div>`
-        : `<div class="etape"><span class="num">1</span><span class="txt"><b>Sondage</b><small>Qui est disponible ? Les familles répondent en un clic.</small></span><button class="btn mini prim" data-a="lancer-sondage" data-id="${esc(e.id)}">Lancer</button></div>`;
+        : cv ? `<div class="etape fait"><span class="num">1</span><span class="txt"><b>Sondage</b><small>Pas de sondage : convocation faite directement.</small></span></div>`
+        : C.sondagePossible(e) ? `<div class="etape"><span class="num">1</span><span class="txt"><b>Sondage</b><small>Qui est disponible ? Les familles répondent en un clic.${so.non ? ` Déjà ${pl(so.non, "absence prévenue", "absences prévenues")}.` : ""}</small></span><button class="btn mini prim" data-a="lancer-sondage" data-id="${esc(e.id)}">Lancer</button></div>`
+        : `<div class="etape"><span class="num">1</span><span class="txt"><b>Sondage</b><small>Possible à partir du ${fJ(C.ouvertureSondage(e))} (${C.JOURS_SONDAGE} jours avant).${so.non ? ` Déjà ${pl(so.non, "absence prévenue", "absences prévenues")}.` : ""}</small></span></div>`;
       const etape2 = cv ? `<div class="etape fait"><span class="num">2</span><span class="txt"><b>Convocation publiée</b><small>${pl(cv.joueurs.length, "convoqué")} · RDV ${hh(cv.rdvHeure)}</small></span><a class="btn mini" href="#convoc/${esc(e.id)}">Voir</a></div>`
         : `<div class="etape"><span class="num">2</span><span class="txt"><b>Convocation</b><small>${so.lance ? `${so.oui} disponible${so.oui > 1 ? "s" : ""} pour l'instant` : "Après le sondage, ou tout de suite"}</small></span><a class="btn mini${so.lance ? " prim" : ""}" href="#convoc/${esc(e.id)}">Faire</a></div>`;
       return `<section class="carte match-carte"><div class="mc-tete"><span class="date"><b>${fmt(e.date, { weekday: "short" })}</b><span>${jour(e.date).getDate()}</span><small>${fmt(e.date, { month: "short" })}</small></span>
-        <span><b>${esc(e.titre)}</b><small>${estDirigeant() ? esc(C.nomEquipe(e.equipe)) + " · " : ""}${hh(e.heure)} · ${esc(e.lieu)}<br>${esc(e.competition || TYPES[e.type])}</small></span></div>${etape1}${etape2}</section>`; }).join("")}</div>` : '<p class="vide">Aucun match dans les 5 prochaines semaines. Ajoutez un match amical si besoin.</p>');
+        <span><b>${esc(e.titre)}</b><small>${estDirigeant() ? esc(C.nomEquipe(e.equipe)) + " · " : ""}${hh(e.heure)} · ${esc(e.lieu)}<br>${esc(e.competition || TYPES[e.type])}</small></span></div>${etape1}${etape2}</section>`; }).join("")}</div>` : '<p class="vide">Aucun match ni plateau dans les 5 prochaines semaines. Ajoutez un match amical si besoin.</p>');
   }
 
   const feuilles = {};
@@ -595,30 +633,30 @@
       : { joueurs: js.filter((p) => !(dispo[p.id] && dispo[p.id].statut === "absent") && p.certificat === "ok").slice(0, maxConv(e) || 99).map((p) => p.id), rdvHeure: minutes(e.heure, e.domicile ? -60 : -90), rdvLieu: e.domicile ? `${e.lieu.split(",")[0]} (vestiaires)` : "Parking du stade Edmond Pouzet", tenue: "Tenue du club, protège-tibias, gourde", mot: "", modif: true });
     const edition = !cv || b.modif;
     const texte = texteConvoc(e, b);
-    return `<div class="entete"><div><p class="fil-ariane"><a href="#convocations">Convocations</a> ›</p><h1>${esc(e.titre)}</h1><p class="sous">${esc(C.nomEquipe(e.equipe))} · ${fJL(e.date)} · ${hh(e.heure)} · ${esc(e.lieu)}</p></div>
+    return `<div class="entete"><div><p class="fil-ariane"><a href="#convocations">Matchs</a> ›</p><h1>${esc(e.titre)}</h1><p class="sous">${esc(C.nomEquipe(e.equipe))} · ${fJL(e.date)} · ${hh(e.heure)} · ${esc(e.lieu)}</p></div>
       <div class="actions"><button class="btn" data-a="copier-convoc" data-id="${esc(id)}">Copier le texte</button><button class="btn" data-a="imprimer">Imprimer</button></div></div>
-      ${cv ? `<div class="statut-convoc no-print">✅ <span><b>Publiée le ${new Date(cv.publiee).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} à ${new Date(cv.publiee).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</b>${cv.source === "messagerie" ? " depuis la messagerie" : ""} · visible dans la messagerie de l'équipe.</span>${edition ? "" : `<button class="btn mini" style="margin-left:auto" data-a="convoc-modifier" data-id="${esc(id)}">Modifier</button>`}</div>` : ""}
+      ${cv ? `<div class="statut-convoc no-print">✅ <span><b>Publiée le ${new Date(cv.publiee).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} à ${new Date(cv.publiee).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</b>${cv.source === "messagerie" ? " depuis la messagerie" : ""} · dans les Annonces de l'équipe (messagerie).</span>${edition ? "" : `<button class="btn mini" style="margin-left:auto" data-a="convoc-modifier" data-id="${esc(id)}">Modifier</button>`}</div>` : ""}
       <form class="convoc" id="fConvoc" data-id="${esc(id)}">
         <section class="carte"><h2>Joueurs convoqués <span class="etiq bleu" id="nbConv">${b.joueurs.length} / ${js.length}</span>${maxConv(e) ? `<span class="discret petit"> · ${maxConv(e)} maximum</span>` : ""}${edition ? `<span class="plus"><button type="button" class="btn lien" data-a="conv-tous">Tous</button> · <button type="button" class="btn lien" data-a="conv-aucun">Aucun</button></span>` : ""}</h2>
           ${edition && maxConv(e) ? `<label class="exception"><input type="checkbox" name="plus"${b.plus || b.joueurs.length > maxConv(e) ? " checked" : ""}> Exceptionnellement, convoquer plus de ${maxConv(e)} joueur${C.equipe(e.equipe).genre === "F" ? "ses" : "s"}</label>` : ""}
           <ul class="sel-joueurs">${js.map((p) => { const d = dispo[p.id], t = C.tauxPresence(p.id), notes = [p.poste, t != null ? `présence ${t} %` : ""].filter(Boolean).join(" · ");
             const ok = d && d.statut === "present";
-            const al = [d && !ok ? `${d.statut === "incertain" ? "❔" : "⚠️"} ${d.motif || "indisponible"}${d.precision ? " (" + d.precision + ")" : ""}` : "", p.certificat !== "ok" ? "⛔ certificat médical manquant" : "", p.licence.statut === "en_attente" ? "⛔ licence en attente" : ""].filter(Boolean).join(" · ");
-            return `<li><label><input type="checkbox" name="j" value="${esc(p.id)}"${b.joueurs.includes(p.id) ? " checked" : ""}${edition ? "" : " disabled"}><span class="num">${p.numero || "–"}</span><span class="n"><b>${esc(p.prenom)} ${esc(p.nom)}</b><small>${ok ? '<span style="color:var(--ok);font-weight:700">✓ disponible</span> · ' : ""}${esc(notes)}${al ? `<br><span style="color:var(--att);font-weight:600">${esc(al)}</span>` : ""}</small></span></label></li>`; }).join("")}</ul>
+            const al = [d && !ok ? (d.statut === "incertain" ? "❔ peut-être" : `⚠️ absent${p.genre === "F" ? "e" : ""}${d.motif && !/sondage/i.test(d.motif) ? " : " + d.motif : ""}${d.precision ? " (" + d.precision + ")" : ""}`) : "", p.certificat !== "ok" ? "⛔ certificat médical manquant" : "", p.licence.statut === "en_attente" ? "⛔ licence en attente" : ""].filter(Boolean).join(" · ");
+            return `<li><label><input type="checkbox" name="j" value="${esc(p.id)}"${b.joueurs.includes(p.id) ? " checked" : ""}${edition ? "" : " disabled"}><span class="num">${p.numero || "–"}</span><span class="n"><b>${esc(p.prenom)} ${esc(p.nom)}</b><small>${ok ? `<span style="color:var(--ok);font-weight:700">✓ présent${p.genre === "F" ? "e" : ""}</span> · ` : ""}${esc(notes)}${al ? `<br><span style="color:var(--att);font-weight:600">${esc(al)}</span>` : ""}</small></span></label></li>`; }).join("")}</ul>
         </section>
         <section class="carte"><h2>Rendez-vous</h2><div class="form">
-          <div class="ligne"><label>Heure du RDV<input type="time" name="rdvHeure" value="${esc(b.rdvHeure)}"${edition ? "" : " disabled"}></label><label>Coup d'envoi<input value="${hh(e.heure)}" disabled></label></div>
+          <div class="ligne"><label>Heure du RDV<input type="time" name="rdvHeure" value="${esc(b.rdvHeure)}"${edition ? "" : " disabled"}></label><label>${estMatch(e) ? "Coup d'envoi" : "Début"}<input value="${hh(e.heure)}" disabled></label></div>
           <label>Lieu du RDV<input name="rdvLieu" value="${esc(b.rdvLieu)}"${edition ? "" : " disabled"}></label>
           <label>Tenue et matériel<input name="tenue" value="${esc(b.tenue)}"${edition ? "" : " disabled"}></label>
           <label>Mot du coach<textarea name="mot" placeholder="Covoiturage, goûter, consignes…"${edition ? "" : " disabled"}>${esc(b.mot)}</textarea></label>
           <label>Aperçu du message<div class="apercu" id="apercuConvoc">${esc(texte)}</div></label>
-          ${edition ? `<div class="pied">${cv ? `<button type="button" class="btn" data-a="convoc-annuler-modif" data-id="${esc(id)}">Annuler</button>` : ""}<button class="btn prim">${cv ? "Republier la convocation" : "Publier la convocation"}</button></div><p class="aide">Les familles la reçoivent dans le groupe de l'équipe (messagerie), avec un bouton « Je ne peux pas venir ».</p>` : ""}
+          ${edition ? `<div class="pied">${cv ? `<button type="button" class="btn" data-a="convoc-annuler-modif" data-id="${esc(id)}">Annuler</button>` : ""}<button class="btn prim">${cv ? "Republier la convocation" : "Publier la convocation"}</button></div><p class="aide">Les familles la reçoivent dans les Annonces de l'équipe (messagerie) et dans leur espace, avec un bouton « Je ne peux pas venir ».</p>` : ""}
         </div></section>
       </form>`;
   }
   function texteConvoc(e, b) {
     const js = b.joueurs.map(C.personne).filter(Boolean).sort((a, c) => (a.numero || 99) - (c.numero || 99));
-    return `📋 CONVOCATION · ${C.nomEquipe(e.equipe)}\n${e.titre}\n${fJL(e.date)} · coup d'envoi ${hh(e.heure)}\n📍 ${e.lieu}\n\n⏰ Rendez-vous ${hh(b.rdvHeure)} · ${b.rdvLieu}\n🎒 ${b.tenue}\n\nConvoqué${js.length > 1 ? "s" : ""} (${js.length}) :\n${js.map((p) => `${p.numero ? p.numero + ". " : "• "}${p.prenom} ${p.nom}`).join("\n")}${b.mot ? `\n\n💬 ${b.mot}` : ""}\n\nEn cas d'empêchement, prévenez le coach au plus vite.`;
+    return `📋 CONVOCATION · ${C.nomEquipe(e.equipe)}\n${e.titre}\n${fJL(e.date)} · ${estMatch(e) ? "coup d'envoi" : "début"} ${hh(e.heure)}\n📍 ${e.lieu}\n\n⏰ Rendez-vous ${hh(b.rdvHeure)} · ${b.rdvLieu}\n🎒 ${b.tenue}\n\nConvoqué${js.length > 1 ? "s" : ""} (${js.length}) :\n${js.map((p) => `${p.numero ? p.numero + ". " : "• "}${p.prenom} ${p.nom}`).join("\n")}${b.mot ? `\n\n💬 ${b.mot}` : ""}\n\nEn cas d'empêchement, prévenez le coach au plus vite.`;
   }
   const maxConv = (e) => { const q = e && e.equipe && C.equipe(e.equipe); return q && q.format === 11 ? 14 : q && q.format === 8 ? 11 : null; };
   function lireConvoc(f) { const id = f.dataset.id, b = brouillons[id]; const d = new FormData(f); b.joueurs = d.getAll("j"); b.plus = d.has("plus"); ["rdvHeure", "rdvLieu", "tenue", "mot"].forEach((k) => { if (d.has(k)) b[k] = d.get(k).trim(); }); return b; }
@@ -716,26 +754,34 @@
 
   /* ---------- espace parent / joueur ---------- */
   const MOTIFS = ["Malade", "Blessure", "École / devoirs", "Raison familiale", "Transport", "Autre"];
+  // Une rencontre vue par la famille : convocation, sinon sondage (ouvert par le coach), sinon « prévenir d'une absence »
+  function carteMatchFamille(m, j, parent) {
+    const f = j.genre === "F", e_ = f ? "e" : "", cv = C.convocation(m.id), dm = C.dispos(m.id)[j.id], conv = cv && cv.joueurs.includes(j.id);
+    const tete = `<p class="gros">${esc(m.titre)}</p><p class="discret" style="margin:0 0 12px">${fJL(m.date)} · ${hh(m.heure)}<br>${esc(m.lieu)}${m.type !== "match" ? ` · ${esc(TYPES[m.type])}` : ""}</p>`;
+    const absent = dm && dm.statut === "absent";
+    if (cv && conv && !absent) return tete + `<div class="statut-convoc">✅ <span><b>${parent ? `${esc(j.prenom)} est convoqué${e_}` : "Vous êtes convoqué" + e_}</b><br>Rendez-vous <b>${hh(cv.rdvHeure)}</b> · ${esc(cv.rdvLieu)}<br><small>${esc(cv.tenue)}</small>${cv.mot ? `<br><small>💬 ${esc(cv.mot)}</small>` : ""}</span></div>
+          <button class="btn" data-a="dispo-match" data-id="${esc(m.id)}" data-v="absent">${parent ? `${esc(j.prenom)} ne peut pas venir` : "Je ne peux pas venir"}</button>`;
+    if (cv && conv) return tete + `<div class="statut-convoc att">⚠️ <span>Vous avez prévenu le coach : <b>${esc(dm.motif || "absent" + e_)}</b>.</span></div><button class="btn" data-a="dispo-annuler" data-id="${esc(m.id)}">${parent ? `Finalement ${esc(j.prenom)} peut venir` : "Finalement je peux venir"}</button>`;
+    if (cv) return tete + `<div class="statut-convoc att">ℹ️ <span>${parent ? `${esc(j.prenom)} n'est pas convoqué${e_}` : "Vous n'êtes pas convoqué" + e_} pour ce match.</span></div>`;
+    const so = C.sondage(m.id);
+    if (!so) {
+      const quand = C.sondagePossible(m) ? "bientôt" : `vers le ${fJ(C.ouvertureSondage(m))}`;
+      return tete + (absent ? `<div class="statut-convoc att">⚠️ <span>Vous avez prévenu le coach : <b>${esc(dm.motif || "absent" + e_)}</b>.</span></div><button class="btn" data-a="dispo-annuler" data-id="${esc(m.id)}">${parent ? `Finalement ${esc(j.prenom)} peut venir` : "Finalement je peux venir"}</button>`
+        : `<p class="aide" style="margin:0 0 10px">📅 Le coach ouvrira le sondage de disponibilité ${quand}. Vous le recevrez ici et dans les Annonces de l'équipe.</p><button class="btn" data-a="dispo-match" data-id="${esc(m.id)}" data-v="absent">${parent ? `${esc(j.prenom)} ne pourra pas venir` : "Je ne pourrai pas venir"}</button>`);
+    }
+    return tete + `<p style="margin:0 0 8px"><b>${parent ? `${esc(j.prenom)} sera-t-${f ? "elle" : "il"} disponible ?` : "Serez-vous disponible ?"}</b></p>
+          <div class="reponse-match">${[["present", "✓ Présent" + e_, "ok"], ["incertain", "? Peut-être", "att"], ["absent", "✕ Absent" + e_, "ko"]].map(([k, l, c]) => `<button class="rep ${c}" data-a="dispo-match" data-id="${esc(m.id)}" data-v="${k}" aria-pressed="${dm ? dm.statut === k : false}">${l}</button>`).join("")}</div>
+          <p class="aide" style="margin-top:8px">${so.lies ? `🔗 Une seule réponse pour les 2 matchs du week-end (${so.lies.map((x) => C.evenement(x)).filter(Boolean).map((x) => esc(x.adversaire || x.titre) + " " + fJ(x.date)).join(" et ")}). ` : ""}${dm ? "Réponse envoyée au coach. Vous pouvez la changer." : "Le coach fera la convocation avec ces réponses."}</p>`;
+  }
   function pageMoi() {
     const j = moiJoueur(); if (!j) return pageBienvenue();
-    const parent = profil.role === "parent", e = C.equipe(j.equipe) || {}, f = j.genre === "F";
-    const il = parent ? j.prenom : "vous", Il = parent ? j.prenom : "Vous";
-    const m = C.prochainMatch(j.equipe), cv = m && C.convocation(m.id), dm = m ? C.dispos(m.id)[j.id] : null;
-    const conv = cv && cv.joueurs.includes(j.id);
+    const parent = profil.role === "parent", f = j.genre === "F";
+    // Tous les matchs et plateaux des 10 prochains jours (deux le même week-end compris), sinon le prochain
+    const proches = C.rencontres(j.equipe, auj(), ajout(auj(), C.JOURS_SONDAGE)), ms = proches.length ? proches : [C.prochainMatch(j.equipe)].filter(Boolean);
     const coachs = C.staffDe(j.equipe);
-    let carteMatch = '<p class="vide">Pas de match prévu pour l\'instant.</p>';
-    if (m) {
-      const tete = `<p class="gros">${esc(m.titre)}</p><p class="discret" style="margin:0 0 12px">${fJL(m.date)} · ${hh(m.heure)}<br>${esc(m.lieu)}</p>`;
-      if (cv && conv && !(dm && dm.statut === "absent")) carteMatch = tete + `<div class="statut-convoc">✅ <span><b>${parent ? `${esc(j.prenom)} est convoqué${f ? "e" : ""}` : "Vous êtes convoqué" + (f ? "e" : "")}</b><br>Rendez-vous <b>${hh(cv.rdvHeure)}</b> · ${esc(cv.rdvLieu)}<br><small>${esc(cv.tenue)}</small>${cv.mot ? `<br><small>💬 ${esc(cv.mot)}</small>` : ""}</span></div>
-          <button class="btn" data-a="dispo-match" data-id="${esc(m.id)}" data-v="absent">${parent ? `${esc(j.prenom)} ne peut pas venir` : "Je ne peux pas venir"}</button>`;
-      else if (cv && conv) carteMatch = tete + `<div class="statut-convoc att">⚠️ <span>Vous avez prévenu le coach : <b>${esc(dm.motif || "absent")}</b>.</span></div><button class="btn" data-a="dispo-annuler" data-id="${esc(m.id)}">${parent ? `Finalement ${esc(j.prenom)} peut venir` : "Finalement je peux venir"}</button>`;
-      else if (cv) carteMatch = tete + `<div class="statut-convoc att">ℹ️ <span>${parent ? `${esc(j.prenom)} n'est pas convoqué${f ? "e" : ""}` : "Vous n'êtes pas convoqué" + (f ? "e" : "")} pour ce match.</span></div>`;
-      else carteMatch = tete + `<p style="margin:0 0 8px"><b>${parent ? `${esc(j.prenom)} sera-t-${f ? "elle" : "il"} disponible ?` : "Serez-vous disponible ?"}</b></p>
-          <div class="reponse-match">${[["present", "✓ Oui", "ok"], ["incertain", "? Peut-être", "att"], ["absent", "✕ Non", "ko"]].map(([k, l, c]) => `<button class="rep ${c}" data-a="dispo-match" data-id="${esc(m.id)}" data-v="${k}" aria-pressed="${dm ? dm.statut === k : false}">${l}</button>`).join("")}</div>
-          <p class="aide" style="margin-top:8px">${(C.sondage(m.id) || {}).lies ? `🔗 Une seule réponse pour les 2 matchs du week-end (${(C.sondage(m.id).lies).map((x) => C.evenement(x)).filter(Boolean).map((x) => esc(x.adversaire || x.titre) + " " + fJ(x.date)).join(" et ")}). ` : ""}${dm ? "Réponse envoyée au coach. Vous pouvez la changer." : "Le coach fera la convocation avec ces réponses."}</p>`;
-    }
+    const carteMatch = ms.length ? ms.map((m) => carteMatchFamille(m, j, parent)).join('<hr class="sep-match">') : '<p class="vide">Pas de match prévu pour l\'instant.</p>';
     const ents = C.evenements({ equipe: j.equipe, du: auj(), au: ajout(auj(), 21), types: ["entrainement"] }).slice(0, 4);
-    const autres = C.evenements({ equipe: j.equipe, du: auj(), au: ajout(auj(), 21) }).filter((x) => !["entrainement", "match"].includes(x.type) && x.id !== (m && m.id) && x.equipe);
+    const autres = C.evenements({ equipe: j.equipe, du: auj(), au: ajout(auj(), 21) }).filter((x) => x.type !== "entrainement" && !ms.some((m) => m.id === x.id) && x.equipe === j.equipe);
     const ligneEnt = (x) => { const d = C.dispos(x.id)[j.id];
       return `<li class="ent${x.statut === "annule" ? " annule" : ""}"><span class="q"><b>${maj1(fmt(x.date, { weekday: "long", day: "numeric", month: "short" }))}</b> · ${hh(x.heure)}<small>${esc(x.lieu)}</small></span>
         ${x.statut === "annule" ? '<span class="etiq ko">Annulé</span>' : d ? `<span class="etat-abs">Absent${f ? "e" : ""} · ${esc(d.motif || "")}</span><button class="btn mini" data-a="dispo-annuler" data-id="${esc(x.id)}">Annuler</button>` : `<button class="btn mini" data-a="absence" data-id="${esc(x.id)}">${parent ? "Prévenir d'une absence" : "Je serai absent" + (f ? "e" : "")}</button>`}</li>`; };
@@ -743,7 +789,7 @@
     return `<div class="entete"><div><p class="fil-ariane discret">${fJL(auj())}</p><h1>${parent ? `Bonjour 👋` : `Salut ${esc(j.prenom)} 👋`}</h1><p class="sous">${parent ? `Parent de <b>${esc(C.nomComplet(j))}</b> · ` : ""}${esc(C.nomEquipe(j.equipe))}</p></div></div>
       ${dossier.length ? `<p class="alerte ko" style="margin-bottom:14px"><b>À faire :</b> ${dossier.map(esc).join(" ")}</p>` : ""}
       <div class="grille g2 moi">
-        <section class="carte"><h2>⚽ Prochain match</h2>${carteMatch}</section>
+        <section class="carte"><h2>⚽ ${ms.length > 1 ? "Prochains matchs" : "Prochain match"}</h2>${carteMatch}</section>
         <section class="carte"><h2>🏃 Entraînements</h2>${ents.length ? `<ul class="ents">${ents.map(ligneEnt).join("")}</ul>` : '<p class="vide">Pas d\'entraînement ces 3 prochaines semaines (vacances ?).</p>'}
           ${autres.length ? `<h3>Aussi au programme</h3><ul class="ents">${autres.map((x) => `<li class="ent"><span class="q"><b>${esc(x.titre)}</b> · ${fJ(x.date)} ${hh(x.heure)}<small>${esc(x.lieu)}${x.notes ? " · " + esc(x.notes) : ""}</small></span></li>`).join("")}</ul>` : ""}</section>
         <section class="carte"><h2>📞 ${coachs.length > 1 ? "Les éducateurs" : "L'éducateur"}</h2>${coachs.length ? coachs.map((x) => `<div class="contact">${avatarP(x)}<span><b>${esc(C.nomComplet(x))}</b><small>${esc(ROLES[x.role] || "")}</small></span><a class="btn mini" href="tel:${esc(x.tel.replace(/\s/g, ""))}">Appeler</a></div>`).join("") : '<p class="discret">Éducateur pas encore désigné.</p>'}
@@ -799,9 +845,12 @@
     else html = pageAccueil();
     $("#contenu").innerHTML = html;
     document.title = `${($("#contenu h1") || {}).textContent || "Console"} · Console ESGA`;
-    if (r.page === "accueil") chargerPV();
+    if (r.page === "accueil") { chargerPV(); if (estCoach() && !PVS) chargerPVs().then(() => { if (route().page === "accueil") rendre(true); }); }
     const cle = location.hash;
     if (garderDefil && cle === derniere) window.scrollTo(0, y); else if (cle !== derniere) window.scrollTo(0, 0);
+    // Lien d'un autre module (retour de l'Atelier…) : #calendrier?evt=<id> ouvre la fiche de l'événement, une fois
+    const pe = new URLSearchParams(r.params || "").get("evt");
+    if (pe && cle !== derniere && C.evenement(pe) && peutVoir(C.evenement(pe).equipe)) setTimeout(() => ouvrirEvt(pe), 0);
     derniere = cle;
   }
 
@@ -821,11 +870,14 @@
     if (a === "choix-equipe") { choix.equipe = t.dataset.v; choix.q = ""; return rendre(true); }
     if (a === "choisir-coach") { profil = { role: "coach", staff: id }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#accueil", `Bonjour ${moiStaff().prenom} ! Voici votre équipe.`); }
     if (a === "choisir-joueur") { profil = { role: choix.role, joueur: id }; sauverProfil(); choix = { role: null, equipe: null, q: "" }; return allerA("#moi", "C'est parti !"); }
-    if (a === "dispo-match") { if (t.dataset.v === "absent") { if (!(C.dispos(id)[moiJoueur().id] || {}).motif || C.dispos(id)[moiJoueur().id].statut !== "absent") C.setDispo(id, moiJoueur().id, { statut: "absent", motif: "Absent", par: "famille" }); return ouvrirMotif(id); } C.setDispo(id, moiJoueur().id, { statut: t.dataset.v, motif: t.dataset.v === "present" ? "Disponible" : "Incertain", par: "famille" }); return toast("Réponse envoyée au coach. 👍"); }
+    if (a === "dispo-match") { if (t.dataset.v === "absent") { if (!(C.dispos(id)[moiJoueur().id] || {}).motif || C.dispos(id)[moiJoueur().id].statut !== "absent") C.setDispo(id, moiJoueur().id, { statut: "absent", motif: "Absent", par: "famille" }); return ouvrirMotif(id); } C.setDispo(id, moiJoueur().id, { statut: t.dataset.v, motif: DISPO[t.dataset.v], par: "famille" }); return toast("Réponse envoyée au coach. 👍"); }
     if (a === "absence") return ouvrirMotif(id);
-    if (a === "lancer-sondage-we") { C.lancerSondage(id, false, [t.dataset.avec]); return toast("Un seul sondage pour les deux matchs du week-end : chaque réponse compte pour les deux."); }
-    if (a === "lancer-sondage") { C.lancerSondage(id); return toast("Sondage envoyé dans la messagerie de l'équipe. Les réponses arrivent ici."); }
-    if (a === "relancer-sondage") { C.lancerSondage(id, true); return toast("Rappel envoyé aux familles qui n'ont pas répondu."); }
+    if (a === "lancer-sondage-we" || a === "lancer-sondage") {
+      const e = C.evenement(id); if (!C.sondagePossible(e)) return toast(`Le sondage s'ouvre le ${fJ(C.ouvertureSondage(e))}, ${C.JOURS_SONDAGE} jours avant le match.`);
+      C.lancerSondage(id, false, a === "lancer-sondage-we" ? [t.dataset.avec] : null);
+      return toast(a === "lancer-sondage-we" ? "Un seul sondage pour les deux matchs du week-end, publié dans les Annonces : chaque réponse compte pour les deux." : "Sondage publié dans les Annonces de l'équipe (messagerie). Les réponses arrivent ici.");
+    }
+    if (a === "relancer-sondage") { C.lancerSondage(id, true); return toast("Rappel publié dans les Annonces pour les familles qui n'ont pas répondu."); }
     if (a === "f-plus" || a === "f-moins") {
       const fid = route().a, f = feuilles[fid], k = t.dataset.k, d = a === "f-plus" ? 1 : -1;
       if (id) { const st = (f.stats[id] = f.stats[id] || { buts: 0, passes: 0 }); st[k] = Math.max(0, (st[k] || 0) + d); if (d > 0 && !f.joueurs.includes(id)) f.joueurs.push(id); if (k === "buts" && d > 0 && f.nous < Object.values(f.stats).reduce((x, y) => x + (y.buts || 0), 0)) f.nous++; }

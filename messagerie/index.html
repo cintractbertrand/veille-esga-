@@ -9,16 +9,17 @@
   <meta name="description" content="ES Genas Azieu : messagerie d'équipe, groupes, sondages, absences et convocations">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="../commun/charte.css?v=2026-11-20d">
-  <link rel="stylesheet" href="style.css?v=2026-11-20e">
-  <script src="../commun/modules.js?v=2026-11-20g" data-module="messagerie" defer></script>
+  <link rel="stylesheet" href="../commun/charte.css?v=2026-11-21a">
+  <link rel="stylesheet" href="style.css?v=2026-11-21a">
+  <script src="../commun/modules.js?v=2026-11-21a" data-module="messagerie" defer></script>
 </head>
 <body class="chargement" data-espace="discussions">
   <div class="demo-bandeau">
-    <span><b>Démo</b> · rien n'est envoyé, tout reste dans ce navigateur. Ouvrez un 2<sup>e</sup> onglet : « Le coach » d'un côté, « Parent de… » de l'autre.</span>
-    <label>Équipe <select id="choixEquipe"></select></label>
-    <label>Je suis <select id="choixProfil"></select></label>
-    <button class="lien" id="btnReinitialiser">Remettre à zéro</button>
+    <span class="b-mode" id="bandeauMode"><b>Démo</b></span>
+    <span class="b-qui">Vous : <b id="bandeauQui"></b> · <a class="lien" href="../#bienvenue">Changer de profil</a></span>
+    <label id="lblEquipe" hidden>Équipe <select id="choixEquipe"></select></label>
+    <label id="lblProfil" hidden>Voir comme <select id="choixProfil"></select></label>
+    <button class="lien" id="btnReinitialiser" hidden>Remettre à zéro</button>
   </div>
 
   <div class="appli">
@@ -80,8 +81,8 @@
   <div id="modale" class="modale" hidden></div>
   <div class="toast" id="toast" role="status" hidden></div>
 
-  <script src="../commun/club.js?v=2026-11-20n"></script>
+  <script src="../commun/club.js?v=2026-11-21a"></script>
   <script src="stockage.js?v=2026-11-20b"></script>
-  <script src="app.js?v=2026-11-20i"></script>
+  <script src="app.js?v=2026-11-21a"></script>
 </body>
 </html>

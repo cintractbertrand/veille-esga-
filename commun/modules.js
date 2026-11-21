@@ -1,7 +1,7 @@
 /* Bandeau commun des modules ESGA.
    Ajouter dans un module :
      <script src="https://cintractbertrand.github.io/veille-esga-/commun/modules.js" data-module="atelier" defer></script>
-   data-module : accueil | console | pv | video | atelier | messagerie (le module courant est mis en avant).
+   data-module : console | messagerie | atelier | video | pv (le module courant est mis en avant).
    Pour changer l'adresse d'un module, modifier seulement la liste MODULES ci-dessous. */
 (function () {
   const script = document.currentScript;
@@ -16,19 +16,20 @@
     atelier: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 9h3v6H3M21 9h-3v6h3"/><circle cx="12" cy="12" r="2.5"/></svg>',
   };
 
+  // Mêmes noms partout (bandeau, menu de la console, accueil) : « court » pour le bandeau, « nom » ailleurs
   const MODULES = [
     { id: "console", nom: "Console du club", court: "Accueil", url: BASE,
       desc: "Licenciés, éducateurs, équipes, calendrier, présences et convocations : tout le club au même endroit, partagé par tous les modules." },
-    { id: "video", nom: "Analyse vidéo", court: "Vidéo", url: BASE + "analyse-video/",
-      desc: "Revoir un match, marquer une joueuse, dessiner flèches et cercles sur l'image, monter des séquences et les envoyer." },
-    { id: "pv", nom: "Lecture des PV du District", court: "PV District", url: BASE + "pv.html",
+    { id: "messagerie", nom: "Messagerie", court: "Messagerie", url: BASE + "messagerie/",
+      desc: "Annonces du staff et Blabla de chaque équipe, sondages, absences et convocations." },
+    { id: "atelier", nom: "Atelier entraînements", court: "Atelier", url: "https://cintractbertrand.github.io/atelier-foot/site/",
+      desc: "Choisir des exercices, composer une séance et la placer sur un entraînement de l'équipe." },
+    { id: "video", nom: "Monteur vidéo", court: "Vidéo", url: BASE + "analyse-video/",
+      desc: "Revoir un match, marquer une joueuse, dessiner sur l'image, monter des séquences et les envoyer aux joueurs." },
+    { id: "pv", nom: "PV du District", court: "PV", url: BASE + "pv.html",
       desc: "Chaque semaine, tout ce que les PV du District disent du club : sanctions, échéances, matchs, amendes." },
-    { id: "atelier", nom: "Atelier entraînements", court: "Entraînements", url: "https://cintractbertrand.github.io/atelier-foot/site/",
-      desc: "Choisir des exercices, composer une séance, la partager et la suivre au bord du terrain." },
-    { id: "messagerie", nom: "Messagerie d'équipe", court: "Messagerie", url: BASE + "messagerie/",
-      desc: "Discuter avec les familles, recevoir les absences aux entraînements, sonder la présence au match, faire la compo et la convocation." },
-    { id: "equipe", nom: "Gestion de l'équipe", court: "Équipe", url: "https://myfootsquad.com/", externe: true,
-      desc: "Le site de Nico (MyFootSquad) : gestion des matchs, des absences et de l'équipe." },
+    { id: "equipe", nom: "MyFootSquad", court: "MyFootSquad", url: "https://myfootsquad.com/", externe: true,
+      desc: "Le site de Nico (MyFootSquad), en complément." },
   ];
   window.ESGA = { BASE, MODULES, ICONES, bandeau: () => bandeau() };
 

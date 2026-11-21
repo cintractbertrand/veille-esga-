@@ -326,14 +326,15 @@
     // Une partie des convocations du week-end sont déjà faites par les coachs (sauf U15F 2, pour essayer)
     MATCHS.map(matchEvt).filter((e) => e.date >= auj() && e.date <= ajout(auj(), 3) && e.equipe !== "U15F-2").forEach((e) => {
       if (r() < .55) {
-        const js = joueurs(e.equipe).filter((j) => j.certificat === "ok").slice(0, 16).map((j) => j.id);
+        const q = D.equipes.find((x) => x.id === e.equipe), mx = q && q.format === 11 ? 14 : q && q.format === 8 ? 11 : 10; // règle du club : 14 à 11, 11 à 8
+        const js = joueurs(e.equipe).filter((j) => j.certificat === "ok").slice(0, mx).map((j) => j.id);
         const [h, mn] = e.heure.split(":").map(Number), t = h * 60 + mn - (e.domicile ? 60 : 90);
         D.convocations.push({ id: uid("cv"), evenement: e.id, equipe: e.equipe, joueurs: js, rdvHeure: `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`, rdvLieu: e.domicile ? "Vestiaires du stade" : "Parking du stade Edmond Pouzet", tenue: "Tenue du club, protège-tibias", mot: "", publiee: new Date(Date.now() - 864e5 * (1 + r())).toISOString(), source: "console" });
       }
     });
     // Réponses au sondage du match amical U15F 2 (les mêmes que dans la messagerie)
     const so = (statut, motif) => ({ statut, motif, par: "sondage", date: new Date().toISOString() });
-    D.dispos["ev-amical-u15f"] = Object.assign(D.dispos["ev-amical-u15f"] || {}, { "j-U15F-2-4": so("absent", "Absent au sondage"), "j-U15F-2-5": so("absent", "Absent au sondage"), "j-U15F-2-7": so("incertain", "Incertain au sondage") });
+    D.dispos["ev-amical-u15f"] = Object.assign(D.dispos["ev-amical-u15f"] || {}, { "j-U15F-2-4": so("absent", "Absent (sondage)"), "j-U15F-2-5": so("absent", "Absent (sondage)"), "j-U15F-2-7": so("incertain", "Peut-être (sondage)") });
     D.presencesDemo = true; matchsDemo(r); STOCKAGE.ecrire(D);
   }
 
@@ -381,7 +382,7 @@
     const so = (statut, motif) => ({ statut, motif, par: "sondage", date: new Date().toISOString() });
     const rep = { 1: "present", 2: "present", 3: "present", 4: "absent", 5: "absent", 6: "present", 7: "incertain", 8: "present", 10: "present", 11: "present", 12: "present", 13: "present", 14: "present", 15: "present", 16: "present" };
     const dm = (D.dispos["ev-amical-u15f"] = D.dispos["ev-amical-u15f"] || {});
-    Object.entries(rep).forEach(([k, v]) => { const id = "j-U15F-2-" + k; if (!dm[id]) dm[id] = so(v, v === "present" ? "Disponible" : v === "absent" ? "Absent au sondage" : "Incertain au sondage"); });
+    Object.entries(rep).forEach(([k, v]) => { const id = "j-U15F-2-" + k; if (!dm[id]) dm[id] = so(v, v === "present" ? "Présent (sondage)" : v === "absent" ? "Absent (sondage)" : "Peut-être (sondage)"); });
     D.sondages["ev-amical-u15f"] = D.sondages["ev-amical-u15f"] || { lance: new Date(Date.now() - 4 * 3600e3).toISOString() };
     D.matchsDemo = true;
   }
@@ -394,7 +395,23 @@
   const coachDe = (eq) => staffDe(eq).find((s) => s.role === "coach") || staffDe(eq)[0] || null;
   const nomEquipe = (id) => { const e = equipe(id); return e ? e.nom : id || "Club"; };
   const nomComplet = (p) => p ? `${p.prenom} ${p.nom}` : "?";
-  const prochainMatch = (eq) => evenements({ equipe: eq, du: auj(), types: ["match", "amical"] }).filter((e) => e.statut !== "annule")[0] || null;
+  // Rencontres : ce qui se prépare avec un sondage et une convocation (plateaux et tournois de l'école de foot compris)
+  const RENCONTRES = ["match", "amical", "plateau", "tournoi"];
+  const rencontres = (eq, du, au) => evenements({ equipe: eq, du: du || auj(), au, types: RENCONTRES }).filter((e) => e.statut !== "annule" && !!e.equipe && (!eq || e.equipe === eq));
+  const prochainMatch = (eq) => rencontres(eq)[0] || null;
+  // Le sondage de disponibilité s'ouvre 10 jours avant la rencontre (pas avant : les familles ne savent pas encore)
+  const JOURS_SONDAGE = 10;
+  const ouvertureSondage = (e) => ajout(e.date, -JOURS_SONDAGE);
+  const sondagePossible = (e) => !!e && e.date >= auj() && auj() >= ouvertureSondage(e);
+  // Week-end d'une date (vendredi → dimanche) ; un jour de semaine renvoie au week-end qui suit
+  function weekend(d) { const j = jour(d).getDay(), ven = ajout(d, j === 0 ? -2 : j === 6 ? -1 : j === 5 ? 0 : 5 - j); return { du: ven, au: ajout(ven, 2) }; }
+  // Équipes d'un profil : tout le club (dirigeant), ses équipes (coach), l'équipe de l'enfant (famille)
+  function equipesDe(p) {
+    if (!p) return [];
+    if (p.role === "dirigeant") return D.equipes.map((e) => e.id);
+    if (p.role === "coach") { const s = D.staff.find((x) => x.id === p.staff); return s ? s.equipes.slice() : []; }
+    const j = personne(p.joueur); return j ? [j.equipe] : [];
+  }
   const prochainsEntrainements = (eq, n = 6) => evenements({ equipe: eq, du: auj(), types: ["entrainement"] }).filter((e) => e.statut !== "annule").slice(0, n);
   const convocation = (evt) => D.convocations.filter((c) => c.evenement === evt).slice(-1)[0] || null;
   function tauxPresence(jid, n = 8) {
@@ -443,6 +460,7 @@
   // Sondage de disponibilité d'un match : lancé depuis la console ou la messagerie, réponses dans dispos
   function lancerSondage(evt, relance, avec) {
     const s = D.sondages[evt]; if (s && !relance) return;
+    if (!s && !sondagePossible(evenement(evt))) return false;
     const groupe = avec && avec.length ? [evt, ...avec] : (s && s.lies) || null, t = new Date().toISOString();
     (groupe || [evt]).forEach((x) => { const s0 = D.sondages[x]; D.sondages[x] = Object.assign({}, s0, s0 && relance ? { relance: t } : { lance: t }, groupe ? { lies: groupe } : {}); });
     sauver();
@@ -505,7 +523,7 @@
     get donnees() { return D; }, get club() { return D.club; }, get maj() { return D.maj; },
     equipes: () => D.equipes.slice(), equipe, nomEquipe, joueurs, personne, nomComplet, staff: () => D.staff.slice(), staffDe, coachDe,
     creneaux: (eq) => D.creneaux.filter((c) => !eq || c.equipe === eq),
-    evenements, evenement, prochainMatch, prochainsEntrainements, convocation, convocations: (eq) => D.convocations.filter((c) => !eq || c.equipe === eq),
+    evenements, evenement, prochainMatch, prochainsEntrainements, RENCONTRES, rencontres, JOURS_SONDAGE, ouvertureSondage, sondagePossible, weekend, equipesDe, convocation, convocations: (eq) => D.convocations.filter((c) => !eq || c.equipe === eq),
     presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, tauxPresence, categorieAge,
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
     feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,

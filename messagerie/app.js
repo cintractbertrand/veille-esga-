@@ -17,7 +17,7 @@
 
   const FORMATIONS = { 11: ["4-4-2", "4-3-3", "4-2-3-1", "3-5-2", "5-3-2"], 8: ["3-3-1", "2-3-2", "3-2-2"], 5: ["2-2", "1-2-1"], 4: ["2-1", "1-2"] };
   const MOTIFS = ["Malade", "Blessure", "École / devoirs", "Raison familiale", "Transport", "Autre"];
-  const OPTIONS_MATCH = ["Présent", "Incertain", "Absent"]; // index 0, 1, 2
+  const OPTIONS_MATCH = ["Présent", "Peut-être", "Absent"]; // index 0, 1, 2
   const CLES_MATCH = ["oui", "incertain", "non"];
   const REACTIONS = ["👍", "❤️", "😂", "👏", "⚽", "🙏"];
   const VERSION = 5;
@@ -50,7 +50,12 @@
   let sep = { conv: null, idx: 0 }; // séparateur « nouveaux messages »
   let enBasPrec = { conv: null, n: 0 }, nouveauxEnBas = 0;
 
-  /* ---------- profil de l'onglet (chaque onglet peut jouer quelqu'un d'autre) ---------- */
+  /* ---------- qui utilise la messagerie : le profil choisi à l'accueil (le même dans toute l'appli) ----------
+     Coach et dirigeant écrivent comme le staff de l'équipe (« coach », signé de leur nom) ; un parent écrit pour
+     son enfant, une joueuse pour elle-même. En démo seulement, le staff peut « voir comme » une famille. */
+  let PG = null; // profil de l'accueil (CLUB.profil())
+  const estStaffPG = () => !!PG && (PG.role === "coach" || PG.role === "dirigeant");
+  const demo = () => !CLUB.enLigne.actif;
   function lireMoi() { try { return JSON.parse(sessionStorage.getItem("esga-messagerie-moi")) || {}; } catch (e) { return {}; } }
   function ecrireMoi() { try { sessionStorage.setItem("esga-messagerie-moi", JSON.stringify(moi)); } catch (e) {} }
   const estCoach = () => moi.profil === "coach";
@@ -61,20 +66,48 @@
   const e_ = () => (fem() ? "e" : "");
   // En seniors, vétérans et U20, ce sont les joueurs eux-mêmes qui utilisent la messagerie
   const adultes = () => /Seniors|Vétérans|U20/.test((CLUB.equipe(moi.equipe) || {}).categorie || "");
-  const nomProfil = (p) => p === "coach" ? "Coach" : enfantDe(p) ? (adultes() ? joueur(enfantDe(p)).nom : "Parent de " + joueur(enfantDe(p)).nom) : "?";
+  const nomCoach = () => { const c = CLUB.coachDe(moi.equipe); return c ? "Coach " + c.prenom : "Le coach"; };
+  const nomProfil = (p) => p === "coach" ? nomCoach() : enfantDe(p) ? (adultes() ? joueur(enfantDe(p)).nom : "Parent de " + joueur(enfantDe(p)).nom) : "?";
+  // Signature de mes messages : plusieurs éducateurs écrivent comme « coach », une joueuse écrit en son nom
+  function maSignature() {
+    if (!PG) return null;
+    if (estCoach()) {
+      if (PG.role === "dirigeant") return "Dirigeant du club";
+      const s = PG.role === "coach" && CLUB.staff().find((x) => x.id === PG.staff);
+      return !s ? null : s.role === "coach" ? "Coach " + s.prenom : `${s.prenom} ${s.nom[0]}. (${s.role || "staff"})`;
+    }
+    return PG.role === "joueur" && monEnfant() && idClub(monEnfant()) === PG.joueur && !adultes() ? joueur(monEnfant()).nom : null;
+  }
+  const nomAuteur = (m) => m.signe || nomProfil(m.auteur);
   const tousProfils = () => ["coach", ...etat.joueurs.map((j) => "p-" + j.id)];
-  function initiales(t) { return t.replace(/^Parent de /, "").split(/\s+/).map((m) => m[0]).join("").slice(0, 2).toUpperCase(); }
+  function initiales(t) { return t.replace(/^(Parent de|Coach) /, "").split(/\s+/).map((m) => m[0]).join("").slice(0, 2).toUpperCase(); }
   function couleur(t) { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COULEURS[h % COULEURS.length]; }
 
   /* ---------- équipes, match du week-end et séances ---------- */
   function nomEquipe(id) { return CLUB.nomEquipe(id); }
-  // Prochain match et séances : lus dans le socle du club (matchs des PV + créneaux de la console)
-  function prochainMatch(equipe) {
-    const m = CLUB.prochainMatch(equipe), eq = CLUB.equipe(equipe), format = eq ? eq.format : 11;
-    if (m) return { id: m.id, date: m.date, heure: m.heure, adversaire: m.adversaire || m.titre, domicile: m.domicile !== false, lieu: m.lieu, competition: m.competition || "Match amical", format: FORMATIONS[format] ? format : 8 };
-    const d = new Date(); d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
-    return { id: "demo-" + jourISO(d), date: jourISO(d), heure: "10:00", adversaire: format < 8 ? "Plateau à confirmer" : "Adversaire à confirmer", domicile: true, lieu: CLUB.club.lieux[0], competition: format < 8 ? "Plateau" : "Match amical", format: FORMATIONS[format] ? format : 8 };
+  // Rencontres à venir (matchs, amicaux, plateaux, tournois) et séances : lues dans le socle du club (PV + console)
+  const HORIZON = 42; // jours
+  const LIB_TYPE = { amical: "Match amical", plateau: "Plateau", tournoi: "Tournoi", match: "Match" };
+  function versMatch(e) {
+    const eq = CLUB.equipe(e.equipe), f = eq ? eq.format : 11, ecole = e.type === "plateau" || e.type === "tournoi";
+    return { id: e.id, date: e.date, heure: e.heure || "10:00", adversaire: e.adversaire || e.titre || LIB_TYPE[e.type] || "Adversaire à confirmer", domicile: e.domicile !== false, lieu: e.lieu || CLUB.club.lieux[0],
+      competition: e.competition || LIB_TYPE[e.type] || "Match", format: FORMATIONS[f] ? f : 8, type: e.type, ecole };
   }
+  function matchsVenir(equipe) { const o = CLUB.outils; return CLUB.rencontres(equipe, o.auj(), o.ajout(o.auj(), HORIZON)).map(versMatch); }
+  const prochainMatch = (equipe) => matchsVenir(equipe)[0] || null;
+  // Match suivi dans cet onglet : le prochain, ou celui que le coach a choisi
+  function matchCourant() { const l = matchsVenir(moi.equipe); return l.find((m) => m.id === moi.match) || l[0] || null; }
+  const matchDe = (id) => matchsVenir(moi.equipe).find((m) => m.id === id) || null;
+  const titreMatch = (m) => (m.ecole ? m.adversaire : "contre " + m.adversaire);
+  const affiche = (m) => (m.ecole ? m.adversaire : m.domicile ? "ESGA – " + m.adversaire : m.adversaire + " – ESGA");
+  const jourMatch = (m) => fmtJour(m.date, { weekday: "long", day: "numeric" });
+  const sondageOuvert = (m) => !!m && CLUB.sondagePossible(CLUB.evenement(m.id));
+  const dateOuverture = (m) => fmtJour(CLUB.ouvertureSondage(m), { weekday: "long", day: "numeric", month: "long" });
+  const dans10j = (m) => m.date <= CLUB.outils.ajout(CLUB.outils.auj(), CLUB.JOURS_SONDAGE);
+  // Sondage commun du week-end (choisi par le coach dans la console) : publié une fois, avec le premier match
+  const primaire = (mid) => { const cs = CLUB.sondage(mid); return cs && cs.lies && cs.lies.length ? cs.lies[0] : mid; };
+  // Convocation : 14 au maximum à 11, 11 à 8 (règle du club), sauf case « exceptionnellement »
+  const maxConv = () => { const q = CLUB.equipe(moi.equipe); return q && q.format === 11 ? 14 : q && q.format === 8 ? 11 : null; };
   function seances(equipe) { return CLUB.prochainsEntrainements(equipe, 6).map((e) => ({ id: e.id, date: e.date, heure: e.heure, lieu: e.lieu })); }
   const libSeance = (s) => `${maj1(fmtJour(s.date))} · ${s.heure.replace(":", "h")}`;
   const seance = (id) => seances(moi.equipe).find((s) => s.id === id);
@@ -88,6 +121,13 @@
     const e = { version: VERSION, joueurs, convs: [], messages: [], sondages: [], absences: [], appel: {}, convocations: [], lus: {} };
     e.convs.push({ id: "equipe", type: "equipe", nom: "Blabla · " + nomEquipe(equipe), membres: tous, creePar: "coach", date: il(80) });
     e.convs.push({ id: "annonces", type: "groupe", annonces: true, nom: "Annonces · " + nomEquipe(equipe), membres: tous, creePar: "coach", date: il(90) });
+    // En ligne : une équipe toute neuve, sans messages d'exemple (seulement les deux mots d'accueil)
+    if (!demo()) {
+      const accueil = (conv, texte) => e.messages.push({ id: uid(), conv, auteur: "coach", date: maintenant(), type: "texte", texte });
+      accueil("annonces", "📣 Ici, seulement les informations du staff : sondages des matchs, convocations, horaires, changements de terrain. Pour échanger entre vous (covoiturage…), utilisez le Blabla de l'équipe.");
+      accueil("equipe", "Bonjour à tous ! Ici c'est le Blabla de l'équipe 👋 Tout le monde peut écrire : covoiturage, goûters, questions… Pour une absence à l'entraînement, touchez le + en bas puis « Absence ».");
+      return e;
+    }
     e.convs.push({ id: "c-staff", type: "groupe", nom: "Parents référents", membres: ["coach", "p-j2", "p-j10"], creePar: "coach", date: il(70) });
     e.convs.push({ id: "c-perso-j3", type: "perso", membres: ["coach", "p-j3"], creePar: "p-j3", date: il(30) });
     const m = (conv, auteur, h, o) => e.messages.push(Object.assign({ id: uid(), conv, auteur, date: il(h) }, o));
@@ -102,23 +142,30 @@
     r.reponseA = q.id; r.reactions = { "p-j3": "🙏", "p-j1": "👍", "p-j8": "👍" };
     m("equipe", "p-j3", 24, { type: "texte", texte: "Qui peut emmener samedi ? J'ai 2 places." });
     m("equipe", "p-j6", 23, { type: "texte", texte: "Moi aussi, 3 places au départ de Genas centre." });
-    e.absences.push({ id: uid(), seance: s[0].id, joueur: "j5", motif: "Malade", precision: "Fièvre depuis hier", par: "p-j5", date: il(5) });
-    m("equipe", "p-j5", 5, { type: "absence", joueur: "j5", seance: s[0].id, motif: "Malade" });
-    e.appel[s[0].id] = { j5: "absent" };
-    // Sondage du match créé par le coach
-    const sm = { id: "s-match", conv: "annonces", auteur: "coach", date: il(4), type: "match", match: match.id, question: `Match contre ${match.adversaire} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
-    const rep = { j1: 0, j2: 0, j3: 0, j4: 2, j5: 2, j6: 0, j7: 1, j8: 0, j10: 0, j11: 0, j12: 0, j13: 0, j14: 0, j15: 0, j16: 0 };
-    Object.assign(sm.reponses, rep);
-    e.sondages.push(sm);
-    m("annonces", "coach", 4, { type: "sondage", sondage: sm.id });
-    e.convs[0].epingle = e.messages[e.messages.length - 1].id;
+    if (s[0]) {
+      e.absences.push({ id: uid(), seance: s[0].id, joueur: "j5", motif: "Malade", precision: "Fièvre depuis hier", par: "p-j5", date: il(5) });
+      m("equipe", "p-j5", 5, { type: "absence", joueur: "j5", seance: s[0].id, motif: "Malade" });
+      e.appel[s[0].id] = { j5: "absent" };
+    }
+    // Sondage du match lancé par le coach (seulement s'il est lancé dans le club : c'est le coach qui décide)
+    if (match && CLUB.sondage(match.id) && primaire(match.id) === match.id) {
+      const sm = { id: "s-match", conv: "annonces", auteur: "coach", date: CLUB.sondage(match.id).lance || il(4), type: "match", match: match.id, question: `${maj1(jourMatch(match))} · ${maj1(titreMatch(match))} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
+      const rep = { j1: 0, j2: 0, j3: 0, j4: 2, j5: 2, j6: 0, j7: 1, j8: 0, j10: 0, j11: 0, j12: 0, j13: 0, j14: 0, j15: 0, j16: 0 };
+      Object.assign(sm.reponses, rep);
+      e.sondages.push(sm);
+      e.messages.push({ id: uid(), conv: "annonces", auteur: "coach", date: sm.date, type: "sondage", sondage: sm.id });
+      e.convs[1].epingle = e.messages[e.messages.length - 1].id;
+    }
     m("c-perso-j3", "p-j3", 3, { type: "texte", texte: "Bonjour coach, Jade aura 15 minutes de retard mardi (dentiste). Désolé !" });
     m("c-perso-j3", "coach", 2.5, { type: "texte", texte: "Pas de souci, merci de prévenir." });
     const sl = { id: "s-repas", conv: "annonces", auteur: "coach", date: il(2.2), type: "libre", question: "Repas de fin d'année : quelle date vous arrange ?", options: ["Samedi 12 décembre", "Dimanche 13 décembre", "Samedi 19 décembre"], reponses: { "p-j1": 0, "p-j2": 0, "p-j4": 1, "p-j6": 0, "p-j9": 2 } };
     e.sondages.push(sl);
     m("annonces", "coach", 2.2, { type: "sondage", sondage: sl.id });
-    e.absences.push({ id: uid(), seance: s[0].id, joueur: "j9", motif: "École / devoirs", precision: "Contrôle de maths le lendemain", par: "p-j9", date: il(1.5) });
-    m("equipe", "p-j9", 1.5, { type: "absence", joueur: "j9", seance: s[0].id, motif: "École / devoirs" });
+    if (s[0]) {
+      e.absences.push({ id: uid(), seance: s[0].id, joueur: "j9", motif: "École / devoirs", precision: "Contrôle de maths le lendemain", par: "p-j9", date: il(1.5) });
+      m("equipe", "p-j9", 1.5, { type: "absence", joueur: "j9", seance: s[0].id, motif: "École / devoirs" });
+    }
+    e.messages.sort((a, b) => a.date.localeCompare(b.date));
     // Les personnes citées dans la démo doivent exister dans l'effectif (les petites équipes ont moins de 16 joueurs)
     const ok = new Set(tous);
     e.convs.forEach((c) => (c.membres = c.membres.filter((p) => ok.has(p))));
@@ -161,38 +208,46 @@
       });
       etat.absences = etat.absences.filter((a) => !(a.deClub && a.seance === s.id && !d[idClub(a.joueur)]));
     });
-    const m = prochainMatch(moi.equipe), cv = CLUB.convocation(m.id);
-    // Sondage lancé (ou relancé) depuis la console : publié dans le groupe de l'équipe
-    const cs = CLUB.sondage(m.id);
+    // Toutes les rencontres à venir (deux matchs le même week-end, un plateau…), pas seulement la prochaine
+    matchsVenir(moi.equipe).forEach(depuisClubMatch);
+  }
+  function depuisClubMatch(m) {
+    const cv = CLUB.convocation(m.id), cs = CLUB.sondage(m.id), prim = primaire(m.id) === m.id;
+    const epingler = () => { const a = conv("annonces"); if (a) a.epingle = etat.messages[etat.messages.length - 1].id; };
+    // Sondage lancé (ou relancé) depuis la console : publié dans les Annonces de l'équipe
     let sl = etat.sondages.find((x) => x.type === "match" && x.match === m.id);
-    if (cs && !sl) {
-      sl = { id: uid(), conv: "annonces", auteur: "coach", date: cs.lance, type: "match", match: m.id, question: cs.lies ? `Week-end : ${cs.lies.map((x) => CLUB.evenement(x)).filter(Boolean).map((x) => `${x.adversaire || x.titre} (${fmtJour(x.date, { weekday: "short", day: "numeric" })})`).join(" et ")}. Qui est disponible pour les 2 matchs ?` : `Match contre ${m.adversaire} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
+    if (prim && cs && !sl) {
+      const lies = cs.lies ? cs.lies.map((x) => CLUB.evenement(x)).filter(Boolean).map(versMatch) : null;
+      sl = { id: uid(), conv: "annonces", auteur: "coach", date: cs.lance, type: "match", match: m.id, lies: cs.lies || undefined,
+        question: lies ? `Week-end : ${lies.map((x) => `${x.adversaire} (${fmtJour(x.date, { weekday: "short", day: "numeric" })})`).join(" et ")}. Qui est disponible pour les ${lies.length} matchs ?` : `${maj1(jourMatch(m))} · ${maj1(titreMatch(m))} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
       etat.sondages.push(sl); etat.messages.push({ id: uid(), conv: "annonces", auteur: "coach", date: cs.lance, type: "sondage", sondage: sl.id });
-      const eq0 = etat.convs.find((x) => x.id === "annonces"); if (eq0) eq0.epingle = etat.messages[etat.messages.length - 1].id;
+      epingler();
     }
-    if (cs && cs.relance && sl && sl.relanceClub !== cs.relance) {
+    if (prim && cs && cs.relance && sl && sl.relanceClub !== cs.relance) {
       sl.relanceClub = cs.relance;
       const sans = etat.joueurs.filter((j) => sl.reponses[j.id] === undefined && !CLUB.dispos(m.id)[j.club]);
       if (sans.length) etat.messages.push({ id: uid(), conv: "annonces", auteur: "coach", date: cs.relance, type: "relance", sondage: sl.id, noms: sans.map((j) => j.nom) });
     }
-    // Réponses données dans l'espace parent : reportées sur le sondage du match et la convocation
-    const sm = etat.sondages.find((x) => x.type === "match" && x.match === m.id), cvm = etat.convocations.filter((c) => c.match === m.id).slice(-1)[0];
+    // Réponses données dans l'espace parent de l'accueil : reportées sur le sondage du match et la convocation
+    const cvm = derniereConvocation(m.id), imp = prim && sl ? (sl.deFamille = sl.deFamille || {}) : null;
+    // Réponse retirée dans l'espace parent : elle disparaît aussi du sondage
+    if (imp) Object.keys(imp).forEach((j) => { const x = CLUB.dispos(m.id)[idClub(j)]; if (!x) delete sl.reponses[j]; if (!x || x.par !== "famille") delete imp[j]; });
     Object.entries(CLUB.dispos(m.id)).forEach(([cid, x]) => {
       const j = idMsg(cid); if (!j || x.par !== "famille") return;
       const r = { present: 0, incertain: 1, absent: 2 }[x.statut];
-      if (sm && r !== undefined) sm.reponses[j] = r;
+      if (imp && r !== undefined) { sl.reponses[j] = r; imp[j] = true; }
       if (cvm && cvm.joueurs.includes(j) && x.statut === "absent" && !(cvm.empechements || {})[j]) (cvm.empechements = cvm.empechements || {})[j] = { motif: x.motif, precision: x.precision || "", date: x.date || maintenant() };
     });
     if (cvm && cvm.empechements) Object.keys(cvm.empechements).forEach((j) => { const x = CLUB.dispos(m.id)[idClub(j)]; if (!x || x.statut !== "absent") delete cvm.empechements[j]; });
+    // Convocation publiée depuis la console
     if (cv && cv.source !== "messagerie" && !etat.convocations.some((c) => c.clubRef === cv.id)) {
-      const ancienne = etat.convocations.filter((c) => c.match === m.id).slice(-1)[0];
-      const formation = ancienne ? ancienne.formation : FORMATIONS[m.format][m.format === 11 ? 1 : 0];
+      const formation = cvm ? cvm.formation : FORMATIONS[m.format][m.format === 11 ? 1 : 0];
       const joueurs = cv.joueurs.map(idMsg).filter(Boolean);
       const c = Object.assign({}, m, { id: uid(), match: m.id, joueurs, formation, postes: places(formation).map(() => null), rdvHeure: cv.rdvHeure, rdvLieu: cv.rdvLieu, tenue: cv.tenue, mot: cv.mot, publiee: cv.publiee, vus: [], clubRef: cv.id });
       remplirAuto(c);
       etat.convocations.push(c);
       etat.messages.push({ id: uid(), conv: "annonces", auteur: "coach", date: cv.publiee, type: "convocation", convoc: c.id });
-      const eq = etat.convs.find((x) => x.id === "annonces"); if (eq) eq.epingle = etat.messages[etat.messages.length - 1].id;
+      epingler();
     }
   }
   // Ce que la messagerie apporte au club : absences signalées, appel, réponses au sondage, empêchements, convocations
@@ -205,20 +260,24 @@
         Object.entries(etat.appel[s.id] || {}).forEach(([jid, v]) => { const cid = idClub(jid), cur = CLUB.presences(s.id)[cid]; if (cid && !(v === "absent" && ["absent", "excuse"].includes(cur)) && !(v === "present" && ["present", "retard"].includes(cur))) CLUB.setPresence(s.id, cid, v === "absent" ? "excuse" : "present"); });
       });
       etat.absences.forEach((a) => { const cid = idClub(a.joueur); if (cid && !CLUB.dispos(a.seance)[cid]) CLUB.setDispo(a.seance, cid, { statut: "absent", motif: a.motif, precision: a.precision, par: "messagerie", date: a.date }); });
-      const m = prochainMatch(moi.equipe), sm = etat.sondages.find((x) => x.type === "match" && x.match === m.id), cv = etat.convocations.filter((c) => c.match === m.id).slice(-1)[0];
-      if (sm && !String(m.id).startsWith("demo-") && !CLUB.sondage(m.id)) CLUB.lancerSondage(m.id);
-      etat.joueurs.forEach((j) => {
-        const emp = cv && cv.empechements && cv.empechements[j.id], r = sm ? sm.reponses[j.id] : undefined, d = CLUB.dispos(m.id)[j.club];
-        const voulu = emp ? { statut: "absent", motif: emp.motif, precision: emp.precision, par: "messagerie" } : r === 2 ? { statut: "absent", motif: "Absent au sondage", par: "sondage" } : r === 1 ? { statut: "incertain", motif: "Incertain au sondage", par: "sondage" } : r === 0 ? { statut: "present", motif: "Disponible", par: "sondage" } : null;
-        if (voulu && (!d || d.statut !== voulu.statut)) CLUB.setDispo(m.id, j.club, voulu);
-        else if (!voulu && d && ["sondage", "messagerie"].includes(d.par)) CLUB.setDispo(m.id, j.club, null);
+      // Chaque rencontre à venir dont la messagerie s'occupe (sondage ou convocation) ; les autres restent à la console
+      matchsVenir(moi.equipe).forEach((m) => {
+        const prim = primaire(m.id) === m.id, sm = prim ? etat.sondages.find((x) => x.type === "match" && x.match === m.id) : null, cv = derniereConvocation(m.id);
+        if (!sm && !cv) return;
+        if (sm && !CLUB.sondage(m.id)) CLUB.lancerSondage(m.id); // sondage lancé par le coach dans la messagerie
+        etat.joueurs.forEach((j) => {
+          const emp = cv && cv.empechements && cv.empechements[j.id], r = sm ? sm.reponses[j.id] : undefined, d = CLUB.dispos(m.id)[j.club];
+          const voulu = emp ? { statut: "absent", motif: emp.motif, precision: emp.precision, par: "messagerie" } : r === 2 ? { statut: "absent", motif: "Absent (sondage)", par: "sondage" } : r === 1 ? { statut: "incertain", motif: "Peut-être (sondage)", par: "sondage" } : r === 0 ? { statut: "present", motif: "Présent (sondage)", par: "sondage" } : null;
+          if (voulu && (!d || d.statut !== voulu.statut)) CLUB.setDispo(m.id, j.club, voulu);
+          else if (!voulu && d && (d.par === "messagerie" || (sm && d.par === "sondage"))) CLUB.setDispo(m.id, j.club, null);
+        });
       });
-      etat.convocations.filter((c) => !c.clubRef && !String(c.match).startsWith("demo-")).forEach((c) => {
+      etat.convocations.filter((c) => !c.clubRef && CLUB.evenement(c.match)).forEach((c) => {
         c.clubRef = CLUB.publierConvocation({ evenement: c.match, joueurs: c.joueurs.map(idClub).filter(Boolean), rdvHeure: c.rdvHeure, rdvLieu: c.rdvLieu, tenue: c.tenue, mot: c.mot, source: "messagerie" }).id;
       });
     });
   }
-  function poster(conv, msg) { etat.messages.push(Object.assign({ id: uid(), conv, date: maintenant(), auteur: moi.profil }, msg)); marquerLu(conv); }
+  function poster(conv, msg) { const signe = maSignature(); etat.messages.push(Object.assign({ id: uid(), conv, date: maintenant(), auteur: moi.profil }, signe ? { signe } : {}, msg)); marquerLu(conv); }
 
   /* ---------- conversations ---------- */
   const mesConvs = () => etat.convs.filter((c) => c.membres.includes(moi.profil));
@@ -239,7 +298,7 @@
     if (m.type === "texte" || m.type === "info") return m.texte;
     if (m.type === "photo") return "📷 Photo" + (m.texte ? " · " + m.texte : "");
     if (m.type === "sondage") { const so = sondage(m.sondage); return "📊 " + (so ? so.question : "Sondage"); }
-    if (m.type === "convocation") { const c = etat.convocations.find((x) => x.id === m.convoc); return c ? `📋 Convocation · ${c.domicile ? "ESGA – " + c.adversaire : c.adversaire + " – ESGA"}, RDV ${c.rdvHeure.replace(":", "h")}` : "📋 Convocation"; }
+    if (m.type === "convocation") { const c = etat.convocations.find((x) => x.id === m.convoc); return c ? `📋 Convocation · ${affiche(c)}, RDV ${c.rdvHeure.replace(":", "h")}` : "📋 Convocation"; }
     if (m.type === "absence") return `🚫 Absence de ${joueur(m.joueur).nom}`;
     if (m.type === "empechement") return `⚠️ Empêchement de ${joueur(m.joueur).nom}`;
     return "🔔 Rappel";
@@ -249,7 +308,7 @@
     if (m.supprime) return "🚫 Message supprimé";
     if (m.type === "photo") return (m.auteur === moi.profil ? "Vous : " : "") + "📷 Photo" + (m.texte ? " · " + m.texte : "");
     if (m.type === "empechement") return `⚠️ Empêchement de ${joueur(m.joueur).nom}`;
-    const qui = m.auteur === moi.profil ? "Vous : " : (conv(m.conv) || {}).type !== "perso" ? nomProfil(m.auteur).replace("Parent de ", "") + " : " : "";
+    const qui = m.auteur === moi.profil ? "Vous : " : (conv(m.conv) || {}).type !== "perso" ? nomAuteur(m).replace("Parent de ", "") + " : " : "";
     if (m.type === "texte") return qui + m.texte;
     if (m.type === "info") return m.texte;
     if (m.type === "sondage") { const s = sondage(m.sondage); return "📊 " + (s ? s.question : "Sondage"); }
@@ -280,11 +339,22 @@
       rendreSemaine(); rendreListe(); rendreChat();
     }
   }
+  // Bandeau : qui je suis (profil de l'accueil), mode démo ou en ligne ; équipe au choix pour le staff
   function rendreTete() {
+    const N = CLUB.enLigne, staff = estStaffPG();
+    document.body.classList.toggle("en-ligne", N.actif);
+    $("#bandeauMode").innerHTML = N.actif ? `🟢 <b>En ligne</b> · messages partagés avec l'équipe` : `<b>Démo</b> · tout reste dans ce navigateur${staff ? ". Pour tester, ouvrez un 2<sup>e</sup> onglet et « voyez comme » une famille" : ""}`;
+    $("#bandeauQui").textContent = CLUB.nomProfil(PG) + (staff ? "" : " · " + nomEquipe(moi.equipe));
+    $("#lblEquipe").hidden = !staff || EQUIPES.length < 2;
     $("#choixEquipe").innerHTML = EQUIPES.map((e) => `<option value="${esc(e)}"${e === moi.equipe ? " selected" : ""}>${esc(nomEquipe(e))}</option>`).join("");
-    $("#choixProfil").innerHTML = `<option value="coach">Le coach</option><optgroup label="Un parent">${etat.joueurs.map((j) => `<option value="p-${j.id}">Parent de ${esc(j.nom)}</option>`).join("")}</optgroup>`;
-    $("#choixProfil").value = moi.profil;
+    $("#lblProfil").hidden = !staff || !demo();
+    $("#btnReinitialiser").hidden = !staff || !demo();
+    if (staff && demo()) {
+      $("#choixProfil").innerHTML = `<option value="coach">Moi (${esc(maSignatureStaff())})</option><optgroup label="Une famille (démo)">${etat.joueurs.map((j) => `<option value="p-${j.id}">${adultes() ? "" : "Parent de "}${esc(j.nom)}</option>`).join("")}</optgroup>`;
+      $("#choixProfil").value = moi.profil;
+    }
   }
+  const maSignatureStaff = () => { const p = moi.profil; moi.profil = "coach"; const s = maSignature(); moi.profil = p; return s || nomCoach(); };
   function rendreListe() {
     const q = ($("#recherche").value || "").toLowerCase();
     const liste = trierConvs(mesConvs()).filter((c) => !q || nomConv(c).toLowerCase().includes(q));
@@ -319,9 +389,9 @@
         html += `<div class="separateur" id="separateur"><span>${pluriel(msgs.slice(idx).filter((x) => x.auteur !== moi.profil).length, "nouveau message").replace("nouveau messages", "nouveaux messages")}</span></div>`; auteurPrec = "";
       }
       if (m.type === "info") { html += `<div class="jour info"><span>${esc(m.texte)}</span></div>`; auteurPrec = ""; return; }
-      const mien = m.auteur === moi.profil, suite = auteurPrec === m.auteur;
-      auteurPrec = m.auteur;
-      const nom = !mien && c.type !== "perso" && !suite ? `<div class="auteur" style="color:${couleur(nomProfil(m.auteur))}">${esc(nomProfil(m.auteur))}</div>` : "";
+      const mien = m.auteur === moi.profil, suite = auteurPrec === nomAuteur(m);
+      auteurPrec = nomAuteur(m);
+      const nom = !mien && c.type !== "perso" && !suite ? `<div class="auteur" style="color:${couleur(nomAuteur(m))}">${esc(nomAuteur(m))}</div>` : "";
       html += `<div class="msg${mien ? " mien" : ""}${suite ? " suite" : ""}${m.type !== "texte" && m.type !== "photo" ? " riche" : ""}${m.supprime ? " supprime" : ""}" id="m-${m.id}">
         <div class="bulle">${m.supprime ? "" : `<button class="m-plus" data-ctx="${m.id}" aria-label="Options du message">${IC.chevron}</button>`}${nom}${corpsMessage(m)}<span class="h">${fmtHeure(m.date)}${mien && !m.supprime ? coches(c, idx) : ""}</span></div>
         ${reactions(m)}${!m.supprime && estCoach() && !mien && enfantDe(m.auteur) ? `<button class="msg-act" data-act-joueur="${enfantDe(m.auteur)}" title="Actions pour ${esc(joueur(enfantDe(m.auteur)).nom)}">${IC.absence}<span>Action</span></button>` : ""}</div>`;
@@ -336,7 +406,7 @@
     $("#formEnvoi").hidden = !peutEcrire; $("#lectureSeule").hidden = peutEcrire;
     const ra = reponseA && msgs.find((m) => m.id === reponseA);
     $("#reponseBarre").hidden = !ra;
-    if (ra) $("#reponseBarre").innerHTML = `<div class="citation"><b>${esc(ra.auteur === moi.profil ? "Vous" : nomProfil(ra.auteur))}</b><span>${esc(extrait(ra))}</span></div><button class="icone" id="btnAnnulerReponse" aria-label="Annuler la réponse">✕</button>`;
+    if (ra) $("#reponseBarre").innerHTML = `<div class="citation"><b>${esc(ra.auteur === moi.profil ? "Vous" : nomAuteur(ra))}</b><span>${esc(extrait(ra))}</span></div><button class="icone" id="btnAnnulerReponse" aria-label="Annuler la réponse">✕</button>`;
     // Défilement : à la première arrivée, sur le séparateur ; ensuite, en bas si on y était
     if (fil.dataset.conv !== c.id) {
       const sp = $("#separateur");
@@ -358,10 +428,10 @@
     let cit = "";
     if (m.reponseA) {
       const o = etat.messages.find((x) => x.id === m.reponseA);
-      if (o) cit = `<button class="citation" data-aller-msg="${o.id}"><b style="color:${couleur(nomProfil(o.auteur))}">${esc(o.auteur === moi.profil ? "Vous" : nomProfil(o.auteur))}</b><span>${esc(extrait(o))}</span></button>`;
+      if (o) cit = `<button class="citation" data-aller-msg="${o.id}"><b style="color:${couleur(nomAuteur(o))}">${esc(o.auteur === moi.profil ? "Vous" : nomAuteur(o))}</b><span>${esc(extrait(o))}</span></button>`;
     }
     if (m.type === "texte") return cit + `<div class="txt">${lienner(esc(m.texte)).replace(/\n/g, "<br>")}</div>`;
-    if (m.type === "photo") return cit + `<button class="photo" data-zoom="${m.id}"><img src="${m.src}" alt="Photo envoyée par ${esc(nomProfil(m.auteur))}"></button>${m.texte ? `<div class="txt">${esc(m.texte)}</div>` : ""}`;
+    if (m.type === "photo") return cit + `<button class="photo" data-zoom="${m.id}"><img src="${m.src}" alt="Photo envoyée par ${esc(nomAuteur(m))}"></button>${m.texte ? `<div class="txt">${esc(m.texte)}</div>` : ""}`;
     if (m.type === "sondage") return carteSondage(sondage(m.sondage));
     if (m.type === "absence") return carteAbsence(m);
     if (m.type === "convocation") return carteConvocMsg(m);
@@ -429,41 +499,57 @@
     const pourMoi = n.filter((m) => { const c = nouveau.convs.find((x) => x.id === m.conv); return c && c.membres.includes(moi.profil) && (m.conv !== moi.conv || moi.espace !== "discussions"); });
     if (!pourMoi.length) return;
     const m = pourMoi[pourMoi.length - 1], c = nouveau.convs.find((x) => x.id === m.conv);
-    const nomC = c.type === "perso" ? nomProfil(m.auteur) : c.nom;
+    const nomC = c.type === "perso" ? nomAuteur(m) : c.nom;
     toast(`💬 ${nomC} · ${apercu(m)}`.slice(0, 110));
   }
 
   /* ---------- panneau « Cette semaine » (parent) / « À faire » (coach) ---------- */
   function rendreSemaine() {
     const el = $("#semaine"), ferme = moi.semaineFerme;
-    const s0 = seances(moi.equipe)[0], match = prochainMatch(moi.equipe), sm = sondageMatch(), cv = derniereConvocation();
+    const s0 = seances(moi.equipe)[0], tous = matchsVenir(moi.equipe), proches = tous.filter(dans10j);
+    const jc = (m) => fmtJour(m.date, { weekday: "short", day: "numeric" });
     let titre, lignes = [];
     if (estCoach()) {
       const aNoter = etat.absences.filter((a) => seances(moi.equipe).some((s) => s.id === a.seance) && !((etat.appel[a.seance] || {})[a.joueur] === "absent")).length;
-      const sans = sm ? etat.joueurs.filter((j) => sm.reponses[j.id] === undefined).length : null;
-      const emp = cv ? Object.keys(cv.empechements || {}).filter((j) => cv.joueurs.includes(j)) : [];
       titre = "À faire";
-      lignes.push(aNoter ? `<button class="sem-l alerte-l" data-coach="entrainements">${IC.absence}<span><b>${pluriel(aNoter, "absence")} à noter</b><small>sur les feuilles de présence</small></span></button>`
-        : `<div class="sem-l ok-l">${IC.absence}<span><b>Absences à jour</b><small>${esc(libSeance(s0))}</small></span></div>`);
-      lignes.push(!sm ? `<button class="sem-l alerte-l" data-action="sondage-match">${IC.ballon}<span><b>Sondage du match à envoyer</b><small>contre ${esc(match.adversaire)}</small></span></button>`
-        : sans ? `<button class="sem-l" data-relancer="${sm.id}">${IC.ballon}<span><b>${pluriel(sans, "famille")} sans réponse</b><small>Relancer dans le groupe</small></span></button>`
-        : `<div class="sem-l ok-l">${IC.ballon}<span><b>Tout le monde a répondu</b><small>au sondage du match</small></span></div>`);
-      lignes.push(!cv ? `<button class="sem-l alerte-l" data-coach="convoc">${IC.convoc}<span><b>Convocation à faire</b><small>${esc(maj1(fmtJour(match.date, { weekday: "long", day: "numeric" })))}</small></span></button>`
-        : `<button class="sem-l${emp.length ? " alerte-l" : ""}" data-coach="convoc">${IC.convoc}<span><b>${emp.length ? pluriel(emp.length, "empêchement") + " signalé" + (emp.length > 1 ? "s" : "") : `Convocation lue par ${cv.vus.length}/${cv.joueurs.length}`}</b><small>${emp.length ? esc(emp.map((j) => joueur(j).nom).join(", ")) + " · revoir la compo" : "Voir la convocation"}</small></span></button>`);
+      if (aNoter) lignes.push(`<button class="sem-l alerte-l" data-coach="entrainements">${IC.absence}<span><b>${pluriel(aNoter, "absence")} à noter</b><small>sur les feuilles de présence</small></span></button>`);
+      else if (s0) lignes.push(`<div class="sem-l ok-l">${IC.absence}<span><b>Absences à jour</b><small>${esc(libSeance(s0))}</small></span></div>`);
+      // Chaque rencontre des 10 prochains jours : d'abord le sondage, puis la convocation
+      proches.forEach((m) => {
+        const sm = sondageMatch(m.id), cv = derniereConvocation(m.id), qui = `${maj1(titreMatch(m))} · ${jc(m)}`;
+        const sans = sm ? etat.joueurs.filter((j) => sm.reponses[j.id] === undefined).length : 0;
+        const emp = cv ? Object.keys(cv.empechements || {}).filter((j) => cv.joueurs.includes(j)) : [];
+        if (!sm && !cv) return lignes.push(`<button class="sem-l alerte-l" data-action="sondage-match" data-match="${esc(m.id)}">${IC.ballon}<span><b>Sondage à lancer</b><small>${esc(qui)}</small></span></button>`);
+        if (sm && primaire(m.id) === m.id) lignes.push(sans ? `<button class="sem-l" data-relancer="${sm.id}">${IC.ballon}<span><b>${pluriel(sans, "famille")} sans réponse</b><small>${esc(qui)} · relancer dans Annonces</small></span></button>`
+          : `<div class="sem-l ok-l">${IC.ballon}<span><b>Tout le monde a répondu</b><small>${esc(qui)}</small></span></div>`);
+        lignes.push(!cv ? `<button class="sem-l alerte-l" data-coach="convoc" data-match="${esc(m.id)}">${IC.convoc}<span><b>Convocation à faire</b><small>${esc(qui)}</small></span></button>`
+          : `<button class="sem-l${emp.length ? " alerte-l" : ""}" data-coach="convoc" data-match="${esc(m.id)}">${IC.convoc}<span><b>${emp.length ? pluriel(emp.length, "empêchement") + " signalé" + (emp.length > 1 ? "s" : "") : `Convocation lue par ${cv.vus.length}/${cv.joueurs.length}`}</b><small>${emp.length ? esc(emp.map((j) => joueur(j).nom).join(", ")) + " · revoir la compo" : esc(qui)}</small></span></button>`);
+      });
+      if (!proches.length) lignes.push(tous[0] ? `<div class="sem-l ok-l">${IC.ballon}<span><b>Prochain match ${esc(jourMatch(tous[0]))}</b><small>Sondage à lancer à partir du ${esc(dateOuverture(tous[0]))}</small></span></div>`
+        : `<div class="sem-l ok-l">${IC.ballon}<span><b>Pas de match prévu</b><small>dans les 6 prochaines semaines</small></span></div>`);
     } else {
-      const j = monEnfant(), nom = joueur(j).nom;
-      const absS = etat.absences.find((a) => a.joueur === j && a.seance === s0.id);
-      const r = sm ? sm.reponses[j] : undefined;
+      const j = monEnfant(), nom = joueur(j).nom, vus = new Set();
       titre = `Cette semaine · ${nom}`;
-      lignes.push(absS ? `<div class="sem-l">${IC.absence}<span><b>${esc(libSeance(s0))}</b><small>Absence signalée (${esc(absS.motif)})</small></span></div>`
-        : `<button class="sem-l" data-action="absence">${IC.absence}<span><b>Entraînement ${esc(libSeance(s0))}</b><small>Absent${e_()} ? Prévenir le coach</small></span></button>`);
-      lignes.push(sm ? `<div class="sem-l sem-match">${IC.ballon}<span><b>Match ${esc(fmtJour(match.date, { weekday: "long", day: "numeric" }))}</b><small>contre ${esc(match.adversaire)}</small>
-          <span class="sem-choix">${OPTIONS_MATCH.map((o, i) => `<button class="pastille p-${CLES_MATCH[i]}${r === i ? " choisi" : ""}" data-voter="${sm.id}|${i}">${o}</button>`).join("")}</span></span></div>`
-        : `<div class="sem-l">${IC.ballon}<span><b>Match ${esc(fmtJour(match.date, { weekday: "long", day: "numeric" }))}</b><small>Le sondage n'est pas encore ouvert</small></span></div>`);
-      if (cv) {
-        const ret = cv.joueurs.includes(j), emp = (cv.empechements || {})[j];
-        lignes.push(`<button class="sem-l${ret && !cv.vus.includes(j) && !emp ? " alerte-l" : ""}" data-voir-convoc="${cv.id}">${IC.convoc}<span><b>${emp ? "Empêchement signalé" : ret ? `Convoqué${e_()} · RDV ${esc(cv.rdvHeure.replace(":", "h"))}` : "Non retenu" + e_() + " ce week-end"}</b><small>${ret && !cv.vus.includes(j) && !emp ? "À lire et confirmer" : "Voir la convocation"}</small></span></button>`);
-      } else lignes.push(`<div class="sem-l">${IC.convoc}<span><b>Convocation</b><small>Pas encore publiée</small></span></div>`);
+      if (s0) {
+        const absS = etat.absences.find((a) => a.joueur === j && a.seance === s0.id);
+        lignes.push(absS ? `<div class="sem-l">${IC.absence}<span><b>${esc(libSeance(s0))}</b><small>Absence signalée (${esc(absS.motif)})</small></span></div>`
+          : `<button class="sem-l" data-action="absence">${IC.absence}<span><b>Entraînement ${esc(libSeance(s0))}</b><small>Absent${e_()} ? Prévenir le coach</small></span></button>`);
+      }
+      proches.forEach((m) => {
+        const sm = sondageMatch(m.id), cv = derniereConvocation(m.id), r = sm ? sm.reponses[j] : undefined;
+        const tete = `<b>${esc(m.ecole ? m.competition : "Match")} ${esc(jourMatch(m))}</b><small>${esc(titreMatch(m))}</small>`;
+        if (sm && vus.has(sm.id)) lignes.push(`<div class="sem-l">${IC.ballon}<span>${tete}<small>Sondage commun du week-end : même réponse</small></span></div>`);
+        else lignes.push(sm ? `<div class="sem-l sem-match">${IC.ballon}<span>${tete}
+            <span class="sem-choix">${OPTIONS_MATCH.map((o, i) => `<button class="pastille p-${CLES_MATCH[i]}${r === i ? " choisi" : ""}" data-voter="${sm.id}|${i}">${o}</button>`).join("")}</span></span></div>`
+          : `<div class="sem-l">${IC.ballon}<span>${tete}<small>Le coach n'a pas encore lancé le sondage</small></span></div>`);
+        if (sm) vus.add(sm.id);
+        if (cv) {
+          const ret = cv.joueurs.includes(j), emp = (cv.empechements || {})[j];
+          lignes.push(`<button class="sem-l${ret && !cv.vus.includes(j) && !emp ? " alerte-l" : ""}" data-voir-convoc="${cv.id}">${IC.convoc}<span><b>${emp ? "Empêchement signalé" : ret ? `Convoqué${e_()} · RDV ${esc(cv.rdvHeure.replace(":", "h"))}` : "Non retenu" + e_() + " pour ce match"}</b><small>${ret && !cv.vus.includes(j) && !emp ? "À lire et confirmer" : "Voir la convocation"}${proches.length > 1 ? " · " + esc(jc(m)) : ""}</small></span></button>`);
+        }
+      });
+      if (!proches.length) lignes.push(tous[0] ? `<div class="sem-l">${IC.ballon}<span><b>Prochain match ${esc(jourMatch(tous[0]))}</b><small>${esc(maj1(titreMatch(tous[0])))} · le sondage ouvrira le ${esc(dateOuverture(tous[0]))}</small></span></div>`
+        : `<div class="sem-l">${IC.ballon}<span><b>Pas de match prévu</b><small>dans les 6 prochaines semaines</small></span></div>`);
     }
     el.innerHTML = `<button class="sem-titre" data-replier aria-expanded="${!ferme}"><span>${esc(titre)}</span>${IC.chevron}</button>${ferme ? "" : `<div class="sem-lignes">${lignes.join("")}</div>`}`;
     el.classList.toggle("ferme", !!ferme);
@@ -482,13 +568,14 @@
   }
   // Fenêtre d'actions sur un enfant (depuis le menu ou un message d'un parent)
   function modaleActionsJoueur(jid) {
-    const s = sondageMatch(), r = s ? s.reponses[jid] : undefined, m = prochainMatch(moi.equipe);
+    const s = sondageMatch(), r = s ? s.reponses[jid] : undefined, m = matchCourant();
     const c = conv(moi.conv);
     ouvrirModale(`Actions pour ${joueur(jid).nom}`, `<div class="actions-j">
       <h3>Entraînement</h3><button class="esga-btn" data-absence-pour="${jid}">${IC.absence} Noter absent${e_()} à un entraînement</button>
-      <h3>Match contre ${esc(m.adversaire)} (${esc(fmtJour(m.date, { weekday: "short", day: "numeric" }))})</h3>
+      ${!m ? `<h3>Match</h3><p class="discret petit">Pas de match prévu dans les 6 prochaines semaines.</p>` : `<h3>${esc(maj1(titreMatch(m)))} (${esc(fmtJour(m.date, { weekday: "short", day: "numeric" }))})</h3>
       ${s ? `<div class="choix3">${OPTIONS_MATCH.map((o, i) => `<button class="rep rep-${CLES_MATCH[i]}${r === i ? " choisi" : ""}" data-match-pour="${jid}|${i}">${o}</button>`).join("")}</div>`
-          : `<p class="discret petit">Le sondage du match n'est pas encore ouvert.</p><button class="esga-btn" data-action="sondage-match">Envoyer le sondage du match</button>`}
+          : sondageOuvert(m) ? `<p class="discret petit">Le sondage du match n'est pas encore lancé.</p><button class="esga-btn" data-action="sondage-match">Lancer le sondage du match</button>`
+          : `<p class="discret petit">Le sondage pourra être lancé à partir du ${esc(dateOuverture(m))} (10 jours avant).</p>`}`}
       ${c && c.type !== "perso" ? `<h3>Conversation</h3><button class="esga-btn" data-perso="p-${jid}">Écrire en privé au parent</button>` : ""}
     </div>`);
   }
@@ -498,18 +585,19 @@
 
   /* ---------- cartes riches dans la conversation ---------- */
   const sondage = (id) => etat.sondages.find((s) => s.id === id);
+  const optionsDe = (s) => (s.type === "match" ? OPTIONS_MATCH : s.options); // mêmes mots partout : Présent, Peut-être, Absent
   // Pour le sondage du match, c'est l'enfant qui « vote » (le parent répond pour lui)
   const votant = (s) => (s.type === "match" ? monEnfant() : moi.profil);
   function carteSondage(s) {
     if (!s) return "";
     const v = votant(s), mien = v ? s.reponses[v] : undefined;
-    const compte = s.options.map((_, i) => Object.values(s.reponses).filter((r) => r === i).length);
+    const compte = optionsDe(s).map((_, i) => Object.values(s.reponses).filter((r) => r === i).length);
     const max = Math.max(1, ...compte), total = Object.keys(s.reponses).length;
     const attendus = s.type === "match" ? etat.joueurs.length : conv(s.conv).membres.length;
     return `<div class="sondage${s.type === "match" ? " s-match" : ""}">
       <div class="s-q">${s.type === "match" ? IC.ballon : IC.sondage}<b>${esc(s.question)}</b></div>
       <div class="s-aide">${s.type === "match" ? (monEnfant() ? `Répondez pour ${esc(joueur(monEnfant()).nom)}` : "Les familles répondent pour leur enfant") : "Choisissez une option"}${s.clos ? " · clos" : ""}</div>
-      ${s.options.map((o, i) => `<button class="s-opt${mien === i ? " choisi" : ""}${s.type === "match" ? " m" + i : ""}" data-voter="${s.id}|${i}"${!v || s.clos ? " disabled" : ""}>
+      ${optionsDe(s).map((o, i) => `<button class="s-opt${mien === i ? " choisi" : ""}${s.type === "match" ? " m" + i : ""}" data-voter="${s.id}|${i}"${!v || s.clos ? " disabled" : ""}>
         <span class="rond"></span><span class="s-lib">${esc(o)}</span><span class="s-n">${compte[i]}</span>
         <span class="s-barre"><i style="width:${(compte[i] / max) * 100}%"></i></span></button>`).join("")}
       <button class="s-voir" data-votes="${s.id}">Voir les votes · ${total}/${attendus}</button></div>`;
@@ -525,9 +613,9 @@
     const c = etat.convocations.find((x) => x.id === m.convoc);
     if (!c) return "";
     const enfant = monEnfant(), retenu = enfant && c.joueurs.includes(enfant);
-    const derniere = derniereConvocation() && derniereConvocation().id === c.id;
+    const derniere = (derniereConvocation(c.match) || {}).id === c.id;
     return `<div class="carte-msg c-convoc"><div class="c-tete">${IC.convoc}<b>Convocation${derniere ? "" : " (remplacée)"}</b></div>
-      <div>${c.domicile ? "ESGA – " + esc(c.adversaire) : esc(c.adversaire) + " – ESGA"}</div>
+      <div>${esc(affiche(c))}</div>
       <div class="discret">${esc(maj1(fmtJour(c.date, { weekday: "long", day: "numeric", month: "long" })))} · RDV ${esc(c.rdvHeure.replace(":", "h"))}</div>
       ${enfant ? `<div class="verdict-mini ${retenu ? "ok" : "non"}">${retenu ? `${esc(joueur(enfant).nom)} est convoqué${e_()}` : `${esc(joueur(enfant).nom)} n'est pas retenu${e_()}`}</div>` : `<div class="discret">${pluriel(c.joueurs.length, "convoqué" + e_())} · lue par ${c.vus.length}</div>`}
       <button class="mini-btn" data-voir-convoc="${c.id}">Voir la convocation</button></div>`;
@@ -535,7 +623,7 @@
   function carteEmpechement(m) {
     return `<div class="carte-msg c-absence"><div class="c-tete">⚠️ <b>Empêchement pour le match</b></div>
       <div><b>${esc(joueur(m.joueur).nom)}</b> · ${esc(m.motif)}</div>${m.precision ? `<div class="discret">« ${esc(m.precision)} »</div>` : ""}
-      ${estCoach() ? `<button class="mini-btn" data-coach="convoc" data-revoir="1">Revoir la compo</button>` : ""}</div>`;
+      ${estCoach() ? `<button class="mini-btn" data-coach="convoc" data-revoir="1"${m.match ? ` data-match="${esc(m.match)}"` : ""}>Revoir la compo</button>` : ""}</div>`;
   }
   function modaleEmpechement(cid) {
     const j = monEnfant();
@@ -594,7 +682,7 @@
     const s = sondage(id);
     const qui = (k) => (s.type === "match" ? joueur(k).nom : nomProfil(k));
     const sans = (s.type === "match" ? etat.joueurs.map((j) => j.id) : conv(s.conv).membres).filter((k) => s.reponses[k] === undefined);
-    ouvrirModale("Votes", `<p><b>${esc(s.question)}</b></p>${s.options.map((o, i) => {
+    ouvrirModale("Votes", `<p><b>${esc(s.question)}</b></p>${optionsDe(s).map((o, i) => {
       const v = Object.keys(s.reponses).filter((k) => s.reponses[k] === i);
       return `<div class="votes"><div class="votes-t"><b>${esc(o)}</b><span>${v.length}</span></div><div class="discret">${v.map((k) => esc(qui(k))).join(", ") || "—"}</div></div>`;
     }).join("")}<div class="votes"><div class="votes-t"><b>Sans réponse</b><span>${sans.length}</span></div><div class="discret">${sans.map((k) => esc(qui(k))).join(", ") || "—"}</div></div>
@@ -623,10 +711,10 @@
     return `<div class="match">
       <div class="match-date"><span>${esc(fmtJour(match.date, { weekday: "short" }))}</span><b>${esc(fmtJour(match.date, { day: "numeric" }))}</b><span>${esc(fmtJour(match.date, { month: "short" }))}</span></div>
       <div class="match-info"><p class="esga-kicker">${esc(match.competition)}</p>
-        <div class="match-titre">${match.domicile ? `ESGA <span>contre</span> ${esc(match.adversaire)}` : `${esc(match.adversaire)} <span>contre</span> ESGA`}</div>
-        <div class="discret">${esc(match.heure.replace(":", "h"))} · ${esc(match.lieu)} · ${match.domicile ? "à domicile" : "à l'extérieur"}</div></div></div>`;
+        <div class="match-titre">${match.ecole ? esc(match.adversaire) : match.domicile ? `ESGA <span>contre</span> ${esc(match.adversaire)}` : `${esc(match.adversaire)} <span>contre</span> ESGA`}</div>
+        <div class="discret">${esc(match.heure.replace(":", "h"))} · ${esc(match.lieu)}${match.ecole ? "" : match.domicile ? " · à domicile" : " · à l'extérieur"}</div></div></div>`;
   }
-  function derniereConvocation() { const m = prochainMatch(moi.equipe); return etat.convocations.filter((c) => c.match === m.id).slice(-1)[0] || null; }
+  function derniereConvocation(mid) { mid = mid || (matchCourant() || {}).id; return mid ? etat.convocations.filter((c) => c.match === mid).slice(-1)[0] || null : null; }
   function places(formation) {
     const lignes = formation.split("-").map(Number), L = lignes.length, res = [{ x: 50, y: 90, lib: "G" }];
     lignes.forEach((n, li) => {
@@ -651,7 +739,7 @@
   function vueConvocation(c) {
     const enfant = monEnfant(), retenu = enfant && c.joueurs.includes(enfant), titulaire = enfant && (c.postes || []).includes(enfant);
     const compo = c.postes && c.postes.some(Boolean);
-    const derniere = derniereConvocation() && derniereConvocation().id === c.id;
+    const derniere = (derniereConvocation(c.match) || {}).id === c.id;
     return `<div class="convoc">
       ${derniere ? "" : `<p class="alerte">Cette convocation a été remplacée par une version plus récente.</p>`}
       ${carteMatch(c)}
@@ -677,30 +765,43 @@
       places(c.formation).forEach((p, i) => { if (!c.postes[i]) return; const g = groupes.find((x) => x.lib === p.lib); g ? g.ids.push(c.postes[i]) : groupes.push({ lib: p.lib, ids: [c.postes[i]] }); });
       compo = `\nComposition (${c.formation}) :\n` + groupes.map((g) => `${g.lib} : ${noms(g.ids)}`).join("\n") + (remplacants(c).length ? `\nRemplaçant${e_()}s : ${noms(remplacants(c))}` : "") + "\n";
     }
-    return `⚽ CONVOCATION ESGA · ${nomEquipe(moi.equipe)}\n${maj1(fmtJour(c.date))} · coup d'envoi ${c.heure.replace(":", "h")}\n` +
-      `${c.domicile ? "ESGA – " + c.adversaire : c.adversaire + " – ESGA"} (${c.lieu})\n\nRendez-vous : ${c.rdvHeure.replace(":", "h")} · ${c.rdvLieu}\nTenue : ${c.tenue}\n\n` +
+    return `⚽ CONVOCATION ESGA · ${nomEquipe(moi.equipe)}\n${maj1(fmtJour(c.date))} · ${c.ecole ? "début" : "coup d'envoi"} ${c.heure.replace(":", "h")}\n` +
+      `${affiche(c)} (${c.lieu})\n\nRendez-vous : ${c.rdvHeure.replace(":", "h")} · ${c.rdvLieu}\nTenue : ${c.tenue}\n\n` +
       `Convoqué${e_()}s (${c.joueurs.length}) : ${noms(c.joueurs)}\n` + compo + (c.mot ? `\n${c.mot}\n` : "");
   }
 
   /* ---------- Espace coach ---------- */
-  function sondageMatch() { const m = prochainMatch(moi.equipe); return etat.sondages.filter((s) => s.type === "match" && s.match === m.id).slice(-1)[0] || null; }
+  // Sondage d'une rencontre (par défaut celle suivie dans l'onglet) ; sondage commun du week-end : celui du premier match
+  function sondageMatch(mid) {
+    mid = mid || (matchCourant() || {}).id; if (!mid) return null;
+    const p = primaire(mid); return etat.sondages.filter((s) => s.type === "match" && (s.match === p || s.match === mid)).slice(-1)[0] || null;
+  }
   function reponseMatch(jid) { const s = sondageMatch(); const r = s ? s.reponses[jid] : undefined; return r === undefined ? null : CLES_MATCH[r]; }
   function rendreCoach() {
     const o = moi.coachOnglet || "match";
     document.querySelectorAll(".c-onglet").forEach((b) => b.setAttribute("aria-selected", b.dataset.coach === o));
     const el = $("#coachContenu");
     if (el.contains(document.activeElement) && document.activeElement.matches("input:not([type=checkbox]), textarea")) return;
-    el.innerHTML = o === "match" ? coachMatch() : o === "convoc" ? coachConvoc() : coachEntrainements();
+    el.innerHTML = o === "entrainements" ? coachEntrainements() : choixMatch() + (o === "match" ? coachMatch() : coachConvoc());
   }
+  // Plusieurs rencontres à venir (deux matchs le même week-end, un tournoi…) : le coach choisit celle qu'il prépare
+  function choixMatch() {
+    const l = matchsVenir(moi.equipe), cur = matchCourant();
+    if (l.length < 2) return "";
+    return `<div class="choix-match" role="tablist" aria-label="Rencontre">${l.slice(0, 6).map((m) => `<button class="chip${m.id === cur.id ? " actif" : ""}" data-match-choisi="${esc(m.id)}" aria-selected="${m.id === cur.id}"><b>${esc(maj1(fmtJour(m.date, { weekday: "short", day: "numeric", month: "short" })))}</b><span>${esc(m.ecole ? m.adversaire : m.adversaire + (m.domicile ? " (dom.)" : " (ext.)"))}</span></button>`).join("")}</div>`;
+  }
+  const sansMatch = () => `<section class="carte"><h2>Pas de match prévu</h2><p class="discret">Aucune rencontre dans les 6 prochaines semaines. Les matchs arrivent des PV du District ; les amicaux et plateaux s'ajoutent dans le calendrier de la console.</p><a class="esga-btn" href="../#calendrier">Ouvrir le calendrier</a></section>`;
   function coachMatch() {
-    const match = prochainMatch(moi.equipe), s = sondageMatch();
-    if (!s) return `<section class="carte">${carteMatch(match)}<p>Aucun sondage n'est encore ouvert pour ce match.</p>
-      <button class="esga-btn esga-btn-or" data-action="sondage-match">Envoyer le sondage de présence à l'équipe</button></section>`;
+    const match = matchCourant(), s = sondageMatch();
+    if (!match) return sansMatch();
+    if (!s) return `<section class="carte">${carteMatch(match)}${sondageOuvert(match)
+      ? `<p>Le sondage de présence n'est pas encore lancé pour ce match.</p><button class="esga-btn esga-btn-or" data-action="sondage-match">Lancer le sondage dans Annonces</button>`
+      : `<p>Le sondage s'ouvre 10 jours avant la rencontre : vous pourrez le lancer à partir du <b>${esc(dateOuverture(match))}</b>.</p>`}</section>`;
     const cpt = [0, 0, 0], sans = [];
     etat.joueurs.forEach((j) => (s.reponses[j.id] === undefined ? sans.push(j) : cpt[s.reponses[j.id]]++));
-    return `<section class="carte">${carteMatch(match)}
+    return `<section class="carte">${carteMatch(match)}${s.match !== match.id ? `<p class="discret petit">Sondage commun du week-end : « ${esc(s.question)} »</p>` : ""}
       <div class="jauge">${cpt.map((n, i) => (n ? `<span class="j-${CLES_MATCH[i]}" style="flex:${n}"></span>` : "")).join("")}${sans.length ? `<span class="j-aucune" style="flex:${sans.length}"></span>` : ""}</div>
-      <div class="legende"><span><i class="j-oui"></i>${cpt[0]} présent${e_()}s</span><span><i class="j-incertain"></i>${cpt[1]} incertain${e_()}s</span><span><i class="j-non"></i>${cpt[2]} absent${e_()}s</span><span><i class="j-aucune"></i>${sans.length} sans réponse</span></div>
+      <div class="legende"><span><i class="j-oui"></i>${cpt[0]} présent${e_()}${cpt[0] > 1 ? "s" : ""}</span><span><i class="j-incertain"></i>${cpt[1]} peut-être</span><span><i class="j-non"></i>${cpt[2]} absent${e_()}${cpt[2] > 1 ? "s" : ""}</span><span><i class="j-aucune"></i>${sans.length} sans réponse</span></div>
       <div class="actions">${sans.length ? `<button class="esga-btn" data-relancer="${s.id}">Relancer les ${sans.length} sans réponse</button>` : ""}
         <button class="esga-btn esga-btn-or" data-coach="convoc">Faire la compo et la convoc ›</button></div></section>
       <section class="carte"><h2>Réponses</h2><p class="discret petit">Touchez une réponse pour la changer (si une famille vous a répondu de vive voix).</p>
@@ -708,33 +809,36 @@
   }
   function moinsMinutes(h, min) { const [a, b] = h.split(":").map(Number); const t = (a * 60 + b - min + 1440) % 1440; return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`; }
   function nouveauBrouillon() {
-    const match = prochainMatch(moi.equipe), c = derniereConvocation();
+    const match = matchCourant(), c = derniereConvocation();
     if (c) {
       const b = JSON.parse(JSON.stringify({ joueurs: c.joueurs, formation: c.formation, postes: c.postes, rdvHeure: c.rdvHeure, rdvLieu: c.rdvLieu, tenue: c.tenue, mot: c.mot }));
       const emp = Object.keys(c.empechements || {});
       b.joueurs = b.joueurs.filter((j) => !emp.includes(j)); b.postes = b.postes.map((p) => (emp.includes(p) ? null : p));
+      b.plus = !!maxConv() && b.joueurs.length > maxConv();
       return b;
     }
     const formation = FORMATIONS[match.format][match.format === 11 ? 1 : 0];
-    const b = { joueurs: etat.joueurs.filter((j) => reponseMatch(j.id) === "oui").map((j) => j.id), formation, postes: places(formation).map(() => null),
-      rdvHeure: moinsMinutes(match.heure, match.domicile ? 60 : 90), rdvLieu: match.domicile ? match.lieu + ", vestiaires" : "Parking du stade Léon Garaud (covoiturage)",
-      tenue: "Tenue du club, protège-tibias, gourde, k-way", mot: "" };
+    const b = { joueurs: etat.joueurs.filter((j) => reponseMatch(j.id) === "oui").map((j) => j.id).slice(0, maxConv() || 99), formation, postes: places(formation).map(() => null),
+      rdvHeure: moinsMinutes(match.heure, match.domicile ? 60 : 90), rdvLieu: match.domicile ? match.lieu.split(",")[0] + " (vestiaires)" : "Parking du stade Edmond Pouzet (covoiturage)",
+      tenue: "Tenue du club, protège-tibias, gourde", mot: "" };
     remplirAuto(b);
     return b;
   }
   function remplirAuto(b) { const libres = b.joueurs.filter((j) => !b.postes.includes(j)); b.postes = b.postes.map((p) => p || libres.shift() || null); }
   function coachConvoc() {
-    const match = prochainMatch(moi.equipe), c = derniereConvocation();
+    const match = matchCourant(), c = derniereConvocation();
+    if (!match) return sansMatch();
     if (c && !brouillon) return `<section class="carte"><div class="carte-tete"><h2>Convocation publiée</h2><button class="esga-btn" id="btnModifierConvoc">${IC.crayon} Modifier</button></div>${vueConvocation(c)}</section>`;
     if (!brouillon) brouillon = nouveauBrouillon();
-    const b = brouillon, cpt = { oui: 0, incertain: 0, non: 0, aucune: 0 };
+    const b = brouillon, cpt = { oui: 0, incertain: 0, non: 0, aucune: 0 }, mx = maxConv();
     etat.joueurs.forEach((j) => cpt[reponseMatch(j.id) || "aucune"]++);
-    const LIB = { oui: "Présent", incertain: "Incertain", non: "Absent" };
+    const LIB = { oui: "Présent", incertain: "Peut-être", non: "Absent" };
     return `<section class="carte"><h2>${c ? "Modifier la convocation" : "Compo et convocation"}</h2>${carteMatch(match)}
-      <p class="resume-sondage">Sondage : <b>${cpt.oui}</b> présent${e_()}s, <b>${cpt.incertain}</b> incertain${e_()}s, <b>${cpt.non}</b> absent${e_()}s, <b>${cpt.aucune}</b> sans réponse.</p>
+      <p class="resume-sondage">${sondageMatch() ? `Sondage : <b>${cpt.oui}</b> présent${e_()}${cpt.oui > 1 ? "s" : ""}, <b>${cpt.incertain}</b> peut-être, <b>${cpt.non}</b> absent${e_()}${cpt.non > 1 ? "s" : ""}, <b>${cpt.aucune}</b> sans réponse.` : "Le sondage n'est pas lancé pour ce match : cochez les convoqué" + e_() + "s vous-même."}</p>
       <form id="formConvoc" class="form">
-        <fieldset class="large"><legend>1. Convoqué${e_()}s <span class="discret">(${b.joueurs.length})</span></legend>
+        <fieldset class="large"><legend>1. Convoqué${e_()}s <span class="discret">(${b.joueurs.length}${mx ? " / " + mx + " maximum" : ""})</span></legend>
           <p class="discret petit">Les « Présent » du sondage sont déjà cochés.</p>
+          ${mx ? `<label class="case exception"><input type="checkbox" id="convPlus"${b.plus ? " checked" : ""}><span>Exceptionnellement, convoquer plus de ${mx} ${fem() ? "joueuses" : "joueurs"}</span></label>` : ""}
           <div class="cases">${etat.joueurs.map((j) => { const r = reponseMatch(j.id); return `<label class="case"><input type="checkbox" name="j" value="${j.id}"${b.joueurs.includes(j.id) ? " checked" : ""}><span>${esc(j.nom)}</span><span class="etiquette e-${r || "aucune"}">${r ? LIB[r] : "?"}</span></label>`; }).join("")}</div>
         </fieldset>
         <fieldset class="large"><legend>2. Composition</legend>
@@ -750,7 +854,7 @@
           <label class="large">Tenue et affaires<input name="tenue" value="${esc(b.tenue)}"></label>
           <label class="large">Mot du coach (facultatif)<textarea name="mot" rows="2" placeholder="Ex. : prévenez-moi au plus vite en cas d'empêchement.">${esc(b.mot)}</textarea></label>
         </fieldset>
-        <div class="actions large"><button class="esga-btn esga-btn-or">${c ? "Republier dans le groupe de l'équipe" : "Publier dans le groupe de l'équipe"}</button>
+        <div class="actions large"><button class="esga-btn esga-btn-or">${c ? "Republier dans Annonces" : "Publier dans Annonces"}</button>
           ${c ? `<button type="button" class="esga-btn" id="btnAnnulerEdition">Annuler</button>` : ""}</div>
       </form></section>`;
   }
@@ -814,14 +918,19 @@
     if (d.supprimer) { const m = etat.messages.find((x) => x.id === d.supprimer); m.supprime = true; delete m.texte; delete m.src; fermerCtx(); const c = conv(m.conv); if (c.epingle === m.id) c.epingle = null; return sauver(); }
     if (d.allerMsg) return allerMsg(d.allerMsg);
     if (t.id === "versBas") { const f = $("#fil"); f.scrollTo({ top: f.scrollHeight, behavior: "smooth" }); nouveauxEnBas = 0; return; }
-    if (d.zoom) { const m = etat.messages.find((x) => x.id === d.zoom); return ouvrirModale("Photo", `<img class="photo-zoom" src="${m.src}" alt="">${m.texte ? `<p>${esc(m.texte)}</p>` : ""}<p class="discret petit">${esc(nomProfil(m.auteur))} · ${esc(fmtJour(m.date, { day: "numeric", month: "long" }))} à ${fmtHeure(m.date)}</p>`, true); }
+    if (d.zoom) { const m = etat.messages.find((x) => x.id === d.zoom); return ouvrirModale("Photo", `<img class="photo-zoom" src="${m.src}" alt="">${m.texte ? `<p>${esc(m.texte)}</p>` : ""}<p class="discret petit">${esc(nomAuteur(m))} · ${esc(fmtJour(m.date, { day: "numeric", month: "long" }))} à ${fmtHeure(m.date)}</p>`, true); }
     if (t.id === "btnPhoto") return $("#fichierPhoto").click();
     if (d.replier !== undefined) { moi.semaineFerme = !moi.semaineFerme; ecrireMoi(); return rendreSemaine(); }
     if (d.empechement) return modaleEmpechement(d.empechement);
     if (d.annonces) { const c = conv(d.annonces); c.annonces = !c.annonces; poster(c.id, { type: "info", texte: c.annonces ? "Seuls les coachs et les dirigeants peuvent maintenant écrire dans ce groupe" : "Tout le monde peut de nouveau écrire dans ce groupe" }); fermerModale(); return sauver(); }
     if (d.fermer !== undefined) return fermerModale();
     if (d.espace) { moi.espace = d.espace; ecrireMoi(); return rendre(); }
-    if (d.coach) { if (d.revoir && derniereConvocation()) brouillon = nouveauBrouillon(); moi.coachOnglet = d.coach; moi.espace = "coach"; ecrireMoi(); rendre(); return window.scrollTo(0, 0); }
+    if (d.matchChoisi) { if (moi.match !== d.matchChoisi) brouillon = null; moi.match = d.matchChoisi; ecrireMoi(); return rendre(); }
+    if (d.coach) {
+      if (d.match && d.match !== (matchCourant() || {}).id) { moi.match = d.match; brouillon = null; }
+      if (d.revoir && derniereConvocation()) brouillon = nouveauBrouillon();
+      moi.coachOnglet = d.coach; moi.espace = "coach"; ecrireMoi(); rendre(); return window.scrollTo(0, 0);
+    }
     if (d.ouvrir) { reponseA = null; return ouvrirConv(d.ouvrir); }
     if (d.retour !== undefined) { moi.mobileChat = false; ecrireMoi(); return rendre(); }
     if (d.infos) return modaleInfos(d.infos);
@@ -839,12 +948,17 @@
       if (d.action === "convoc") { moi.coachOnglet = "convoc"; moi.espace = "coach"; ecrireMoi(); return rendre(); }
       if (d.action === "sondage-match") {
         fermerModale();
-        const ex = sondageMatch();
-        if (ex) { toast("Le sondage de ce match est déjà ouvert."); return ouvrirConv(ex.conv); }
-        const m = prochainMatch(moi.equipe);
-        const s = { id: "s-" + uid(), conv: "annonces", auteur: moi.profil, date: maintenant(), type: "match", match: m.id, question: `Match contre ${m.adversaire} (${fmtJour(m.date, { weekday: "long", day: "numeric" })}) : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
+        const m = (d.match && matchDe(d.match)) || matchCourant();
+        if (!m) return toast("Pas de match prévu dans les 6 prochaines semaines.");
+        const ex = sondageMatch(m.id);
+        if (ex) { toast("Le sondage de ce match est déjà lancé."); return ouvrirConv(ex.conv); }
+        // Règle du club : le sondage s'ouvre 10 jours avant la rencontre (avant, les familles ne savent pas encore)
+        if (!sondageOuvert(m)) return toast(`Trop tôt : le sondage pourra être lancé à partir du ${dateOuverture(m)}.`);
+        const s = { id: "s-" + uid(), conv: "annonces", auteur: moi.profil, date: maintenant(), type: "match", match: m.id, question: `${maj1(jourMatch(m))} · ${maj1(titreMatch(m))} : qui est disponible ?`, options: OPTIONS_MATCH, reponses: {} };
         etat.sondages.push(s); poster("annonces", { type: "sondage", sondage: s.id });
-        toast("Sondage envoyé au groupe de l'équipe.");
+        conv("annonces").epingle = etat.messages[etat.messages.length - 1].id;
+        CLUB.lancerSondage(m.id);
+        toast("Sondage publié dans Annonces.");
         sauver(); return ouvrirConv("annonces");
       }
     }
@@ -865,14 +979,14 @@
     if (d.matchPour) {
       const [jid, i] = d.matchPour.split("|"), s = sondageMatch(); if (!s) return;
       s.reponses[jid] = +i;
-      poster(moi.conv, { type: "info", texte: `Coach : ${joueur(jid).nom} · ${OPTIONS_MATCH[+i].toLowerCase()} au match` });
+      poster(moi.conv, { type: "info", texte: `${nomCoach()} : ${joueur(jid).nom} · ${OPTIONS_MATCH[+i].toLowerCase()} au match` });
       fermerModale(); toast(`${joueur(jid).nom} : ${OPTIONS_MATCH[+i]} au match.`); return sauver();
     }
     if (d.relancer) {
       const s = sondage(d.relancer);
       const sans = (s.type === "match" ? etat.joueurs.map((j) => j.id) : conv(s.conv).membres).filter((k) => s.reponses[k] === undefined);
       poster(s.conv, { type: "relance", sondage: s.id, noms: sans.map((k) => (s.type === "match" ? joueur(k).nom : nomProfil(k))) });
-      fermerModale(); toast("Rappel envoyé dans la conversation."); return sauver();
+      fermerModale(); toast(s.conv === "annonces" ? "Rappel publié dans Annonces." : "Rappel envoyé dans la conversation."); return sauver();
     }
     if (d.clore) { sondage(d.clore).clos = true; fermerModale(); return sauver(); }
     if (d.noter) { const [sid, jid] = d.noter.split("|"); (etat.appel[sid] = etat.appel[sid] || {})[jid] = "absent"; toast(`${joueur(jid).nom} noté${e_()} absent${e_()}.`); return sauver(); }
@@ -895,7 +1009,7 @@
     if (t.id === "btnAnnulerEdition") { brouillon = null; return rendre(); }
     if (t.id === "btnAuto" && brouillon) { lireChampsBrouillon(); remplirAuto(brouillon); return rendre(); }
     if (t.id === "btnVider" && brouillon) { lireChampsBrouillon(); brouillon.postes = brouillon.postes.map(() => null); return rendre(); }
-    if (t.id === "btnReinitialiser") { S.effacer(moi.equipe); charger(); brouillon = null; moi.conv = "equipe"; ecrireMoi(); toast("Démo remise à zéro pour cette équipe."); return rendre(); }
+    if (t.id === "btnReinitialiser" && demo()) { S.effacer(moi.equipe); charger(); brouillon = null; moi.conv = "equipe"; ecrireMoi(); toast("Démo remise à zéro pour cette équipe."); return rendre(); }
   });
 
   document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { if (!$("#modale").hidden) fermerModale(); $("#menuPlus").hidden = true; fermerCtx(); if (reponseA) { reponseA = null; rendreChat(); } } });
@@ -903,15 +1017,19 @@
 
   document.addEventListener("change", (ev) => {
     const t = ev.target;
-    if (t.id === "choixEquipe") { moi.equipe = t.value; moi.profil = "coach"; moi.conv = "equipe"; ecrireMoi(); brouillon = null; charger(); return rendre(); }
+    if (t.id === "choixEquipe") { if (!estStaffPG() || !EQUIPES.includes(t.value)) return; moi.equipe = t.value; moi.profil = "coach"; moi.conv = "equipe"; moi.match = null; ecrireMoi(); brouillon = null; charger(); return rendre(); }
     if (t.id === "choixProfil") {
+      if (!estStaffPG() || !demo()) return;
       moi.profil = t.value; brouillon = null;
       if (!conv(moi.conv) || !conv(moi.conv).membres.includes(moi.profil)) moi.conv = "equipe";
       ecrireMoi(); return rendre();
     }
     if (!brouillon) return;
+    if (t.id === "convPlus") { brouillon.plus = t.checked; return; }
     if (t.name === "j") {
       lireChampsBrouillon();
+      const mx = maxConv();
+      if (t.checked && mx && !brouillon.plus && brouillon.joueurs.length >= mx) { t.checked = false; return toast(`${mx} maximum pour ce format. Cochez « Exceptionnellement » pour en convoquer plus.`); }
       if (t.checked) brouillon.joueurs = etat.joueurs.map((j) => j.id).filter((x) => x === t.value || brouillon.joueurs.includes(x));
       else { brouillon.joueurs = brouillon.joueurs.filter((x) => x !== t.value); brouillon.postes = brouillon.postes.map((p) => (p === t.value ? null : p)); }
       rendre();
@@ -967,21 +1085,23 @@
       const c = etat.convocations.find((x) => x.id === f.dataset.convoc), j = monEnfant();
       c.empechements = c.empechements || {};
       c.empechements[j] = { motif: d.get("motif"), precision: (d.get("precision") || "").trim(), date: maintenant() };
-      const sm = sondageMatch(); if (sm) sm.reponses[j] = 2;
+      const sm = sondageMatch(c.match); if (sm) sm.reponses[j] = 2;
       const pc = convPerso("coach");
-      poster(pc, { type: "empechement", joueur: j, motif: d.get("motif"), precision: (d.get("precision") || "").trim() });
+      poster(pc, { type: "empechement", joueur: j, match: c.match, motif: d.get("motif"), precision: (d.get("precision") || "").trim() });
       fermerModale(); toast("Le coach est prévenu en privé."); return sauver();
     }
     if (f.id === "formConvoc") {
       lireChampsBrouillon();
-      const b = brouillon; if (!b.joueurs.length) return toast(`Cochez au moins un${e_()} ${fem() ? "joueuse" : "joueur"}.`);
-      const m = prochainMatch(moi.equipe), ancienne = derniereConvocation();
+      const b = brouillon, m = matchCourant(), mx = maxConv(); if (!m) return;
+      if (!b.joueurs.length) return toast(`Cochez au moins un${e_()} ${fem() ? "joueuse" : "joueur"}.`);
+      if (mx && !b.plus && b.joueurs.length > mx) return toast(`${mx} maximum : décochez-en ou cochez « Exceptionnellement ».`);
+      const ancienne = derniereConvocation();
       const c = Object.assign({}, m, { id: uid(), match: m.id, joueurs: b.joueurs.slice(), formation: b.formation, postes: b.postes.slice(), rdvHeure: b.rdvHeure, rdvLieu: b.rdvLieu.trim(), tenue: b.tenue.trim(), mot: b.mot.trim(), publiee: maintenant(),
         // Une famille qui avait lu garde son « lu » seulement si son enfant reste dans le même cas
         vus: ancienne ? ancienne.vus.filter((id) => ancienne.joueurs.includes(id) === b.joueurs.includes(id)) : [] });
       etat.convocations.push(c); poster("annonces", { type: "convocation", convoc: c.id });
       conv("annonces").epingle = etat.messages[etat.messages.length - 1].id;
-      brouillon = null; toast(ancienne ? "Convocation mise à jour dans le groupe de l'équipe." : "Convocation publiée dans le groupe de l'équipe.");
+      brouillon = null; toast(ancienne ? "Convocation mise à jour dans Annonces." : "Convocation publiée dans Annonces.");
       return sauver();
     }
   });
@@ -1020,18 +1140,23 @@
 
   /* ---------- démarrage ---------- */
   CLUB.pret.then(() => {
-    EQUIPES = CLUB.equipes().map((e) => e.id);
-    // Profil choisi à l'accueil (le même dans toute l'appli) ; chaque onglet peut ensuite jouer quelqu'un d'autre
-    const pg = CLUB.profil(), pj = pg && pg.joueur && CLUB.personne(pg.joueur);
-    const demande = new URLSearchParams(location.search).get("equipe"); // lien depuis la console
-    let famille = null;
-    if (pj && (!moi.profil || demande)) { moi.equipe = pj.equipe; famille = pj.id; moi.conv = "equipe"; }
-    else if (demande && EQUIPES.includes(demande) && (demande !== moi.equipe || !moi.profil)) { moi.equipe = demande; moi.profil = "coach"; moi.conv = "equipe"; }
-    else if (!moi.profil && pg && pg.role === "coach") { const st = CLUB.staff().find((x) => x.id === pg.staff); if (st && st.equipes[0]) { moi.equipe = st.equipes[0]; moi.profil = "coach"; } }
-    if (!EQUIPES.includes(moi.equipe)) moi.equipe = EQUIPES.includes("U15F-2") ? "U15F-2" : EQUIPES[0];
+    // Le profil choisi à l'accueil décide de tout : pas de profil, on passe d'abord par « Qui êtes-vous ? »
+    PG = CLUB.profil();
+    if (PG && CLUB.enLigne.actif && CLUB.enLigne.role === "famille" && estStaffPG()) PG = null; // code familles : pas d'accès staff
+    const pj = PG && PG.joueur && CLUB.personne(PG.joueur);
+    if (!PG || (!estStaffPG() && !pj)) { location.replace(CLUB.BASE + "#bienvenue"); return; }
+    EQUIPES = CLUB.equipesDe(PG).filter((e) => CLUB.equipe(e));
+    if (!EQUIPES.length) { document.body.classList.remove("chargement"); document.body.innerHTML = `<p class="vide-liste" style="padding:24px">Aucune équipe ne vous est attribuée pour l'instant. <a href="${CLUB.BASE}">Retour à l'accueil</a></p>`; return; }
+    // Profil changé à l'accueil depuis la dernière visite de cet onglet : on repart de zéro
+    const cle = JSON.stringify(PG);
+    if (moi.pg !== cle) moi = { pg: cle };
+    const q = new URLSearchParams(location.search), demande = q.get("equipe"), match = q.get("match"); // liens depuis l'accueil
+    if (demande && EQUIPES.includes(demande) && demande !== moi.equipe) { moi.equipe = demande; moi.conv = "equipe"; moi.match = null; brouillon = null; }
+    if (!EQUIPES.includes(moi.equipe)) moi.equipe = pj ? pj.equipe : PG.role === "dirigeant" && EQUIPES.includes("U15F-2") ? "U15F-2" : EQUIPES[0];
     charger();
-    if (famille && idMsg(famille)) moi.profil = "p-" + idMsg(famille);
-    if (!tousProfils().includes(moi.profil)) moi.profil = "coach";
+    if (!estStaffPG()) moi.profil = "p-" + idMsg(pj.id); // une famille est toujours elle-même
+    else if (!demo() || !tousProfils().includes(moi.profil)) moi.profil = "coach";
+    if (match && matchDe(match)) { moi.match = match; if (estCoach()) { moi.espace = "coach"; moi.coachOnglet = q.get("onglet") === "convoc" ? "convoc" : "match"; } }
     if (!moi.conv) moi.conv = "equipe";
     if (!moi.espace) moi.espace = "discussions";
     ecrireMoi(); rendre();
