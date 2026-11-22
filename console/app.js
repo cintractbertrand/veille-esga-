@@ -152,6 +152,7 @@
         <a class="kpi" href="#staff"><b>${st.filter((s) => ["coach", "adjoint"].includes(s.role)).length}</b><span>éducateurs</span><small class="discret">${st.filter((s) => !["coach", "adjoint"].includes(s.role)).length} au bureau</small></a>
         <a class="kpi" href="#calendrier"><b>${nbM}</b><span>${nbM > 1 ? "matchs" : "match"} d'ici dimanche</span><small class="discret">${pl(nbE, "entraînement")}</small></a>
       </div>
+      ${tuilesConvoques(null, 7, { replier: true })}
       <div class="grille g-tb">
         <section class="carte"><h2>À traiter <span class="etiq ${taches.length ? "att" : "ok"}">${taches.length || "Rien"}</span></h2>
           ${taches.length ? `<ul class="taches">${taches.map((t) => `<li><span class="pt ${t.k}"></span><span class="tx">${esc(t.t)}<small>${esc(t.s)}</small></span>${t.a}</li>`).join("")}</ul>` : '<p class="vide">Tout est à jour. 👌</p>'}
@@ -303,12 +304,36 @@
     return `<section class="recap">${tete}<nav class="recap-puces">${puces}</nav><div class="recap-grille">${sections.map(bloc).join("")}</div></section>`;
   }
 
+  /* ---------- convoqués en tuiles : sur l'accueil de chaque rôle ---------- */
+  // Les rencontres à venir dont la convocation est publiée, une tuile par convoqué (numéro, prénom, poste).
+  // Famille : son équipe, sa tuile en or. Coach : ses équipes. Dirigeant : tout le club, replié s'il y a beaucoup de matchs.
+  function tuilesConvoques(eqs, jours, { moi = null, replier = false, avecEquipe = true } = {}) {
+    const evs = (eqs ? eqs.flatMap((eq) => C.rencontres(eq, auj(), ajout(auj(), jours))) : C.rencontres(null, auj(), ajout(auj(), jours)))
+      .filter((e) => C.convocation(e.id)).sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
+    const fam = !!moi;
+    const tete = (n) => `<h2>📋 ${fam ? "Les convoqués" : "Convoqués aux prochains matchs"} ${n ? `<span class="etiq bleu">${pl(n, "match", "matchs")}</span>` : ""}${fam ? "" : '<a class="plus" href="#convocations">Tous les matchs ›</a>'}</h2>`;
+    if (!evs.length) {
+      const n = (eqs || []).map((eq) => C.prochainMatch(eq)).filter(Boolean).sort((a, b) => a.date.localeCompare(b.date))[0];
+      return `<section class="carte convoques">${tete(0)}<p class="vide" style="padding:6px 0">${fam && n ? `La convocation pour <b>${esc(n.titre)}</b> (${fJ(n.date)}) n'est pas encore publiée. Elle apparaîtra ici.` : `Aucune convocation publiée pour les ${jours} prochains jours.`}</p></section>`;
+    }
+    const tuile = (p, e) => { const d = C.dispos(e.id)[p.id], abs = d && d.statut === "absent", f = p.genre === "F", c = moi === p.id;
+      return `<li class="tuile-j${c ? " moi" : ""}${abs ? " abs" : ""}"${fam ? "" : ` data-a="fiche" data-id="${esc(p.id)}" role="button" tabindex="0"`} title="${esc(C.nomComplet(p))}">
+        <span class="num">${p.numero || initiales(p)}</span><b>${esc(p.prenom)}${p.nom ? " " + esc(p.nom[0]) + "." : ""}</b><small>${abs ? `absent${f ? "e" : ""}` : c ? (profil.role === "parent" ? "votre enfant" : "c'est vous") : esc(p.poste || "")}</small></li>`; };
+    const bloc = (e, ouvert) => { const cv = C.convocation(e.id), js = cv.joueurs.map(C.personne).filter(Boolean).sort((a, b) => (a.numero || 99) - (b.numero || 99) || a.prenom.localeCompare(b.prenom)), mx = maxConv(e);
+      const resume = `<span class="cq-date"><b>${fmt(e.date, { weekday: "short" })}</b><span>${jour(e.date).getDate()}</span><small>${fmt(e.date, { month: "short" })}</small></span>
+        <span class="cq-titre"><b>${avecEquipe ? esc(C.nomEquipe(e.equipe)) + " · " : ""}${esc(e.adversaire || e.titre)}</b><small>${hh(e.heure)} · ${esc(e.lieu || "")}${e.type !== "match" ? " · " + esc(TYPES[e.type]) : ""}<br>⏰ RDV ${hh(cv.rdvHeure)} · ${esc(cv.rdvLieu || "")}</small></span>
+        <span class="etiq ${mx && js.length > mx ? "att" : "ok"}">${js.length}${mx ? " / " + mx : ""}</span>`;
+      const liste = `<ul class="tuiles-j">${js.map((p) => tuile(p, e)).join("")}</ul>${fam ? "" : `<p class="cq-pied"><a class="btn mini lien" href="#convoc/${esc(e.id)}">Voir la convocation ›</a></p>`}`;
+      return replier ? `<details class="cq"${ouvert ? " open" : ""}><summary class="cq-tete">${resume}</summary>${liste}</details>` : `<div class="cq"><div class="cq-tete">${resume}</div>${liste}</div>`; };
+    return `<section class="carte convoques">${tete(evs.length)}${evs.map((e, i) => bloc(e, evs.length <= 2 || i === 0)).join("")}</section>`;
+  }
+
   function pageAccueilCoach() {
     const s = moiStaff(); if (!s) return `<p class="vide">Profil introuvable.</p>`;
     const eqs = s.equipes;
     if (!eqs.length) return `<div class="entete"><h1>Bonjour ${esc(s.prenom)}</h1></div><p class="vide">Aucune équipe ne vous est confiée pour l'instant. Le responsable sportif peut vous en affecter une.</p>`;
     return `<div class="entete"><div><p class="fil-ariane discret">${fJL(auj())}</p><h1>Bonjour ${esc(s.prenom)} 👋</h1><p class="sous">${eqs.map(C.nomEquipe).join(" · ")}</p></div></div>`
-      + recapHTML() + carteWeekend(eqs) + eqs.map((eq) => blocCoach(eq, eqs.length > 1)).join("")
+      + recapHTML() + carteWeekend(eqs) + tuilesConvoques(eqs, 10, { avecEquipe: eqs.length > 1 }) + eqs.map((eq) => blocCoach(eq, eqs.length > 1)).join("")
       + `<section class="carte" style="margin-top:14px"><h2>Vos outils</h2>${modulesHTML(eqs[0])}</section>`;
   }
   /* ---------- vidéos : séquences envoyées aux joueurs ---------- */
@@ -917,6 +942,7 @@
     const dossier = [j.certificat !== "ok" ? "Le certificat médical (ou le questionnaire de santé) est à donner au club." : "", j.licence.statut === "en_attente" ? "La licence est en cours de validation." : j.licence.statut === "a_renouveler" ? "La licence est à renouveler sur le lien envoyé par le club." : ""].filter(Boolean);
     return `<div class="entete"><div><p class="fil-ariane discret">${fJL(auj())}</p><h1>${parent ? `Bonjour 👋` : `Salut ${esc(j.prenom)} 👋`}</h1><p class="sous">${parent ? `Parent de <b>${esc(C.nomComplet(j))}</b> · ` : ""}${esc(C.nomEquipe(j.equipe))}</p></div></div>
       ${dossier.length ? `<p class="alerte ko" style="margin-bottom:14px"><b>À faire :</b> ${dossier.map(esc).join(" ")}</p>` : ""}
+      ${tuilesConvoques([j.equipe], C.JOURS_SONDAGE, { moi: j.id, avecEquipe: false })}
       <div class="grille g2 moi">
         <section class="carte"><h2>⚽ ${ms.length > 1 ? "Prochains matchs" : "Prochain match"}</h2>${carteMatch}</section>
         <section class="carte"><h2>🏃 Entraînements</h2>${ents.length ? `<ul class="ents">${ents.map(ligneEnt).join("")}</ul>` : '<p class="vide">Pas d\'entraînement ces 3 prochaines semaines (vacances ?).</p>'}
@@ -1124,7 +1150,7 @@
     if (surSoumission && f.closest("#tiroir")) surSoumission(f);
   });
   $("#tiroirFond").addEventListener("click", fermer);
-  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("#tiroir").hidden) fermer(); });
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("#tiroir").hidden) fermer(); if (ev.key === "Enter" && ev.target.matches && ev.target.matches('.tuile-j[role="button"]')) ev.target.click(); });
   window.addEventListener("hashchange", () => { fermer(); rendre(); });
 
   function ouvrirCreneau(id, equipe) {
