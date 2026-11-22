@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="fr" data-simulateur>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b2a6f">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230b2a6f%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
+  <title>Simulateur · ESGA</title>
+  <meta name="description" content="ES Genas Azieu : simulateur de test, un scénario complet joué en direct sur des données de test">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="commun/charte.css?v=2026-11-22s">
+  <script src="commun/modules.js?v=2026-11-22s" defer></script>
+  <style>
+    body { margin: 0; background: var(--esga-fond); color: var(--esga-texte); font-family: var(--esga-police); }
+    .simu { max-width: 1680px; margin: 0 auto; padding: 18px 16px 40px; display: grid; grid-template-columns: 360px 1fr; gap: 18px; align-items: start; }
+    .tete { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+    .tete h1 { margin: 0; font-size: 24px; }
+    .tete p { margin: 4px 0 0; color: var(--esga-gris); font-size: 14px; }
+    .commandes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .commandes select { font: 500 14px var(--esga-police); padding: 9px 10px; border-radius: 10px; border: 1px solid var(--esga-ligne); background: var(--esga-carte); color: var(--esga-texte); }
+    .esga-btn[disabled] { opacity: .55; cursor: default; }
+    .panneau { background: var(--esga-carte); border: 1px solid var(--esga-ligne); border-radius: var(--esga-rayon); box-shadow: var(--esga-ombre); position: sticky; top: 12px; max-height: calc(100vh - 24px); display: flex; flex-direction: column; }
+    .bilan { padding: 14px 16px; border-bottom: 1px solid var(--esga-ligne); }
+    .bilan b { font-size: 16px; }
+    .bilan small { display: block; color: var(--esga-gris); margin-top: 3px; font-size: 13px; }
+    .bilan.ok { background: color-mix(in srgb, var(--esga-vert) 12%, transparent); }
+    .bilan.ko { background: color-mix(in srgb, var(--esga-rouge) 12%, transparent); }
+    .barre { height: 6px; background: var(--esga-ligne); border-radius: 3px; margin-top: 10px; overflow: hidden; }
+    .barre i { display: block; height: 100%; width: 0; background: var(--esga-or); transition: width .3s; }
+    ol.etapes { list-style: none; margin: 0; padding: 6px 0; overflow: auto; }
+    .etape { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; padding: 9px 16px; align-items: start; font-size: 14px; }
+    .etape .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; border: 2px solid var(--esga-ligne); color: var(--esga-gris); }
+    .etape b { font-weight: 600; }
+    .etape small { display: block; color: var(--esga-gris); font-size: 12.5px; margin-top: 2px; }
+    .etape .duree { color: var(--esga-gris); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .etape.encours { background: color-mix(in srgb, var(--esga-or) 14%, transparent); }
+    .etape.encours .ic { border-color: var(--esga-or); border-top-color: transparent; animation: tourne .8s linear infinite; }
+    .etape.ok .ic { background: var(--esga-vert); border-color: var(--esga-vert); color: #fff; }
+    .etape.ko .ic { background: var(--esga-rouge); border-color: var(--esga-rouge); color: #fff; }
+    .etape.ko small { color: var(--esga-rouge); }
+    .etape.saute { opacity: .5; }
+    @keyframes tourne { to { transform: rotate(360deg); } }
+    .ecrans { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 14px; }
+    .ecran { background: var(--esga-carte); border: 2px solid var(--esga-ligne); border-radius: 18px; overflow: hidden; box-shadow: var(--esga-ombre); transition: border-color .2s, box-shadow .2s; display: flex; flex-direction: column; }
+    .ecran.actif { border-color: var(--esga-or); box-shadow: 0 0 0 4px color-mix(in srgb, var(--esga-or) 30%, transparent); }
+    .ecran header { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 9px 12px; background: var(--esga-marine); color: #fff; font-size: 13px; }
+    .ecran header b { font-size: 14px; }
+    .ecran header small { opacity: .8; }
+        .ecran .action { min-height: 18px; padding: 6px 12px; font-size: 12.5px; color: var(--esga-gris); border-bottom: 1px solid var(--esga-ligne); }
+    .ecran.actif .action { color: var(--esga-texte); font-weight: 600; }
+    .ecran iframe { width: 100%; height: 680px; border: 0; background: var(--esga-fond); display: block; }
+    .vide { display: grid; place-items: center; height: 680px; color: var(--esga-gris); font-size: 14px; text-align: center; padding: 20px; }
+    .note { grid-column: 1 / -1; font-size: 13px; color: var(--esga-gris); margin: 0; }
+    @media (max-width: 900px) {
+      .simu { grid-template-columns: 1fr; }
+      .panneau { position: static; max-height: none; }
+      .ecran iframe, .vide { height: 560px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="simu">
+    <div class="tete">
+      <div>
+        <h1>🧪 Simulateur</h1>
+        <p>Un match préparé de A à Z, joué tout seul sous vos yeux, sur des données de test. Les vraies données du club ne sont jamais touchées.</p>
+      </div>
+      <div class="commandes">
+        <select id="vitesse" aria-label="Vitesse">
+          <option value="1400">Lent (pour suivre)</option>
+          <option value="600" selected>Normal</option>
+          <option value="80">Rapide</option>
+        </select>
+        <button class="esga-btn esga-btn-or" id="lancer">▶ Lancer le test</button>
+        <button class="esga-btn" id="effacer">Effacer les données de test</button>
+      </div>
+    </div>
+
+    <aside class="panneau">
+      <div class="bilan" id="bilan"><b>Prêt</b><small>Appuyez sur « Lancer le test ». Vous verrez chaque action dans les écrans à droite.</small><div class="barre"><i id="progres"></i></div></div>
+      <ol class="etapes" id="etapes"></ol>
+    </aside>
+
+    <section class="ecrans" id="ecrans"></section>
+    <p class="note">Équipe de test : U15F 2, coach Julie Marchand, match amical du week-end. Chaque écran est une vraie page de l'appli (accueil, espace famille, messagerie) ouverte avec un profil différent ; elles se parlent comme des onglets.</p>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (s, r = document) => r.querySelector(s);
+  const PRE = "esga-simu:", EQ = "U15F-2", EVT = "ev-amical-u15f";
+  const ECRANS = [
+    { id: "coach", nom: "Coach", qui: "Julie Marchand · accueil" },
+    { id: "parent", nom: "Parent de Léa", qui: "espace famille" },
+    { id: "messagerie", nom: "Parent d'Inès", qui: "messagerie" },
+  ];
+  const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+  const vitesse = () => +$("#vitesse").value;
+  let enCours = false, erreurs = [], ctx = {};
+
+  /* ---------- écrans ---------- */
+  $("#ecrans").innerHTML = ECRANS.map((e) => `<article class="ecran" id="e-${e.id}"><header><span><b>${e.nom}</b> <small>· ${e.qui}</small></span></header><div class="action" id="a-${e.id}">En attente</div><div class="vide" id="v-${e.id}">L'écran s'ouvrira au lancement du test.</div></article>`).join("");
+  const cadre = (id) => $("#f-" + id);
+  const fen = (id) => { const f = cadre(id); return f && f.contentWindow; };
+  const doc = (id) => { const w = fen(id); return w && w.document; };
+  function montrer(id, texte) {
+    document.querySelectorAll(".ecran").forEach((x) => x.classList.toggle("actif", x.id === "e-" + id));
+    if (id) $("#a-" + id).textContent = texte || "";
+  }
+  function ouvrir(id, url) {
+    return new Promise((ok, ko) => {
+      let f = cadre(id);
+      if (!f) { f = document.createElement("iframe"); f.id = "f-" + id; f.name = "simu-" + id; f.title = "Écran " + id; $("#v-" + id).replaceWith(f); }
+      const t = setTimeout(() => ko(new Error("la page ne s'ouvre pas (15 s)")), 15000);
+      f.onload = () => {
+        clearTimeout(t);
+        const w = f.contentWindow;
+        if (!w.ESGA_BAC_A_SABLE && w.CLUB) return ko(new Error("la page n'est pas en mode test : arrêt par sécurité"));
+        w.addEventListener("error", (ev) => erreurs.push(`${id} : ${ev.message}`));
+        w.addEventListener("unhandledrejection", (ev) => erreurs.push(`${id} : ${ev.reason && ev.reason.message || ev.reason}`));
+        const st = w.document.createElement("style");
+        st.textContent = ".simu-vise{outline:3px solid #e8b923 !important;outline-offset:2px;box-shadow:0 0 0 7px rgba(232,185,35,.35) !important;transition:outline .2s}";
+        w.document.head.appendChild(st);
+        ok(w);
+      };
+      const [chemin, ancre] = url.split("#"); // un numéro à chaque ouverture : la page se recharge vraiment
+      f.src = chemin + (chemin.includes("?") ? "&" : "?") + "simu=" + Date.now() + (ancre ? "#" + ancre : "");
+    });
+  }
+  async function pret(id) { const w = fen(id); if (!w || !w.CLUB) throw new Error("la page n'a pas chargé le club"); await w.CLUB.pret; await pause(250); return w; }
+  async function attendre(fn, ms = 6000, quoi = "") {
+    const fin = Date.now() + ms; let v;
+    while (Date.now() < fin) { try { v = fn(); if (v) return v; } catch (e) {} await pause(100); }
+    throw new Error(quoi || "délai dépassé");
+  }
+  async function viser(id, el, texte) {
+    montrer(id, texte);
+    if (!el || !el.isConnected) { await pause(Math.max(150, vitesse())); return; } // la page s'est redessinée entre-temps
+    const x = window.scrollX, y = window.scrollY; el.scrollIntoView({ block: "center" }); window.scrollTo(x, y); // seul l'écran défile, pas la page du simulateur
+    el.classList.add("simu-vise"); await pause(Math.max(150, vitesse()));
+    el.classList.remove("simu-vise");
+  }
+  async function cliquer(id, sel, texte, ms) {
+    const el = await attendre(() => typeof sel === "function" ? sel() : doc(id).querySelector(sel), ms || 6000, "bouton introuvable : " + texte);
+    await viser(id, el, texte); el.click(); return el;
+  }
+  const texte = (id) => (doc(id) && doc(id).body ? doc(id).body.innerText : "");
+  async function aller(id, hash) { const w = fen(id); if (w.location.hash !== hash) { w.location.hash = hash; await pause(300); } }
+
+  /* ---------- vraies données : empreinte avant / après ---------- */
+  function empreinte() {
+    const o = [];
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!k.startsWith(PRE)) o.push(k + "=" + localStorage.getItem(k)); }
+    o.sort(); let h = 0; const s = o.join("\n"); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return { n: o.length, h };
+  }
+  function effacerTest() {
+    const k = []; for (let i = 0; i < localStorage.length; i++) if (localStorage.key(i).startsWith(PRE)) k.push(localStorage.key(i));
+    k.forEach((x) => localStorage.removeItem(x));
+    const s = []; for (let i = 0; i < sessionStorage.length; i++) if (sessionStorage.key(i).startsWith(PRE)) s.push(sessionStorage.key(i));
+    s.forEach((x) => sessionStorage.removeItem(x));
+    return k.length;
+  }
+  const profilEcran = (id, p) => localStorage.setItem(PRE + "simu-" + id + ":esga-profil", JSON.stringify(p));
+  const etatMsg = () => JSON.parse(localStorage.getItem(PRE + "esga-messagerie:" + EQ) || "null");
+  const sondageMsg = () => { const e = etatMsg(); return e && e.sondages.find((s) => s.type === "match" && s.match === EVT); };
+  const idMsg = (cid) => { const e = etatMsg(); const j = e && e.joueurs.find((x) => x.club === cid); return j && j.id; };
+  const C = () => fen("coach").CLUB;
+
+  /* ---------- le scénario ---------- */
+  const ETAPES = [
+    { t: "Préparer le bac à sable", f: async () => {
+      ctx.avant = empreinte(); effacerTest(); erreurs = [];
+      await ouvrir("coach", "./#bienvenue"); const w = await pret("coach");
+      if (!w.CLUB.bacASable) throw new Error("mode test non actif");
+      if (w.CLUB.enLigne.actif) throw new Error("la page de test est connectée au club en ligne");
+      const e = w.CLUB.evenement(EVT), js = w.CLUB.joueurs(EQ), coach = w.CLUB.coachDe(EQ);
+      if (!e || !coach || js.length < 15) throw new Error("données de démo incomplètes");
+      // Le match part de zéro : pas encore de sondage, de réponses ni de convocation
+      const D = w.CLUB.donnees; delete D.sondages[EVT]; delete D.dispos[EVT]; delete D.rappels[EVT]; D.convocations = D.convocations.filter((c) => c.evenement !== EVT);
+      w.CLUB.setRappel(EVT, null); // enregistre
+      if (w.CLUB.sondage(EVT) || w.CLUB.convocation(EVT)) throw new Error("impossible de remettre le match à zéro");
+      ctx.coach = coach; ctx.lea = js.find((j) => j.prenom === "Léa"); ctx.ines = js.find((j) => j.prenom === "Inès"); ctx.nb = js.length;
+      return `Données de démo neuves : ${js.length} joueuses, coach ${coach.prenom} ${coach.nom}, match du ${new Date(e.date + "T12:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}`;
+    } },
+    { t: "Ouvrir les 3 écrans (coach, parent, messagerie)", f: async () => {
+      profilEcran("coach", { role: "coach", staff: ctx.coach.id });
+      profilEcran("parent", { role: "parent", joueur: ctx.lea.id });
+      profilEcran("messagerie", { role: "parent", joueur: ctx.ines.id });
+      montrer("coach", "Connexion de la coach"); await ouvrir("coach", "./#accueil"); await pret("coach");
+      montrer("parent", "Connexion du parent de Léa"); await ouvrir("parent", "./#moi"); await pret("parent");
+      montrer("messagerie", "Ouverture de la messagerie"); await ouvrir("messagerie", "./messagerie/"); await pret("messagerie");
+      await attendre(() => /Bonjour Julie/.test(texte("coach")), 5000, "l'accueil de la coach ne s'affiche pas");
+      await attendre(() => /Léa/.test(texte("parent")), 5000, "l'espace du parent ne s'affiche pas");
+      await attendre(() => doc("messagerie").querySelector('[data-ouvrir="annonces"]'), 5000, "la messagerie ne s'affiche pas");
+      return "Accueil coach, espace famille et messagerie ouverts, chacun avec son profil";
+    } },
+    { t: "La coach voit le match à préparer", f: async () => {
+      const b = await attendre(() => doc("coach").querySelector(`[data-a="lancer-sondage"][data-id="${EVT}"]`), 4000, "pas de bouton « Lancer le sondage » sur l'accueil");
+      await viser("coach", b.closest("section") || b, "Carte « Matchs à préparer »");
+      return "Bouton « Lancer le sondage » présent sur son accueil";
+    } },
+    { t: "La coach lance le sondage", f: async () => {
+      await cliquer("coach", `[data-a="lancer-sondage"][data-id="${EVT}"]`, "Clic sur « Lancer le sondage »");
+      await attendre(() => C().sondage(EVT) && C().sondage(EVT).lance, 4000, "le sondage n'est pas enregistré");
+      return "Sondage enregistré dans le club";
+    } },
+    { t: "Le parent de Léa reçoit le sondage", f: async () => {
+      const b = await attendre(() => doc("parent").querySelector(`.reponse-match [data-v="present"][data-id="${EVT}"]`), 6000, "les boutons Présent / Absent n'apparaissent pas chez le parent");
+      await viser("parent", b.closest(".reponse-match") || b, "Le sondage est arrivé");
+      return "Boutons Présente / Peut-être / Absente affichés dans son espace";
+    } },
+    { t: "Le sondage arrive dans les Annonces", f: async () => {
+      const s = await attendre(sondageMsg, 6000, "le sondage n'est pas publié dans la messagerie");
+      ctx.sondage = s.id;
+      await cliquer("messagerie", () => doc("messagerie").querySelector('[data-ouvrir="annonces"]'), "Ouverture des Annonces");
+      const b = await attendre(() => doc("messagerie").querySelector(`[data-voter="${s.id}|0"]`), 5000, "la carte du sondage n'est pas dans les Annonces");
+      await viser("messagerie", b.closest(".sondage") || b, "Sondage du match dans les Annonces");
+      return "Carte du sondage affichée dans les Annonces de l'équipe";
+    } },
+    { t: "Le parent de Léa répond « Présente »", f: async () => {
+      await cliquer("parent", `.reponse-match [data-v="present"][data-id="${EVT}"]`, "Clic sur « Présente »");
+      const d = await attendre(() => { const x = C().dispos(EVT)[ctx.lea.id]; return x && x.statut === "present" && x; }, 5000, "la coach ne reçoit pas la réponse");
+      montrer("coach", "Réponse de Léa reçue");
+      return `Réponse reçue par la coach (${d.motif || "Présent"})`;
+    } },
+    { t: "La réponse s'affiche aussi dans la messagerie", f: async () => {
+      const j = idMsg(ctx.lea.id);
+      await attendre(() => { const s = sondageMsg(); return s && s.reponses[j] === 0; }, 6000, "la réponse de Léa n'est pas reportée sur le sondage de la messagerie");
+      const b = doc("messagerie").querySelector(`[data-voter="${ctx.sondage}|0"]`); if (b) await viser("messagerie", b, "Compteur « Présent » à jour");
+      return "Sondage de la messagerie : 1 présente";
+    } },
+    { t: "Le parent d'Inès vote dans la messagerie", f: async () => {
+      await cliquer("messagerie", `[data-voter="${ctx.sondage}|0"]`, "Clic sur « Présente » dans le sondage");
+      const d = await attendre(() => { const x = C().dispos(EVT)[ctx.ines.id]; return x && x.statut === "present" && x; }, 6000, "le vote n'arrive pas chez la coach");
+      montrer("coach", "Vote d'Inès reçu");
+      return `Vote reçu par la coach (${d.motif || "Présent"})`;
+    } },
+    { t: "Convocation : 14 joueuses au maximum à 11", f: async () => {
+      montrer("coach", "Ouverture de la convocation"); await aller("coach", "#convoc/" + EVT);
+      await attendre(() => doc("coach").querySelector("#fConvoc"), 5000, "la page de convocation ne s'ouvre pas");
+      const cases = [...doc("coach").querySelectorAll('#fConvoc input[name="j"]')];
+      for (const c of cases) if (!c.checked) { c.checked = true; c.dispatchEvent(new Event("input", { bubbles: true })); if (vitesse() > 200) await pause(60); }
+      await viser("coach", doc("coach").querySelector("#nbConv") || doc("coach").querySelector("#fConvoc"), `Tentative : les ${cases.length} joueuses cochées`);
+      const n = doc("coach").querySelectorAll('#fConvoc input[name="j"]:checked').length;
+      if (n !== 14) throw new Error(`${n} cochées : la limite de 14 n'est pas appliquée`);
+      return `${cases.length} cochées, l'appli en garde 14 et prévient la coach`;
+    } },
+    { t: "La coach publie la convocation", f: async () => {
+      await cliquer("coach", '#fConvoc button.prim', "Clic sur « Publier la convocation »");
+      const cv = await attendre(() => C().convocation(EVT), 4000, "la convocation n'est pas publiée");
+      if (cv.joueurs.length !== 14) throw new Error(`${cv.joueurs.length} convoquées au lieu de 14`);
+      ctx.leaConv = cv.joueurs.includes(ctx.lea.id);
+      return `Convocation publiée : 14 joueuses${ctx.leaConv ? ", dont Léa" : ""}`;
+    } },
+    { t: "Le parent de Léa voit les convoquées", f: async () => {
+      const t = await attendre(() => { const l = doc("parent").querySelectorAll(".convoques .tuile-j"); return l.length === 14 && l; }, 6000, "les 14 tuiles n'apparaissent pas dans l'espace famille");
+      const moi = doc("parent").querySelector(".convoques .tuile-j.moi");
+      if (ctx.leaConv && !moi) throw new Error("la tuile de Léa n'est pas mise en avant");
+      await viser("parent", moi || t[0].closest(".convoques"), "14 tuiles, celle de Léa en or");
+      return `14 tuiles${moi ? ", celle de Léa en or" : ""}`;
+    } },
+    { t: "La convocation arrive dans les Annonces", f: async () => {
+      const b = await attendre(() => doc("messagerie").querySelector("[data-voir-convoc]"), 6000, "pas de convocation dans les Annonces");
+      await viser("messagerie", b.closest(".carte-msg") || b, "Convocation reçue");
+      return "Carte « Convocation » publiée dans les Annonces";
+    } },
+    { t: "Le parent de Léa prévient d'une absence", f: async () => {
+      if (!ctx.leaConv) return { saute: "Léa n'est pas convoquée dans ce tirage" };
+      await cliquer("parent", `[data-a="dispo-match"][data-id="${EVT}"][data-v="absent"]`, "Clic sur « Léa ne peut pas venir »");
+      await cliquer("parent", () => { const f = doc("parent").querySelector(".tiroir:not([hidden]) form"); return f && f.querySelector("button.prim"); }, "Clic sur « Prévenir le coach »");
+      const d = await attendre(() => { const x = C().dispos(EVT)[ctx.lea.id]; return x && x.statut === "absent" && x; }, 5000, "la coach n'est pas prévenue");
+      return `La coach est prévenue (${d.motif})`;
+    } },
+    { t: "L'accueil de la coach est à jour", f: async () => {
+      montrer("coach", "Retour à l'accueil"); await aller("coach", "#accueil");
+      const l = await attendre(() => { const x = doc("coach").querySelectorAll(".convoques .tuile-j"); return x.length === 14 && x; }, 5000, "les convoquées n'apparaissent pas sur l'accueil de la coach");
+      const barre = doc("coach").querySelectorAll(".convoques .tuile-j.abs").length;
+      if (ctx.leaConv && barre !== 1) throw new Error("l'absence de Léa n'est pas barrée");
+      await viser("coach", l[0].closest(".convoques"), ctx.leaConv ? "Léa barrée : absente" : "Convoquées");
+      return `14 tuiles sur l'accueil${ctx.leaConv ? ", Léa barrée (absente)" : ""}`;
+    } },
+    { t: "Aucune erreur dans les pages", f: async () => {
+      montrer(null);
+      if (erreurs.length) throw new Error(erreurs.slice(0, 3).join(" · "));
+      return "Aucune erreur JavaScript pendant le test";
+    } },
+    { t: "Les vraies données du club n'ont pas bougé", f: async () => {
+      const apres = empreinte();
+      if (apres.h !== ctx.avant.h || apres.n !== ctx.avant.n) throw new Error("les vraies données ont changé pendant le test");
+      return "Rien n'a été écrit en dehors du bac à sable";
+    } },
+  ];
+
+  /* ---------- affichage du déroulé ---------- */
+  const ol = $("#etapes");
+  function dessiner() { ol.innerHTML = ETAPES.map((e, i) => `<li class="etape" id="s-${i}"><span class="ic">${i + 1}</span><span><b>${e.t}</b><small></small></span><span class="duree"></span></li>`).join(""); }
+  function marquer(i, cl, msg, ms) {
+    const li = $("#s-" + i); li.className = "etape " + cl;
+    li.querySelector(".ic").textContent = cl === "ok" ? "✓" : cl === "ko" ? "✕" : cl === "saute" ? "–" : cl === "encours" ? "" : i + 1;
+    if (msg != null) li.querySelector("small").textContent = msg;
+    li.querySelector(".duree").textContent = ms != null ? (ms / 1000).toFixed(1) + " s" : "";
+    if (cl === "encours") { const b = li.getBoundingClientRect(), o = ol.getBoundingClientRect(); if (b.bottom > o.bottom || b.top < o.top) ol.scrollTop += b.top - o.top - 40; }
+  }
+  function bilan(cl, titre, sous, n) {
+    const b = $("#bilan"); b.className = "bilan " + (cl || "");
+    b.querySelector("b").textContent = titre; b.querySelector("small").textContent = sous;
+    $("#progres").style.width = Math.round(100 * n / ETAPES.length) + "%";
+  }
+  dessiner();
+
+  async function lancer() {
+    if (enCours) return; enCours = true; ctx = {};
+    $("#lancer").disabled = $("#effacer").disabled = true; $("#lancer").textContent = "Test en cours…";
+    dessiner();
+    let ok = 0, ko = 0, saute = 0; const t0 = Date.now();
+    for (let i = 0; i < ETAPES.length; i++) {
+      marquer(i, "encours", "…"); bilan("", `Étape ${i + 1} sur ${ETAPES.length}`, ETAPES[i].t, i);
+      const d = Date.now();
+      try {
+        const r = await ETAPES[i].f();
+        if (r && r.saute) { saute++; marquer(i, "saute", r.saute, Date.now() - d); }
+        else { ok++; marquer(i, "ok", r || "OK", Date.now() - d); }
+      } catch (e) {
+        ko++; marquer(i, "ko", e.message || String(e), Date.now() - d);
+        if (i < 2) { for (let k = i + 1; k < ETAPES.length; k++) marquer(k, "saute", "Non joué : l'étape " + (i + 1) + " a échoué"); break; }
+      }
+      await pause(vitesse());
+    }
+    montrer(null);
+    const s = ((Date.now() - t0) / 1000).toFixed(0);
+    if (ko) bilan("ko", `❌ ${ko} étape${ko > 1 ? "s" : ""} en échec`, `${ok} OK${saute ? `, ${saute} non jouée${saute > 1 ? "s" : ""}` : ""} · ${s} s. Le détail est sous chaque étape en rouge.`, ETAPES.length);
+    else bilan("ok", "✅ Tout marche", `${ok} étapes OK${saute ? `, ${saute} non jouée${saute > 1 ? "s" : ""}` : ""} · ${s} s. Vous pouvez cliquer dans les écrans pour continuer à essayer.`, ETAPES.length);
+    $("#lancer").disabled = $("#effacer").disabled = false; $("#lancer").textContent = "↻ Relancer le test"; enCours = false;
+  }
+  $("#lancer").addEventListener("click", lancer);
+  $("#effacer").addEventListener("click", () => {
+    ECRANS.forEach((e) => { const f = cadre(e.id); if (f) { const v = document.createElement("div"); v.className = "vide"; v.id = "v-" + e.id; v.textContent = "L'écran s'ouvrira au lancement du test."; f.replaceWith(v); } $("#a-" + e.id).textContent = "En attente"; });
+    const n = effacerTest(); dessiner(); bilan("", "Données de test effacées", `${n} élément${n > 1 ? "s" : ""} supprimé${n > 1 ? "s" : ""}. Les vraies données n'ont pas été touchées.`, 0);
+  });
+  if (new URLSearchParams(location.search).has("auto")) lancer();
+})();
+</script>
+</body>
+</html>
