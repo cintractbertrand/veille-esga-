@@ -11,6 +11,43 @@
    (supabase/esga_en_ligne.sql). Le navigateur garde une copie pour aller vite et tenir sans réseau ;
    les modifications partent toutes seules et celles des autres arrivent toutes les 15 s. */
 (function () {
+  /* ---------- bac à sable du simulateur (simulateur.html) ----------
+     Une page ouverte dans un écran du simulateur (cadre nommé « simu-… ») travaille sur une copie de test :
+     tout ce qu'elle garde dans le navigateur est rangé sous « esga-simu: », jamais dans les vraies données,
+     et elle ne se connecte jamais au club en ligne. Le profil (coach, parent…) est propre à chaque écran. */
+  let simu = false;
+  try { simu = window.top !== window && /^simu-/.test(window.name) && window.top.document.documentElement.hasAttribute("data-simulateur"); } catch (e) {}
+  if (!simu) return;
+  const PRE = "esga-simu:", ECRAN = PRE + window.name + ":", PROPRES = ["esga-profil", "esga-session", "esga-messagerie-moi", "esga-connexions"];
+  const vers = (k) => (PROPRES.includes(k) ? ECRAN : PRE) + k;
+  const depuis = (k) => (k.startsWith(ECRAN) ? k.slice(ECRAN.length) : k.startsWith(PRE) && !/^esga-simu:simu-[^:]*:/.test(k) ? k.slice(PRE.length) : null);
+  function copie(vrai) {
+    const cles = () => { const o = []; for (let i = 0; i < vrai.length; i++) { const k = depuis(vrai.key(i)); if (k != null) o.push(k); } return o; };
+    const api = {
+      getItem: (k) => vrai.getItem(vers(String(k))), setItem: (k, v) => vrai.setItem(vers(String(k)), String(v)),
+      removeItem: (k) => vrai.removeItem(vers(String(k))), clear: () => cles().forEach((k) => vrai.removeItem(vers(k))),
+      key: (i) => cles()[i] == null ? null : cles()[i], get length() { return cles().length; },
+    };
+    return new Proxy(api, {
+      get: (t, k) => (k in t ? t[k] : typeof k === "string" ? t.getItem(k) : undefined),
+      ownKeys: () => cles(), getOwnPropertyDescriptor: (t, k) => (typeof k === "string" && t.getItem(k) != null ? { value: t.getItem(k), enumerable: true, configurable: true } : undefined),
+    });
+  }
+  const local = copie(window.localStorage), session = copie(window.sessionStorage);
+  Object.defineProperty(window, "localStorage", { value: local, configurable: true });
+  Object.defineProperty(window, "sessionStorage", { value: session, configurable: true });
+  window.ESGA_BAC_A_SABLE = true;
+  // Les écrans du simulateur se parlent entre eux (comme des onglets), et n'entendent pas les vrais onglets du club
+  window.addEventListener("storage", (ev) => {
+    if (ev.__simu) return;
+    ev.stopImmediatePropagation();
+    const k = ev.key && depuis(ev.key);
+    if (k == null || k.startsWith(PRE)) return;
+    const e = new StorageEvent("storage", { key: k, oldValue: ev.oldValue, newValue: ev.newValue, url: ev.url });
+    e.__simu = true; window.dispatchEvent(e);
+  }, true);
+})();
+(function () {
   "use strict";
   const script = document.currentScript;
   const BASE = new URL("../", script ? script.src : location.href).href;
@@ -552,7 +589,7 @@
   const pret = Promise.all([fetch(BASE + "data/matchs.json").then((r) => r.json()).catch(() => []), premier]).then(([m]) => { MATCHS = Array.isArray(m) ? m : []; presencesDemo(); return window.CLUB; });
 
   window.CLUB = {
-    get mode() { return STOCKAGE.mode; }, enLigne: NUAGE, BASE, SAISON, pret, LIEUX,
+    get mode() { return STOCKAGE.mode; }, bacASable: !!window.ESGA_BAC_A_SABLE, enLigne: NUAGE, BASE, SAISON, pret, LIEUX,
     get donnees() { return D; }, get club() { return D.club; }, get maj() { return D.maj; },
     equipes: () => D.equipes.slice(), equipe, nomEquipe, joueurs, personne, nomComplet, staff: () => D.staff.slice(), staffDe, coachDe,
     creneaux: (eq) => D.creneaux.filter((c) => !eq || c.equipe === eq),

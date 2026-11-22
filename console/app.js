@@ -825,7 +825,7 @@
           ${N.actif ? `<p class="alerte info" style="margin-top:0"><b>En ligne.</b> Console, messagerie, Monteur, PV et Atelier partagent les mêmes données sur tous les appareils (mise à jour toutes les 15 s). Ce navigateur en garde une copie pour fonctionner sans réseau.</p>`
             : `<p class="alerte info" style="margin-top:0"><b>Mode démo.</b> Les données sont gardées dans ce navigateur. Entrez le code du club pour les partager avec tous les appareils.</p>`}
           ${blocCode()}
-          <div class="form"><div class="pied" style="justify-content:flex-start"><button class="btn" data-a="export-json">Sauvegarder (JSON)</button><button class="btn" data-a="import-json">Restaurer</button>${N.actif ? "" : '<button class="btn danger" data-a="raz">Remettre la démo à zéro</button>'}</div></div>
+          <div class="form"><div class="pied" style="justify-content:flex-start"><a class="btn" href="simulateur.html" title="Un match préparé de A à Z, joué tout seul sur des données de test">🧪 Simulateur de test</a><button class="btn" data-a="export-json">Sauvegarder (JSON)</button><button class="btn" data-a="import-json">Restaurer</button>${N.actif ? "" : '<button class="btn danger" data-a="raz">Remettre la démo à zéro</button>'}</div></div>
           <input type="file" id="fichierJSON" accept="application/json,.json" hidden>
           <p class="petit discret">Dernière modification : ${new Date(C.maj).toLocaleString("fr-FR")}</p></section>
       </div>`;
