@@ -567,3 +567,18 @@ details.autres h3 { font-size: .8rem; text-transform: uppercase; letter-spacing:
 .recap-cl td.nom b { white-space: nowrap; }
 @media (max-width: 820px) { .liste .forme .etiq:nth-child(-n+2) { display: none; } .liste .forme .etiq { padding: 2px 5px; } }
 @media (max-width: 820px) { .recap-cl .liste .seul-m { display: block; margin-top: 2px; } }
+
+/* Mes matchs (accueil coach) */
+.bande-matchs { margin: 0 0 16px; }
+.bande-matchs h2 { display: flex; align-items: baseline; gap: 10px; font-size: 1.05rem; margin: 0 0 10px; }
+.bande-matchs h2 .plus { margin-left: auto; font-size: .84rem; font-weight: 600; }
+.tm-liste { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(190px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; }
+.tm { scroll-snap-align: start; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--esga-rayon); background: var(--esga-carte); border: 1px solid var(--esga-ligne); box-shadow: var(--esga-ombre); color: var(--esga-texte); text-decoration: none; border-top: 4px solid var(--match); }
+.tm:hover { border-color: var(--match); }
+.tm.passe { border-top-color: var(--esga-gris); }
+.tm small { color: var(--esga-gris); font-size: .78rem; }
+.tm b { font-size: .98rem; line-height: 1.25; }
+.tm .etiq, .tm .score { align-self: flex-start; margin-top: 4px; }
+@media (max-width: 820px) { .tm-liste { grid-auto-columns: 72%; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .etiq.or { color: #f3cf5a; } }
+:root[data-theme="dark"] .etiq.or { color: #f3cf5a; }

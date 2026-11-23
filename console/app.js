@@ -334,8 +334,20 @@
     const eqs = s.equipes;
     if (!eqs.length) return `<div class="entete"><h1>Bonjour ${esc(s.prenom)}</h1></div><p class="vide">Aucune équipe ne vous est confiée pour l'instant. Le responsable sportif peut vous en affecter une.</p>`;
     return `<div class="entete"><div><p class="fil-ariane discret">${fJL(auj())}</p><h1>Bonjour ${esc(s.prenom)} 👋</h1><p class="sous">${eqs.map(C.nomEquipe).join(" · ")}</p></div></div>`
-      + recapHTML() + carteWeekend(eqs) + tuilesConvoques(eqs, 10, { avecEquipe: eqs.length > 1 }) + eqs.map((eq) => blocCoach(eq, eqs.length > 1)).join("")
+      + bandeMatchs(eqs) + recapHTML() + carteWeekend(eqs) + tuilesConvoques(eqs, 10, { avecEquipe: eqs.length > 1 }) + eqs.map((eq) => blocCoach(eq, eqs.length > 1)).join("")
       + `<section class="carte" style="margin-top:14px"><h2>Vos outils</h2>${modulesHTML(eqs[0])}</section>`;
+  }
+  // Accès direct aux matchs du coach : le dernier joué et les prochains, un geste pour ouvrir la fiche
+  function bandeMatchs(eqs) {
+    const plusieurs = eqs.length > 1;
+    const av = C.evenements({ equipes: eqs, du: auj(), au: ajout(auj(), 60), types: ["match", "amical", "plateau", "tournoi"] }).filter((e) => e.statut !== "annule" && e.equipe).slice(0, 4);
+    const pa = C.evenements({ equipes: eqs, du: ajout(auj(), -30), au: ajout(auj(), -1), types: ["match", "amical"] }).filter((e) => e.statut !== "annule" && e.equipe).pop();
+    const tuile = (e, passe) => { const cv = C.convocation(e.id), f = C.feuille(e.id);
+      const etat = passe ? scoreHTML(e, f) : cv ? '<span class="etiq ok">Convoqué</span>' : etatSondage(e).lance ? '<span class="etiq bleu">Sondage en cours</span>' : '<span class="etiq att">À préparer</span>';
+      return `<a class="tm${passe ? " passe" : ""}" href="#${passe ? "feuille" : "convoc"}/${esc(e.id)}"><small>${passe ? "Dernier match · " : ""}${maj1(fmt(e.date, { weekday: "short", day: "numeric", month: "short" }))}${passe ? "" : " · " + hh(e.heure)}</small>
+        <b>${esc(e.adversaire || e.titre)}</b><small>${plusieurs ? esc(C.nomEquipe(e.equipe)) + " · " : ""}${e.domicile ? "Domicile" : "Extérieur"}</small>${etat}</a>`; };
+    const l = (pa ? [tuile(pa, true)] : []).concat(av.map((e) => tuile(e, false)));
+    return `<section class="bande-matchs"><h2>⚽ Mes matchs <a class="plus" href="#convocations">Tous les matchs de la saison ›</a></h2>${l.length ? `<div class="tm-liste">${l.join("")}</div>` : '<p class="discret petit">Aucun match dans les 2 prochains mois.</p>'}</section>`;
   }
   /* ---------- vidéos : séquences envoyées aux joueurs ---------- */
   const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
@@ -470,7 +482,7 @@
     onglet = onglet || "effectif";
     const staff = C.staffDe(id), js = C.joueurs(id);
     const off = C.saisonOfficielle(id);
-    const tabs = [["effectif", `Effectif (${js.length})`], ["calendrier", "Calendrier"], ...(off ? [["saison", "Classement"]] : []), ["presences", "Présences"], ["creneaux", "Horaires"]];
+    const tabs = [["effectif", `Effectif (${js.length})`], ["calendrier", "Calendrier"], ...(off ? [["saison", "Matchs et classement"]] : []), ["presences", "Présences"], ["creneaux", "Horaires"]];
     let corps = "";
     if (onglet === "effectif") corps = tableJoueurs(js, { equipe: false }) + `<p style="margin-top:12px"><button class="btn" data-a="nouveau-joueur" data-equipe="${esc(id)}">+ Ajouter un joueur</button></p>`;
     if (onglet === "calendrier") {
@@ -509,7 +521,8 @@
       const p = m.a_domicile ? m.score_dom : m.score_ext, c = m.a_domicile ? m.score_ext : m.score_dom;
       return p > c ? '<span class="etiq ok">V</span>' : p < c ? '<span class="etiq ko">D</span>' : '<span class="etiq or">N</span>'; };
     const nom = (m, cote) => m.a_domicile === (cote === "dom") ? `<b>${esc(cote === "dom" ? m.domicile : m.exterieur)}</b>` : esc(cote === "dom" ? m.domicile : m.exterieur);
-    const ligne = (m) => `<tr data-lien="${esc(m.url || "")}"><td class="num">${fmt(m.date, { day: "numeric", month: "numeric" })}</td><td class="rencontre">${nom(m, "dom")} <span class="sc">${score(m)}</span> ${nom(m, "ext")}</td><td class="c">${issue(m)}</td></tr>`;
+    const cible = (m) => { const e = m.esga_id != null && C.evenementScorenco(m.id); return e ? `data-a="lien" data-href="#${e.date < auj() ? "feuille" : "convoc"}/${esc(e.id)}"` : `data-lien="${esc(m.url || "")}"`; };
+    const ligne = (m) => `<tr ${cible(m)}><td class="num">${fmt(m.date, { day: "numeric", month: "numeric" })}</td><td class="rencontre">${nom(m, "dom")} <span class="sc">${score(m)}</span> ${nom(m, "ext")}</td><td class="c">${issue(m)}</td></tr>`;
     const table = (l, vide) => l.length ? `<div class="table-wrap"><table class="liste saison"><tbody>${l.map(ligne).join("")}</tbody></table></div>` : `<p class="vide">${vide}</p>`;
     const joues = off.matchs.filter((m) => m.statut !== "to_come").reverse(), avenir = off.matchs.filter((m) => m.statut === "to_come");
     const classement = (p) => `<section class="carte"><h2>${esc(p.nom)}</h2><div class="table-wrap"><table class="liste saison"><thead><tr><th>#</th><th>Équipe</th><th class="c">Pts</th><th class="c cache-m">J</th><th class="c cache-m">V</th><th class="c cache-m">N</th><th class="c cache-m">D</th><th class="c cache-m">BP</th><th class="c cache-m">BC</th><th class="c">Diff</th></tr></thead><tbody>
@@ -517,9 +530,9 @@
       </tbody></table></div>
       <details class="autres"><summary>Matchs des autres équipes de la poule</summary>${(() => { const a = off.autres(p.id), j = a.filter((m) => m.statut !== "to_come").reverse().slice(0, 12), v = a.filter((m) => m.statut === "to_come").slice(0, 12);
         return `<h3>Derniers résultats</h3>${table(j, "Aucun résultat.")}<h3>Prochains matchs</h3>${table(v, "Aucun match prévu.")}`; })()}</details></section>`;
-    return (off.poules.length ? off.poules.map(classement).join("") : '<p class="vide">Pas de championnat suivi pour cette équipe (coupes ou plateaux seulement).</p>')
-      + `<div class="grille g2"><section class="carte"><h2>Prochains matchs</h2>${table(avenir, "Aucun match prévu.")}</section><section class="carte"><h2>Résultats</h2>${table(joues, "Aucun match joué.")}</section></div>
-      <p class="aide">Source : Scorenco, mis à jour chaque lundi (dernière lecture ${fmt(off.maj.slice(0, 10), { day: "numeric", month: "long" })}). Classement recalculé d'après les résultats (3 points la victoire, 1 le nul), hors pénalités éventuelles du District.</p>`;
+    const matchsHTML = `<div class="grille g2"><section class="carte"><h2>Prochains matchs</h2>${table(avenir, "Aucun match prévu.")}</section><section class="carte"><h2>Résultats</h2>${table(joues, "Aucun match joué.")}</section></div>`;
+    return matchsHTML + (off.poules.length ? off.poules.map(classement).join("") : '<p class="vide">Pas de championnat suivi pour cette équipe (coupes ou plateaux seulement).</p>')
+      + `<p class="aide">Touchez un de vos matchs pour ouvrir sa convocation ou sa feuille de match. Source : Scorenco, mis à jour chaque lundi (dernière lecture ${fmt(off.maj.slice(0, 10), { day: "numeric", month: "long" })}). Classement recalculé d'après les résultats (3 points la victoire, 1 le nul), hors pénalités éventuelles du District.</p>`;
   }
 
   function tableJoueurs(js, { equipe = true } = {}) {
@@ -774,7 +787,12 @@
       const etape2 = cv ? `<div class="etape fait"><span class="num">2</span><span class="txt"><b>Convocation publiée</b><small>${pl(cv.joueurs.length, "convoqué")} · RDV ${hh(cv.rdvHeure)}</small></span><a class="btn mini" href="#convoc/${esc(e.id)}">Voir</a></div>`
         : `<div class="etape"><span class="num">2</span><span class="txt"><b>Convocation</b><small>${so.lance ? `${so.oui} disponible${so.oui > 1 ? "s" : ""} pour l'instant` : "Après le sondage, ou tout de suite"}</small></span><a class="btn mini${so.lance ? " prim" : ""}" href="#convoc/${esc(e.id)}">Faire</a></div>`;
       return `<section class="carte match-carte"><div class="mc-tete"><span class="date"><b>${fmt(e.date, { weekday: "short" })}</b><span>${jour(e.date).getDate()}</span><small>${fmt(e.date, { month: "short" })}</small></span>
-        <span><b>${esc(e.titre)}</b><small>${estDirigeant() ? esc(C.nomEquipe(e.equipe)) + " · " : ""}${hh(e.heure)} · ${esc(e.lieu)}<br>${esc(e.competition || TYPES[e.type])}</small></span></div>${etape1}${etape2}</section>`; }).join("")}</div>` : '<p class="vide">Aucun match ni plateau dans les 5 prochaines semaines. Ajoutez un match amical si besoin.</p>');
+        <span><b>${esc(e.titre)}</b><small>${estDirigeant() ? esc(C.nomEquipe(e.equipe)) + " · " : ""}${hh(e.heure)} · ${esc(e.lieu)}<br>${esc(e.competition || TYPES[e.type])}</small></span></div>${etape1}${etape2}</section>`; }).join("")}</div>` : '<p class="vide">Aucun match ni plateau dans les 5 prochaines semaines. Ajoutez un match amical si besoin.</p>') + plusTard();
+  }
+  function plusTard() {
+    const evs = C.rencontres(null, ajout(auj(), 36), ajout(auj(), 300)).filter((e) => peutVoir(e.equipe));
+    if (!evs.length) return "";
+    return `<h2 class="groupe-titre">Plus tard dans la saison</h2><div class="table-wrap"><table class="liste"><tbody>${evs.map((e) => `<tr data-a="lien" data-href="#convoc/${esc(e.id)}"><td>${fJ(e.date)}<small class="discret"> · ${hh(e.heure)}</small></td>${estDirigeant() ? `<td><b>${esc(C.nomEquipe(e.equipe))}</b></td>` : ""}<td class="nom" style="white-space:normal"><b>${esc(e.titre)}</b><br><small class="discret">${esc(e.competition || TYPES[e.type] || "")}</small></td></tr>`).join("")}</tbody></table></div>`;
   }
 
   const feuilles = {};

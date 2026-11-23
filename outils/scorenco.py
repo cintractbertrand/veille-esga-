@@ -1,6 +1,7 @@
 """Calendrier, résultats et classements des équipes ESGA (et de leurs poules) depuis l'API publique Scorenco.
 
-Écrit data/calendrier-scorenco.json. Lancé chaque semaine par .github/workflows/maj-calendrier.yml.
+Écrit data/calendrier-scorenco.json. Lancé chaque semaine par .github/workflows/test-sources.yml (« Mise à jour du calendrier »).
+Avec --recalcul, refait seulement les poules à partir du fichier existant (sans Scorenco).
 Le classement est recalculé à partir des résultats de la poule (3 pts victoire, 1 nul), Scorenco ne le publiant pas par équipe.
 """
 import json, sys, time, urllib.request
@@ -10,7 +11,8 @@ from zoneinfo import ZoneInfo
 API = "https://graphql.scorenco.com/v1/graphql"
 CLUB_ID = 128233
 PARIS = ZoneInfo("Europe/Paris")
-SORTIE = sys.argv[1] if len(sys.argv) > 1 else "data/calendrier-scorenco.json"
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+SORTIE = ARGS[0] if ARGS else "data/calendrier-scorenco.json"
 EVT = "id date time status teams url level_name level_in_season_id"
 
 # Équipe Scorenco (slug) -> équipe de la console (commun/club.js)
@@ -59,6 +61,61 @@ def est_championnat(nom):
     return not any(k in n for k in ("coupe", "challenge", "trophée", "trophee", "tournoi", "amical"))
 
 
+def regrouper(matchs):
+    """Poules de championnat : un même niveau Scorenco peut réunir plusieurs groupes.
+    Le groupe d'une équipe ESGA = elle et les équipes qu'elle affronte dans ce niveau."""
+    adv = {}
+    for m in matchs:
+        if m["esga_id"] and m["niveau"] and est_championnat(m["competition"]):
+            adv.setdefault((m["niveau"], m["esga_id"]), set()).update(x for x in (m["dom_id"], m["ext_id"]) if x)
+    groupes = []  # [niveau, équipes ESGA, membres]
+    for (niv, t), mem in adv.items():
+        g = next((g for g in groupes if g[0] == niv and (t in g[2] or g[1] & mem)), None)
+        if g:
+            g[1].add(t); g[2] |= mem
+        else:
+            groupes.append([niv, {t}, set(mem)])
+    cles = {}
+    for niv, esga, mem in groupes:
+        cles[f"{niv}-{min(esga)}"] = (niv, esga, mem)
+    garde, lignes = [], {}
+    for m in matchs:
+        cle = next((k for k, (niv, _, mem) in cles.items() if m["niveau"] == niv and m["dom_id"] in mem and m["ext_id"] in mem), None)
+        if not cle and not m["esga_id"]:
+            continue
+        m["poule"] = cle
+        garde.append(m)
+        if not cle:
+            continue
+        p = lignes.setdefault(cle, {"nom": m["competition"], "l": {}})
+        for tid, nom in ((m["dom_id"], m["domicile"]), (m["ext_id"], m["exterieur"])):
+            p["l"].setdefault(tid, {"team_id": tid, "nom": nom, "esga": tid in cles[cle][1], "j": 0, "v": 0, "n": 0, "d": 0, "bp": 0, "bc": 0})
+        sd, se = m["score_dom"], m["score_ext"]
+        if m["statut"] == "finish" and isinstance(sd, int) and isinstance(se, int):
+            for tid, pour, contre in ((m["dom_id"], sd, se), (m["ext_id"], se, sd)):
+                l = p["l"][tid]
+                l["j"] += 1; l["bp"] += pour; l["bc"] += contre
+                l["v" if pour > contre else "n" if pour == contre else "d"] += 1
+    poules, par_equipe = {}, {}
+    for cle, p in lignes.items():
+        ls = list(p["l"].values())
+        if len(ls) < 4:
+            continue
+        for l in ls:
+            l["diff"] = l["bp"] - l["bc"]
+            l["pts"] = 3 * l["v"] + l["n"]
+        ls.sort(key=lambda l: (-l["pts"], -l["diff"], -l["bp"], l["nom"]))
+        for i, l in enumerate(ls):
+            l["rang"] = i + 1
+        poules[cle] = {"nom": p["nom"], "classement": ls}
+        for t in cles[cle][1]:
+            par_equipe.setdefault(t, []).append(cle)
+    for m in garde:
+        if m["poule"] not in poules:
+            m["poule"] = None
+    return garde, poules, par_equipe
+
+
 def main():
     auj = date.today()
     debut = date(auj.year if auj.month >= 7 else auj.year - 1, 7, 1).isoformat()
@@ -93,17 +150,16 @@ def main():
                 tous[e["id"]] = e
 
     slug_console = {t["id"]: CONSOLE.get(t["slug"]) for t in equipes}
-    matchs, poules = [], {}
+    matchs = []
     for e in sorted(tous.values(), key=lambda e: e.get("time") or e.get("date") or ""):
         tt = e.get("teams") or []
         dom = next((x for x in tt if x.get("role") == "home"), {})
         ext = next((x for x in tt if x.get("role") == "away"), {})
         esga = dom if dom.get("club_id") == CLUB_ID else ext if ext.get("club_id") == CLUB_ID else None
         jour, heure = date_heure(e)
-        lid = e.get("level_in_season_id")
         matchs.append({
             "id": e["id"], "date": jour, "heure": heure, "statut": e.get("status"),
-            "competition": e.get("level_name"), "poule": lid if lid in poules_esga else None,
+            "competition": e.get("level_name"), "niveau": e.get("level_in_season_id"), "poule": None,
             "domicile": dom.get("name_in_competition") or "", "exterieur": ext.get("name_in_competition") or "",
             "dom_id": dom.get("team_id"), "ext_id": ext.get("team_id"),
             "score_dom": dom.get("score"), "score_ext": ext.get("score"),
@@ -112,37 +168,13 @@ def main():
             "a_domicile": esga is dom if esga else None,
             "url": "https://scorenco.com" + e["url"] if e.get("url") else None,
         })
-        if lid in poules_esga:
-            p = poules.setdefault(lid, {"nom": e.get("level_name"), "lignes": {}})
-            for x in (dom, ext):
-                if x.get("team_id"):
-                    p["lignes"].setdefault(x["team_id"], {"team_id": x["team_id"], "nom": x.get("name_in_competition") or "", "esga": x.get("club_id") == CLUB_ID,
-                                                          "j": 0, "v": 0, "n": 0, "d": 0, "bp": 0, "bc": 0})
-            sd, se = dom.get("score"), ext.get("score")
-            if e.get("status") == "finish" and isinstance(sd, int) and isinstance(se, int) and dom.get("team_id") and ext.get("team_id"):
-                for x, pour, contre in ((dom, sd, se), (ext, se, sd)):
-                    l = p["lignes"][x["team_id"]]
-                    l["j"] += 1; l["bp"] += pour; l["bc"] += contre
-                    l["v" if pour > contre else "n" if pour == contre else "d"] += 1
-
-    sortie_poules = {}
-    for lid, p in poules.items():
-        lignes = list(p["lignes"].values())
-        if len(lignes) < 4:
-            continue
-        for l in lignes:
-            l["diff"] = l["bp"] - l["bc"]
-            l["pts"] = 3 * l["v"] + l["n"]
-        lignes.sort(key=lambda l: (-l["pts"], -l["diff"], -l["bp"], l["nom"]))
-        for i, l in enumerate(lignes):
-            l["rang"] = i + 1
-        sortie_poules[str(lid)] = {"nom": p["nom"], "classement": lignes}
+    matchs, sortie_poules, poules_equipe = regrouper(matchs)
 
     out = {
         "source": "scorenco", "club_id": CLUB_ID, "saison_debut": debut,
         "maj": datetime.now(PARIS).isoformat(timespec="minutes"),
         "equipes": [{"id": t["id"], "slug": t["slug"], "nom": t["name"], "categorie": t.get("age_category"), "genre": t.get("gender"),
-                     "equipe": CONSOLE.get(t["slug"]), "poules": sorted(str(l) for l, ids in poules_esga.items() if t["id"] in ids and str(l) in sortie_poules)} for t in equipes],
+                     "equipe": CONSOLE.get(t["slug"]), "poules": poules_equipe.get(t["id"], [])} for t in equipes],
         "poules": sortie_poules,
         "matchs": matchs,
     }
@@ -151,5 +183,18 @@ def main():
     print(f"{len(matchs)} matchs, {len(sortie_poules)} poules -> {SORTIE}")
 
 
+def recalcul():
+    with open(SORTIE, encoding="utf-8") as f:
+        d = json.load(f)
+    for m in d["matchs"]:
+        m["niveau"] = m.get("niveau") or (int(str(m["poule"]).split("-")[0]) if m.get("poule") else None)
+    d["matchs"], d["poules"], par = regrouper(d["matchs"])
+    for t in d["equipes"]:
+        t["poules"] = par.get(t["id"], [])
+    with open(SORTIE, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"{len(d['matchs'])} matchs, {len(d['poules'])} poules (recalcul)")
+
+
 if __name__ == "__main__":
-    main()
+    recalcul() if "--recalcul" in sys.argv else main()

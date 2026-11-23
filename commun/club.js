@@ -357,7 +357,7 @@
     const adv = m.a_domicile ? m.exterieur : m.domicile, id = "s-" + m.id, ex = D.exceptions[id] || {};
     return Object.assign({ id, equipe: m.equipe, type: "match", source: "scorenco", titre: (m.a_domicile ? "ESGA – " + adv : adv + " – ESGA") + (SCO_STATUT[m.statut] || ""),
       adversaire: adv, domicile: !!m.a_domicile, date: m.date, heure: m.heure || "15:00", duree: 105, lieu: "", competition: m.competition, coupe: /coupe/i.test(m.competition || ""),
-      url: m.url, officiel: offScore(m), statut: "prevu" }, ex);
+      url: m.url, sco: m.id, officiel: offScore(m), statut: "prevu" }, ex);
   }
   function offScore(m) {
     if (m.statut !== "finish" || m.score_dom == null || m.score_ext == null) return null;
@@ -366,7 +366,7 @@
   function officiels() {
     const sco = SAISON_OFF ? SAISON_OFF.matchs.filter((m) => m.equipe && m.date) : [], cle = (eq, d) => eq + "|" + d;
     const parCle = new Map(sco.map((m) => [cle(m.equipe, m.date), m]));
-    const pv = MATCHS.map(matchEvt).map((e) => { const m = parCle.get(cle(e.equipe, e.date)); if (m) { parCle.delete(cle(e.equipe, e.date)); e.officiel = offScore(m); e.url = m.url; } return e; });
+    const pv = MATCHS.map(matchEvt).map((e) => { const m = parCle.get(cle(e.equipe, e.date)); if (m) { parCle.delete(cle(e.equipe, e.date)); e.officiel = offScore(m); e.url = m.url; e.sco = m.id; } return e; });
     return pv.concat([...parCle.values()].map(scoEvt));
   }
   function entrainements(du, au, equipe) {
@@ -392,6 +392,7 @@
     const liste = [...officiels(), ...entrainements(du, au, equipe), ...D.evenements.map((e) => Object.assign({ source: "manuel", statut: "prevu", duree: 90 }, e))];
     return liste.filter(garde).sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
   }
+  const evenementScorenco = (sid) => officiels().find((e) => e.sco === sid) || null;
   function evenement(id) {
     if (id.startsWith("m-") || id.startsWith("s-")) return officiels().find((e) => e.id === id) || null;
     if (id.startsWith("e-")) { const date = id.slice(-10), cr = id.slice(2, -11); const c = D.creneaux.find((x) => x.id === cr); return c ? entrainements(date, date, c.equipe).find((e) => e.id === id) || null : null; }
@@ -732,9 +733,14 @@
     if (!ids.length) return null;
     const lids = [...new Set(mes.flatMap((t) => t.poules))], matchs = SAISON_OFF.matchs.filter((m) => ids.includes(m.esga_id));
     if (!matchs.length) return null;
+    // Poule principale en tête : celle du prochain match si elle a commencé, sinon celle où l'équipe a le plus joué
+    const joues = (p) => (p.classement.find((x) => ids.includes(x.team_id)) || {}).j || 0;
+    const cle = String((matchs.find((m) => m.statut === "to_come" && m.poule != null) || {}).poule);
+    const poules = lids.map((l) => Object.assign({ id: l }, SAISON_OFF.poules[l])).filter((p) => p.classement)
+      .sort((a, b) => (joues(b) > 0 && String(b.id) === cle) - (joues(a) > 0 && String(a.id) === cle) || joues(b) - joues(a));
     return {
       maj: SAISON_OFF.maj,
-      poules: lids.map((l) => Object.assign({ id: l }, SAISON_OFF.poules[l])).filter((p) => p.classement),
+      poules,
       ids, matchs,
       autres: (l) => SAISON_OFF.matchs.filter((m) => String(m.poule) === String(l) && !ids.includes(m.esga_id)),
     };
@@ -743,8 +749,7 @@
   function classements() {
     return D.equipes.map((q) => {
       const o = saisonOfficielle(q.id); if (!o || !o.poules.length) return null;
-      const cle = (o.matchs.find((m) => m.statut === "to_come" && m.poule != null) || o.matchs.filter((m) => m.poule != null).pop() || {}).poule;
-      const p = o.poules.find((x) => String(x.id) === String(cle)) || o.poules[0], l = p.classement.find((x) => o.ids.includes(x.team_id));
+      const p = o.poules[0], l = p.classement.find((x) => o.ids.includes(x.team_id));
       if (!l) return null;
       const forme = o.matchs.filter((m) => m.statut === "finish" && m.score_dom != null).slice(-5).map((m) => { const a = m.a_domicile ? m.score_dom : m.score_ext, b = m.a_domicile ? m.score_ext : m.score_dom; return a > b ? "V" : a < b ? "D" : "N"; });
       const pro = o.matchs.find((m) => m.statut === "to_come");
@@ -763,7 +768,7 @@
     presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, setCovoit, covoiturage, meteo, matchsTest: (forcer) => { if (NUAGE.actif) return false; const ok = matchsTest(forcer); if (ok) sauver(); return ok; }, modeTest: window.ESGA_MODE_TEST, tauxPresence, categorieAge,
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
     feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,
-    seance: (evt) => D.seances[evt] || null, setSeance, saisonOfficielle, classements,
+    seance: (evt) => D.seances[evt] || null, setSeance, saisonOfficielle, classements, evenementScorenco,
     // Rappel « lancer le sondage le… » choisi par le coach (par défaut 7 jours avant le match)
     rappel: (evt) => D.rappels[evt] || null, setRappel: (evt, date) => { if (date) D.rappels[evt] = date; else delete D.rappels[evt]; sauver(); },
     video: (evt) => D.videos[evt] || null, setVideo, envoyerSequence, envois, envoi: (id) => D.envois.find((x) => x.id === id) || null, vuEnvoi, retirerEnvoi, voixEnvoi,
