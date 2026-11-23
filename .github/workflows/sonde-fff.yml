@@ -1,23 +1,25 @@
-name: Sonde API FFF (temporaire)
+name: Essai navigateur FFF (temporaire)
 on:
   push:
     branches: [claude/project-thread-6c3uj4]
     paths: [.github/workflows/sonde-fff.yml]
 jobs:
-  sonde:
+  essai:
     runs-on: ubuntu-latest
     steps:
+      - run: npm i playwright@1.49.1 && npx playwright install --with-deps chromium
       - run: |
-          for u in \
-            "https://api-dofa.fff.fr/api" \
-            "https://api-dofa.fff.fr/api/clubs/523341.json" \
-            "https://api-dofa.fff.fr/api/clubs/523341/equipes.json" \
-            "https://api-dofa.fff.fr/api/clubs/523341/calendrier.json" \
-            "https://api-dofa.fff.fr/api/engagements.json?club.cl_no=523341" \
-            "https://api-dofa.fff.fr/api/match_entities.json?clNo=523341" \
-            "https://epreuves.fff.fr/competition/club/523341-genas-azieu-e-s/information" \
-            ; do
-            echo "=================== $u"
-            curl -s -m 30 -A "veille-esga (GitHub Actions)" -o out -w "HTTP %{http_code} %{content_type}\n" "$u"
-            head -c 2500 out; echo
-          done
+          cat > essai.mjs <<'JS'
+          import { chromium } from "playwright";
+          const b = await chromium.launch();
+          const p = await b.newPage();
+          for (const u of ["https://epreuves.fff.fr/competition/club/523341-genas-azieu-e-s/equipe/2026_8789_U13_19/saison",
+                           "https://epreuves.fff.fr/competition/club/523341-genas-azieu-e-s/equipe/2026_8789_SEM_1/saison"]) {
+            const r = await p.goto(u, { waitUntil: "networkidle", timeout: 60000 }).catch((e) => ({ status: () => "erreur " + e.message }));
+            const n = await p.locator("app-match-score").count().catch(() => -1);
+            console.log(u, "HTTP", r.status(), "titre:", await p.title(), "matchs:", n);
+            console.log((await p.locator("body").innerText().catch(() => "")).slice(0, 400));
+          }
+          await b.close();
+          JS
+          node essai.mjs
