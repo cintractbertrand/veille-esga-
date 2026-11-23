@@ -712,11 +712,12 @@
     if (!SAISON_OFF) return null;
     const mes = SAISON_OFF.equipes.filter((t) => t.equipe === eq), ids = mes.map((t) => t.id);
     if (!ids.length) return null;
-    const lids = [...new Set(mes.flatMap((t) => t.poules))];
+    const lids = [...new Set(mes.flatMap((t) => t.poules))], matchs = SAISON_OFF.matchs.filter((m) => ids.includes(m.esga_id));
+    if (!matchs.length) return null;
     return {
       maj: SAISON_OFF.maj,
       poules: lids.map((l) => Object.assign({ id: l }, SAISON_OFF.poules[l])).filter((p) => p.classement),
-      matchs: SAISON_OFF.matchs.filter((m) => ids.includes(m.esga_id)),
+      matchs,
       autres: (l) => SAISON_OFF.matchs.filter((m) => String(m.poule) === String(l) && !ids.includes(m.esga_id)),
     };
   }

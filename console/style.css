@@ -558,3 +558,6 @@ p .meteo { margin: 4px 0 0; }
 details.autres { margin-top: 12px; }
 details.autres summary { cursor: pointer; font-weight: 600; color: var(--esga-gris); }
 details.autres h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--esga-gris); margin: 14px 0 6px; }
+.liste.saison td.nom, .liste.saison td.rencontre { white-space: normal; }
+.liste.saison .sc { display: inline-block; min-width: 3.2em; text-align: center; color: var(--esga-gris); font-variant-numeric: tabular-nums; }
+.liste.saison .sc b { color: var(--esga-texte, inherit); }

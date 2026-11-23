@@ -18,7 +18,7 @@ CONSOLE = {
     "1": "Seniors-1", "2": "Seniors-2", "3": "Seniors-3", "f1": "Seniors F-1", "f2": "Seniors F-2",
     "veteran-1": "Vétérans-35", "u20-1": "U20-1", "u18-f1": "U18F-1", "2-u18-feminine": "U18F-2",
     "u17-1": "U17-1", "u17-2": "U17-2", "u15-1": "U15-1", "u15-2": "U15-2", "u15-3": "U15-3", "u15-4": "U15-4",
-    "u15-f2": "U15F-2", "u13-1": "U13-1", "u13-2": "U13-2",
+    "u15-f1": "U15F-2", "u13-1": "U13-1", "u13-2": "U13-2",
 }
 
 
@@ -128,6 +128,8 @@ def main():
     sortie_poules = {}
     for lid, p in poules.items():
         lignes = list(p["lignes"].values())
+        if len(lignes) < 4:
+            continue
         for l in lignes:
             l["diff"] = l["bp"] - l["bc"]
             l["pts"] = 3 * l["v"] + l["n"]
@@ -140,7 +142,7 @@ def main():
         "source": "scorenco", "club_id": CLUB_ID, "saison_debut": debut,
         "maj": datetime.now(PARIS).isoformat(timespec="minutes"),
         "equipes": [{"id": t["id"], "slug": t["slug"], "nom": t["name"], "categorie": t.get("age_category"), "genre": t.get("gender"),
-                     "equipe": CONSOLE.get(t["slug"]), "poules": sorted(str(l) for l, ids in poules_esga.items() if t["id"] in ids)} for t in equipes],
+                     "equipe": CONSOLE.get(t["slug"]), "poules": sorted(str(l) for l, ids in poules_esga.items() if t["id"] in ids and str(l) in sortie_poules)} for t in equipes],
         "poules": sortie_poules,
         "matchs": matchs,
     }
