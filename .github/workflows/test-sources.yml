@@ -17,66 +17,95 @@ jobs:
         run: |
           set -e
           mkdir -p data
-          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
+
+          # Champs valides d après l introspection : id name slug gender age_category rank number
+          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d '{"query":"{ teams_team(where:{club_id:{_eq:128233}}) { id name slug season_id competition { id name slug } } }"}' \
+            -d '{"query":"{ teams_team(where:{club_id:{_eq:128233}}) { id name slug gender age_category rank number } }"}' \
             -o /tmp/teams.json
-          cat /tmp/teams.json | python3 -c "
-          import json, sys
-          d = json.load(sys.stdin)
+
+          echo "=== Réponse brute (100 premiers chars) ==="
+          head -c 200 /tmp/teams.json
+          echo ""
+
+          python3 -c "
+          import json
+          d = json.load(open('/tmp/teams.json'))
+          if 'errors' in d:
+              print('ERREURS:', d['errors'])
           teams = d.get('data',{}).get('teams_team',[])
           print(f'{len(teams)} équipes trouvées')
           for t in teams:
-              comp = t.get('competition') or {}
-              print(f'  {t[\"id\"]:>8}  {t[\"slug\"]:20}  {comp.get(\"name\",\"?\")}')
+              print(f'  {t[\"id\"]:>8}  {t[\"slug\"]:25}  {t.get(\"age_category\",\"\")}  rang={t.get(\"rank\",\"?\")}')
+          # Sauvegarder les IDs
+          with open('/tmp/team_ids.txt','w') as f:
+              for t in teams:
+                  f.write(str(t['id']) + '\n')
           "
 
-      - name: Introspection du type teams_team
+      - name: Introspection event_detail
         run: |
-          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
+          echo "=== Champs de competitions_event_detail ==="
+          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d '{"query":"{ __type(name:\"teams_team\") { fields { name type { name kind ofType { name kind } } } } }"}' | python3 -c "
+            -d '{"query":"{ __type(name:\"competitions_event_detail\") { fields { name type { name kind ofType { name kind } } } } }"}' | python3 -c "
           import json,sys
           d=json.load(sys.stdin)
           fields = d.get('data',{}).get('__type',{}).get('fields',[])
+          if not fields: print('Type non trouvé')
           for f in sorted(fields, key=lambda x:x['name']):
               t = f['type']
               tname = t.get('name') or (t.get('ofType',{}) or {}).get('name','?')
-              print(f'  {f[\"name\"]:30} {t[\"kind\"]:10} {tname}')
+              print(f'  {f[\"name\"]:35} {t[\"kind\"]:10} {tname}')
           "
 
-      - name: Tables de matchs et classements
+      - name: Introspection ranking_detail
         run: |
-          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
+          echo "=== Champs de competitions_ranking_detail ==="
+          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d '{"query":"{ __schema { queryType { fields { name } } } }"}' | python3 -c "
+            -d '{"query":"{ __type(name:\"competitions_ranking_detail\") { fields { name type { name kind ofType { name kind } } } } }"}' | python3 -c "
           import json,sys
           d=json.load(sys.stdin)
-          fields = d.get('data',{}).get('__schema',{}).get('queryType',{}).get('fields',[])
+          fields = d.get('data',{}).get('__type',{}).get('fields',[])
+          if not fields: print('Type non trouvé')
           for f in sorted(fields, key=lambda x:x['name']):
-              n = f['name']
-              if any(k in n.lower() for k in ['match','event','game','fixture','result','standing','rank','calendar','score']):
-                  print(f'  {n}')
+              t = f['type']
+              tname = t.get('name') or (t.get('ofType',{}) or {}).get('name','?')
+              print(f'  {f[\"name\"]:35} {t[\"kind\"]:10} {tname}')
           "
 
-      - name: Test matchs d une équipe
+      - name: Matchs du club via event_detail_by_club_id
         run: |
-          TID=$(cat /tmp/teams.json | python3 -c "
-          import json,sys
-          d=json.load(sys.stdin)
-          teams=d.get('data',{}).get('teams_team',[])
-          if teams: print(teams[0]['id'])
-          ")
-          echo "Team ID: $TID"
-          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
+          echo "=== Matchs par club_id ==="
+          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name slug matches(order_by:{date:asc}) { id date time home_team_name away_team_name home_score away_score status matchday venue { name } } } }\"}" | python3 -m json.tool | head -80
+            -d '{"query":"{ competitions_event_detail_by_club_id(args:{club_id:128233}, limit:5, order_by:{date:desc}) { id date time home_team_name away_team_name home_score away_score status round_day_name team_id } }"}' \
+            | python3 -m json.tool | head -60
 
-      - name: Test events d une équipe
+      - name: Matchs d une équipe via last_events
         run: |
-          TID=$(cat /tmp/teams.json | python3 -c "
-          import json,sys; d=json.load(sys.stdin); print(d['data']['teams_team'][0]['id'])
-          ")
-          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
+          TID=$(head -1 /tmp/team_ids.txt 2>/dev/null || echo "")
+          if [ -z "$TID" ]; then echo "Pas d équipe trouvée"; exit 0; fi
+          echo "Team ID: $TID"
+          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name slug events(order_by:{date:asc}) { id date time home_team_name away_team_name home_score away_score status matchday } } }\"}" | python3 -m json.tool | head -80
+            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name slug rank last_events { id date time home_team_name away_team_name home_score away_score status } next_events { id date time home_team_name away_team_name home_score away_score status } } }\"}" \
+            | python3 -m json.tool | head -80
+
+      - name: Classement d une équipe
+        run: |
+          TID=$(head -1 /tmp/team_ids.txt 2>/dev/null || echo "")
+          if [ -z "$TID" ]; then echo "Pas d équipe trouvée"; exit 0; fi
+          echo "Team ID: $TID"
+          # Essayer competitions_ranking avec team_id
+          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"{ competitions_ranking(where:{team_id:{_eq:$TID}}) { id team_id rank points played won drawn lost goals_for goals_against } }\"}" \
+            | python3 -m json.tool | head -40
+          echo ""
+          echo "=== ranking_detail ==="
+          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"{ competitions_ranking_detail(where:{team_id:{_eq:$TID}}) { id team_id rank points played won drawn lost goals_for goals_against team_name } }\"}" \
+            | python3 -m json.tool | head -40
