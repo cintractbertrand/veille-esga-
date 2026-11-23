@@ -1,6 +1,6 @@
 /* Messagerie d'équipe ESGA, façon WhatsApp (démo dans le navigateur).
    Familles : conversations (équipe, groupes, perso), sondages, absences, convocation reçue.
-   Coach : en plus, l'Espace coach (sondage du match, compo et convocation, feuilles de présence). */
+   Coach : en plus, l'Espace coach (sondage du match, convocation, feuilles de présence). */
 (function () {
   "use strict";
   const S = window.STOCKAGE;
@@ -523,7 +523,7 @@
         if (sm && primaire(m.id) === m.id) lignes.push(sans ? `<button class="sem-l" data-relancer="${sm.id}">${IC.ballon}<span><b>${pluriel(sans, "famille")} sans réponse</b><small>${esc(qui)} · relancer dans Annonces</small></span></button>`
           : `<div class="sem-l ok-l">${IC.ballon}<span><b>Tout le monde a répondu</b><small>${esc(qui)}</small></span></div>`);
         lignes.push(!cv ? `<button class="sem-l alerte-l" data-coach="convoc" data-match="${esc(m.id)}">${IC.convoc}<span><b>Convocation à faire</b><small>${esc(qui)}</small></span></button>`
-          : `<button class="sem-l${emp.length ? " alerte-l" : ""}" data-coach="convoc" data-match="${esc(m.id)}">${IC.convoc}<span><b>${emp.length ? pluriel(emp.length, "empêchement") + " signalé" + (emp.length > 1 ? "s" : "") : `Convocation lue par ${cv.vus.length}/${cv.joueurs.length}`}</b><small>${emp.length ? esc(emp.map((j) => joueur(j).nom).join(", ")) + " · revoir la compo" : esc(qui)}</small></span></button>`);
+          : `<button class="sem-l${emp.length ? " alerte-l" : ""}" data-coach="convoc" data-match="${esc(m.id)}">${IC.convoc}<span><b>${emp.length ? pluriel(emp.length, "empêchement") + " signalé" + (emp.length > 1 ? "s" : "") : `Convocation lue par ${cv.vus.length}/${cv.joueurs.length}`}</b><small>${emp.length ? esc(emp.map((j) => joueur(j).nom).join(", ")) + " · revoir la convocation" : esc(qui)}</small></span></button>`);
       });
       if (!proches.length) lignes.push(tous[0] ? `<div class="sem-l ok-l">${IC.ballon}<span><b>Prochain match ${esc(jourMatch(tous[0]))}</b><small>Sondage à lancer à partir du ${esc(dateOuverture(tous[0]))}</small></span></div>`
         : `<div class="sem-l ok-l">${IC.ballon}<span><b>Pas de match prévu</b><small>dans les 6 prochaines semaines</small></span></div>`);
@@ -564,7 +564,7 @@
       `<button data-action="match-coach">${IC.ballon}<span>Présence${esc(nom)} au match</span></button>` +
       (c.type === "equipe" || c.annonces ? `<button data-action="sondage-match">${IC.sondage}<span>Sondage du match</span></button>` : "") +
       (conv && c.type !== "equipe" && !c.annonces ? `<button data-action="envoyer-convoc">${IC.convoc}<span>Envoyer la convocation ici</span></button>` : "") +
-      `<button data-action="convoc">${IC.convoc}<span>Compo et convocation</span></button>`;
+      `<button data-action="convoc">${IC.convoc}<span>Convocation</span></button>`;
   }
   // Fenêtre d'actions sur un enfant (depuis le menu ou un message d'un parent)
   function modaleActionsJoueur(jid) {
@@ -623,12 +623,12 @@
   function carteEmpechement(m) {
     return `<div class="carte-msg c-absence"><div class="c-tete">⚠️ <b>Empêchement pour le match</b></div>
       <div><b>${esc(joueur(m.joueur).nom)}</b> · ${esc(m.motif)}</div>${m.precision ? `<div class="discret">« ${esc(m.precision)} »</div>` : ""}
-      ${estCoach() ? `<button class="mini-btn" data-coach="convoc" data-revoir="1"${m.match ? ` data-match="${esc(m.match)}"` : ""}>Revoir la compo</button>` : ""}</div>`;
+      ${estCoach() ? `<button class="mini-btn" data-coach="convoc" data-revoir="1"${m.match ? ` data-match="${esc(m.match)}"` : ""}>Revoir la convocation</button>` : ""}</div>`;
   }
   function modaleEmpechement(cid) {
     const j = monEnfant();
     ouvrirModale(`Empêchement de ${joueur(j).nom}`, `<form id="formEmpechement" class="form" data-convoc="${cid}">
-      <p class="large discret petit">Le coach sera prévenu en privé et pourra revoir la composition.</p>
+      <p class="large discret petit">Le coach sera prévenu en privé et pourra revoir la convocation.</p>
       <label>Motif<select name="motif">${MOTIFS.map((m) => `<option>${m}</option>`).join("")}</select></label>
       <label>Précision (facultatif)<input name="precision" maxlength="140" placeholder="Ex. : fièvre depuis ce matin"></label>
       <div class="actions large"><button class="esga-btn esga-btn-primaire">Prévenir le coach</button></div></form>`);
@@ -737,17 +737,16 @@
       }).join("")}</div>`;
   }
   function vueConvocation(c) {
-    const enfant = monEnfant(), retenu = enfant && c.joueurs.includes(enfant), titulaire = enfant && (c.postes || []).includes(enfant);
-    const compo = c.postes && c.postes.some(Boolean);
+    const enfant = monEnfant(), retenu = enfant && c.joueurs.includes(enfant);
     const derniere = (derniereConvocation(c.match) || {}).id === c.id;
     return `<div class="convoc">
       ${derniere ? "" : `<p class="alerte">Cette convocation a été remplacée par une version plus récente.</p>`}
       ${carteMatch(c)}
-      ${estCoach() && Object.keys(c.empechements || {}).some((j) => c.joueurs.includes(j)) ? `<p class="alerte">⚠️ Empêchement${Object.keys(c.empechements).length > 1 ? "s" : ""} : ${Object.entries(c.empechements).filter(([j]) => c.joueurs.includes(j)).map(([j, x]) => esc(joueur(j).nom) + " (" + esc(x.motif) + ")").join(", ")}. Modifiez la compo pour en tenir compte.</p>` : ""}
-      ${enfant ? `<div class="verdict ${retenu ? "ok" : "non"}">${retenu ? `<b>${esc(joueur(enfant).nom)} est convoqué${e_()}</b>${compo ? (titulaire ? " et commence le match." : ", sur le banc au coup d'envoi.") : "."}` : `<b>${esc(joueur(enfant).nom)} n'est pas retenu${e_()} pour ce match.</b> Il y en aura d'autres !`}</div>` : ""}
+      ${estCoach() && Object.keys(c.empechements || {}).some((j) => c.joueurs.includes(j)) ? `<p class="alerte">⚠️ Empêchement${Object.keys(c.empechements).length > 1 ? "s" : ""} : ${Object.entries(c.empechements).filter(([j]) => c.joueurs.includes(j)).map(([j, x]) => esc(joueur(j).nom) + " (" + esc(x.motif) + ")").join(", ")}. Modifiez la convocation pour en tenir compte.</p>` : ""}
+      ${enfant ? `<div class="verdict ${retenu ? "ok" : "non"}">${retenu ? `<b>${esc(joueur(enfant).nom)} est convoqué${e_()}</b>.` : `<b>${esc(joueur(enfant).nom)} n'est pas retenu${e_()} pour ce match.</b> Il y en aura d'autres !`}</div>` : ""}
       <dl class="rdv"><div><dt>Rendez-vous</dt><dd><b>${esc(c.rdvHeure.replace(":", "h"))}</b> · ${esc(c.rdvLieu)}</dd></div>
         <div><dt>Tenue</dt><dd>${esc(c.tenue)}</dd></div>${c.mot ? `<div><dt>Mot du coach</dt><dd>${esc(c.mot)}</dd></div>` : ""}</dl>
-      ${compo ? `<h3>Composition · ${esc(c.formation)}</h3>${terrain(c, false)}${remplacants(c).length ? `<p class="banc"><b>Remplaçant${e_()}s :</b> ${remplacants(c).map((id) => `<span class="${id === enfant ? "moi" : ""}">${esc(joueur(id).nom)}</span>`).join(", ")}</p>` : ""}` : ""}
+      <!-- Convocation générale, sans postes : l'entraîneur les décide le jour même (Bertrand, 23/11/2026) -->
       <h3>Convoqué${e_()}s (${c.joueurs.length})</h3>
       <ul class="convoques">${c.joueurs.map((id) => `<li class="${id === enfant ? "moi" : ""}">${esc(joueur(id).nom)}${estCoach() && c.vus.includes(id) ? ' <span class="lu">✓ lu</span>' : ""}</li>`).join("")}</ul>
       <div class="actions">
@@ -759,15 +758,9 @@
   }
   function texteConvocation(c) {
     const noms = (ids) => ids.map((id) => joueur(id).nom).join(", ");
-    let compo = "";
-    if (c.postes && c.postes.some(Boolean)) {
-      const groupes = [];
-      places(c.formation).forEach((p, i) => { if (!c.postes[i]) return; const g = groupes.find((x) => x.lib === p.lib); g ? g.ids.push(c.postes[i]) : groupes.push({ lib: p.lib, ids: [c.postes[i]] }); });
-      compo = `\nComposition (${c.formation}) :\n` + groupes.map((g) => `${g.lib} : ${noms(g.ids)}`).join("\n") + (remplacants(c).length ? `\nRemplaçant${e_()}s : ${noms(remplacants(c))}` : "") + "\n";
-    }
     return `⚽ CONVOCATION ESGA · ${nomEquipe(moi.equipe)}\n${maj1(fmtJour(c.date))} · ${c.ecole ? "début" : "coup d'envoi"} ${c.heure.replace(":", "h")}\n` +
       `${affiche(c)} (${c.lieu})\n\nRendez-vous : ${c.rdvHeure.replace(":", "h")} · ${c.rdvLieu}\nTenue : ${c.tenue}\n\n` +
-      `Convoqué${e_()}s (${c.joueurs.length}) : ${noms(c.joueurs)}\n` + compo + (c.mot ? `\n${c.mot}\n` : "");
+      `Convoqué${e_()}s (${c.joueurs.length}) : ${noms(c.joueurs)}\n` + (c.mot ? `\n${c.mot}\n` : "");
   }
 
   /* ---------- Espace coach ---------- */
@@ -803,7 +796,7 @@
       <div class="jauge">${cpt.map((n, i) => (n ? `<span class="j-${CLES_MATCH[i]}" style="flex:${n}"></span>` : "")).join("")}${sans.length ? `<span class="j-aucune" style="flex:${sans.length}"></span>` : ""}</div>
       <div class="legende"><span><i class="j-oui"></i>${cpt[0]} présent${e_()}${cpt[0] > 1 ? "s" : ""}</span><span><i class="j-incertain"></i>${cpt[1]} peut-être</span><span><i class="j-non"></i>${cpt[2]} absent${e_()}${cpt[2] > 1 ? "s" : ""}</span><span><i class="j-aucune"></i>${sans.length} sans réponse</span></div>
       <div class="actions">${sans.length ? `<button class="esga-btn" data-relancer="${s.id}">Relancer les ${sans.length} sans réponse</button>` : ""}
-        <button class="esga-btn esga-btn-or" data-coach="convoc">Faire la compo et la convoc ›</button></div></section>
+        <button class="esga-btn esga-btn-or" data-coach="convoc">Faire la convocation ›</button></div></section>
       <section class="carte"><h2>Réponses</h2><p class="discret petit">Touchez une réponse pour la changer (si une famille vous a répondu de vive voix).</p>
       <ul class="reponses">${etat.joueurs.map((j) => `<li><span class="nom">${esc(j.nom)}</span><span class="mini">${OPTIONS_MATCH.map((lib, i) => `<button class="pastille p-${CLES_MATCH[i]}${s.reponses[j.id] === i ? " choisi" : ""}" data-pour="${s.id}|${j.id}|${i}">${lib}</button>`).join("")}</span></li>`).join("")}</ul></section>`;
   }
@@ -821,7 +814,6 @@
     const b = { joueurs: etat.joueurs.filter((j) => reponseMatch(j.id) === "oui").map((j) => j.id).slice(0, maxConv() || 99), formation, postes: places(formation).map(() => null),
       rdvHeure: moinsMinutes(match.heure, match.domicile ? 60 : 90), rdvLieu: match.domicile ? match.lieu.split(",")[0] + " (vestiaires)" : "Parking du stade Edmond Pouzet (covoiturage)",
       tenue: "Tenue du club, protège-tibias, gourde", mot: "" };
-    remplirAuto(b);
     return b;
   }
   function remplirAuto(b) { const libres = b.joueurs.filter((j) => !b.postes.includes(j)); b.postes = b.postes.map((p) => p || libres.shift() || null); }
@@ -833,7 +825,7 @@
     const b = brouillon, cpt = { oui: 0, incertain: 0, non: 0, aucune: 0 }, mx = maxConv();
     etat.joueurs.forEach((j) => cpt[reponseMatch(j.id) || "aucune"]++);
     const LIB = { oui: "Présent", incertain: "Peut-être", non: "Absent" };
-    return `<section class="carte"><h2>${c ? "Modifier la convocation" : "Compo et convocation"}</h2>${carteMatch(match)}
+    return `<section class="carte"><h2>${c ? "Modifier la convocation" : "Convocation"}</h2>${carteMatch(match)}
       <p class="resume-sondage">${sondageMatch() ? `Sondage : <b>${cpt.oui}</b> présent${e_()}${cpt.oui > 1 ? "s" : ""}, <b>${cpt.incertain}</b> peut-être, <b>${cpt.non}</b> absent${e_()}${cpt.non > 1 ? "s" : ""}, <b>${cpt.aucune}</b> sans réponse.` : "Le sondage n'est pas lancé pour ce match : cochez les convoqué" + e_() + "s vous-même."}</p>
       <form id="formConvoc" class="form">
         <fieldset class="large"><legend>1. Convoqué${e_()}s <span class="discret">(${b.joueurs.length}${mx ? " / " + mx + " maximum" : ""})</span></legend>
@@ -841,14 +833,7 @@
           ${mx ? `<label class="case exception"><input type="checkbox" id="convPlus"${b.plus ? " checked" : ""}><span>Exceptionnellement, convoquer plus de ${mx} ${fem() ? "joueuses" : "joueurs"}</span></label>` : ""}
           <div class="cases">${etat.joueurs.map((j) => { const r = reponseMatch(j.id); return `<label class="case"><input type="checkbox" name="j" value="${j.id}"${b.joueurs.includes(j.id) ? " checked" : ""}><span>${esc(j.nom)}</span><span class="etiquette e-${r || "aucune"}">${r ? LIB[r] : "?"}</span></label>`; }).join("")}</div>
         </fieldset>
-        <fieldset class="large"><legend>2. Composition</legend>
-          <div class="compo-outils"><label class="ligne">Système <select id="choixFormation">${[...FORMATIONS[11].map((f) => [f, "à 11"]), ...FORMATIONS[8].map((f) => [f, "à 8"])].map(([f, t]) => `<option value="${f}"${f === b.formation ? " selected" : ""}>${f} (${t})</option>`).join("")}</select></label>
-            <button type="button" class="esga-btn" id="btnAuto">Placer les convoqué${e_()}s</button><button type="button" class="esga-btn" id="btnVider">Vider</button></div>
-          <p class="discret petit">Choisissez ${fem() ? "la joueuse" : "le joueur"} de chaque poste. Les convoqué${e_()}s non placé${e_()}s sont remplaçant${e_()}s.</p>
-          ${terrain(b, true)}
-          <p class="banc"><b>Remplaçant${e_()}s :</b> ${remplacants(b).map((id) => esc(joueur(id).nom)).join(", ") || "aucun" + e_()}</p>
-        </fieldset>
-        <fieldset class="large grille2"><legend>3. Rendez-vous</legend>
+        <fieldset class="large grille2"><legend>2. Rendez-vous</legend>
           <label>Heure<input type="time" name="rdvHeure" required value="${esc(b.rdvHeure)}"></label>
           <label>Lieu<input name="rdvLieu" required value="${esc(b.rdvLieu)}"></label>
           <label class="large">Tenue et affaires<input name="tenue" value="${esc(b.tenue)}"></label>
