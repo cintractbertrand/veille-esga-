@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b2a6f">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230b2a6f%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3EES%3C/text%3E%3C/svg%3E">
+  <title>Guide · ESGA</title>
+  <meta name="description" content="ES Genas Azieu : le guide de l'application en une page pour chaque rôle, et l'affiche avec le QR code">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="commun/charte.css?v=2026-11-22s">
+  <script src="commun/modules.js?v=2026-11-22s" defer></script>
+  <script src="vendor/qrcode/qrcode.js"></script>
+  <style>
+    body { margin: 0; background: var(--esga-fond); color: var(--esga-texte); font-family: var(--esga-police); line-height: 1.5; }
+    .guide { max-width: 860px; margin: 0 auto; padding: 18px 16px 48px; }
+    .tete { background: var(--esga-degrade); color: #fff; border-radius: var(--esga-rayon); padding: 20px; margin-bottom: 16px; }
+    .tete h1 { margin: 0 0 4px; font-size: 26px; }
+    .tete p { margin: 0; opacity: .9; }
+    .onglets { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+    .onglets button { font: inherit; font-weight: 600; border: 1px solid var(--esga-ligne); background: var(--esga-carte); color: var(--esga-texte); border-radius: 999px; padding: 10px 16px; cursor: pointer; min-height: 44px; }
+    .onglets button[aria-pressed="true"] { background: var(--esga-marine); border-color: var(--esga-marine); color: #fff; }
+    .fiche { display: none; }
+    .fiche.active { display: block; }
+    .carte { background: var(--esga-carte); border: 1px solid var(--esga-ligne); border-radius: var(--esga-rayon); box-shadow: var(--esga-ombre); padding: 18px 20px; margin-bottom: 14px; }
+    .carte h2 { margin: 0 0 4px; font-size: 21px; }
+    .carte .pour { margin: 0 0 14px; color: var(--esga-gris); }
+    ol.etapes { list-style: none; counter-reset: e; margin: 0; padding: 0; display: grid; gap: 12px; }
+    ol.etapes li { counter-increment: e; display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; }
+    ol.etapes li::before { content: counter(e); width: 36px; height: 36px; border-radius: 50%; background: var(--esga-or); color: #121826; font-weight: 800; display: grid; place-items: center; }
+    ol.etapes b { display: block; }
+    ol.etapes span { color: var(--esga-gris); }
+    .astuce { margin: 14px 0 0; padding: 10px 14px; border-radius: 10px; background: var(--esga-doux); }
+    .boutons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .btn { font: inherit; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; border-radius: 10px; padding: 10px 16px; min-height: 44px; border: 1px solid var(--esga-ligne); background: var(--esga-carte); color: var(--esga-texte); cursor: pointer; }
+    .btn.prim { background: var(--esga-bleu); border-color: var(--esga-bleu); color: #fff; }
+    .installer { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .installer div { background: var(--esga-carte-2); border-radius: 10px; padding: 12px 14px; }
+    .installer h3 { margin: 0 0 6px; font-size: 16px; }
+    .installer p { margin: 0; color: var(--esga-gris); font-size: 15px; }
+    /* Affiche A4 */
+    .affiche { background: #fff; color: #121826; border-radius: var(--esga-rayon); border: 1px solid var(--esga-ligne); padding: 32px 28px; text-align: center; }
+    .affiche .crest { display: inline-grid; place-items: center; width: 72px; height: 72px; border-radius: 18px; background: #0b2a6f; color: #fff; font-weight: 800; font-size: 26px; line-height: 1; }
+    .affiche .crest small { display: block; font-size: 13px; color: #e8b923; }
+    .affiche h2 { font-size: 34px; margin: 14px 0 6px; color: #0b2a6f; }
+    .affiche .sous { font-size: 18px; margin: 0 0 22px; color: #3a4252; }
+    .affiche .qr { display: inline-block; padding: 14px; border: 4px solid #e8b923; border-radius: 18px; background: #fff; }
+    .affiche .qr svg { display: block; width: 260px; height: 260px; }
+    .affiche .url { font-weight: 700; font-size: 17px; margin: 12px 0 22px; word-break: break-all; }
+    .affiche .trois { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: left; }
+    .affiche .trois div { background: #f3f5f9; border-radius: 12px; padding: 12px; }
+    .affiche .trois b { display: block; color: #0b2a6f; font-size: 17px; }
+    .affiche .trois span { font-size: 14px; color: #3a4252; }
+    @media (max-width: 600px) {
+      .installer, .affiche .trois { grid-template-columns: 1fr; }
+      .affiche h2 { font-size: 26px; }
+      .affiche .qr svg { width: 200px; height: 200px; }
+    }
+    @media print {
+      @page { size: A4; margin: 12mm; }
+      body { background: #fff; }
+      .esga-bar, .tete, .onglets, .no-print { display: none !important; }
+      .guide { padding: 0; max-width: none; }
+      .fiche { display: none !important; }
+      .fiche.active { display: block !important; }
+      .carte { box-shadow: none; break-inside: avoid; }
+      .affiche { border: 0; padding: 0; }
+      .affiche h2 { font-size: 40px; }
+      .affiche .qr svg { width: 320px; height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="guide">
+    <header class="tete">
+      <h1>Le guide de l'appli ESGA</h1>
+      <p>Une page par rôle : ce qu'il faut savoir, en 2 minutes. Choisissez qui vous êtes.</p>
+    </header>
+
+    <nav class="onglets" aria-label="Rôles">
+      <button data-f="parent">👨‍👩‍👧 Parent</button>
+      <button data-f="joueur">⚽ Joueuse ou joueur</button>
+      <button data-f="coach">📋 Éducateur</button>
+      <button data-f="dirigeant">🏛️ Dirigeant</button>
+      <button data-f="affiche">🖨️ Affiche QR code</button>
+    </nav>
+
+    <!-- ===== Parent ===== -->
+    <section class="fiche" id="parent">
+      <div class="carte">
+        <h2>Parent : la semaine de votre enfant</h2>
+        <p class="pour">Matchs, entraînements, absences et messages de l'équipe, au même endroit.</p>
+        <ol class="etapes">
+          <li><div><b>Ouvrez l'appli et touchez «&nbsp;Parent&nbsp;»</b><span>Tapez le prénom de votre enfant, ou choisissez son équipe, puis touchez son nom. C'est fait une fois pour toutes.</span></div></li>
+          <li><div><b>Répondez au sondage du match</b><span>Environ 10 jours avant, le coach demande qui est disponible. Touchez Présent, Peut-être ou Absent. Vous pouvez changer d'avis.</span></div></li>
+          <li><div><b>Regardez la convocation</b><span>Une fois publiée, elle affiche l'heure et le lieu de rendez-vous et la tenue. Les convoqués apparaissent en tuiles, votre enfant en or.</span></div></li>
+          <li><div><b>Prévenez d'une absence en 2 touches</b><span>À côté de l'entraînement : «&nbsp;Prévenir d'une absence&nbsp;» ; pour un match : «&nbsp;… ne pourra pas venir&nbsp;». Choisissez le motif, le coach est prévenu tout de suite.</span></div></li>
+          <li><div><b>Lisez les messages de l'équipe</b><span>«&nbsp;Annonces&nbsp;» : les infos du coach. «&nbsp;Blabla&nbsp;» : entre parents, pour le covoiturage par exemple.</span></div></li>
+        </ol>
+        <p class="astuce">💡 Ajoutez l'appli à votre écran d'accueil (voir plus bas) : vous l'ouvrirez comme une application.</p>
+      </div>
+    </section>
+
+    <!-- ===== Joueur ===== -->
+    <section class="fiche" id="joueur">
+      <div class="carte">
+        <h2>Joueuse ou joueur : ton planning</h2>
+        <p class="pour">Tes matchs, tes entraînements, tes vidéos et le groupe de l'équipe.</p>
+        <ol class="etapes">
+          <li><div><b>Ouvre l'appli et touche «&nbsp;Joueur ou joueuse&nbsp;»</b><span>Tape ton prénom ou choisis ton équipe, puis touche ton nom.</span></div></li>
+          <li><div><b>Réponds au sondage du match</b><span>Présent, Peut-être ou Absent : le coach fait la convocation avec vos réponses.</span></div></li>
+          <li><div><b>Regarde si tu es convoqué(e)</b><span>Heure et lieu de rendez-vous, tenue et mot du coach. Ta tuile est en or.</span></div></li>
+          <li><div><b>Tu ne peux pas venir ?</b><span>Touche «&nbsp;Je serai absent(e)&nbsp;» à côté de l'entraînement, ou «&nbsp;Je ne pourrai pas venir&nbsp;» pour un match, puis choisis le motif.</span></div></li>
+          <li><div><b>Regarde tes vidéos</b><span>Quand le coach t'envoie une séquence du match, elle arrive dans «&nbsp;Mes vidéos&nbsp;».</span></div></li>
+        </ol>
+        <p class="astuce">💡 Le groupe «&nbsp;Blabla&nbsp;» est ouvert à toute l'équipe. Les «&nbsp;Annonces&nbsp;» sont réservées au staff.</p>
+      </div>
+    </section>
+
+    <!-- ===== Coach ===== -->
+    <section class="fiche" id="coach">
+      <div class="carte">
+        <h2>Éducateur : préparer un match en 4 étapes</h2>
+        <p class="pour">Tout part de votre accueil «&nbsp;Aujourd'hui&nbsp;» : ce qui est à faire s'y affiche.</p>
+        <ol class="etapes">
+          <li><div><b>Choisissez «&nbsp;Éducateur&nbsp;», puis votre nom</b><span>Vous ne voyez que vos équipes. Le récapitulatif en haut montre ce qui a changé depuis votre dernière visite.</span></div></li>
+          <li><div><b>Lancez le sondage</b><span>La carte «&nbsp;Matchs à préparer&nbsp;» vous le rappelle (par défaut le lundi avant le match, possible dès 10 jours avant). Deux matchs le même week-end : un sondage commun au choix.</span></div></li>
+          <li><div><b>Faites la convocation</b><span>Menu Matchs, puis Convocation : cochez les joueuses, l'heure et le lieu de rendez-vous. 14 maximum à 11, 11 à 8. Elle part dans les Annonces de l'équipe.</span></div></li>
+          <li><div><b>Après le match, remplissez la feuille</b><span>Score, qui a joué, buts et passes avec + et −. Le bilan de la saison de chaque joueuse se met à jour.</span></div></li>
+          <li><div><b>À l'entraînement, faites l'appel</b><span>«&nbsp;Faire l'appel&nbsp;», puis «&nbsp;Tous les autres sont présents&nbsp;» : il ne reste que les absents à cocher. Vous pouvez y rattacher une séance de l'Atelier.</span></div></li>
+        </ol>
+        <p class="astuce">💡 Pour un changement d'horaire ou une annulation : ouvrez l'entraînement dans le calendrier, «&nbsp;Déplacer&nbsp;» ou «&nbsp;Annuler la séance&nbsp;». Les familles le voient tout de suite.</p>
+      </div>
+    </section>
+
+    <!-- ===== Dirigeant ===== -->
+    <section class="fiche" id="dirigeant">
+      <div class="carte">
+        <h2>Dirigeant : tout le club d'un coup d'œil</h2>
+        <p class="pour">Le tableau de bord rassemble ce qui demande une action.</p>
+        <ol class="etapes">
+          <li><div><b>Choisissez «&nbsp;Dirigeant&nbsp;», puis votre nom</b><span>Votre récapitulatif vous suit sur tous vos appareils.</span></div></li>
+          <li><div><b>Licences et certificats</b><span>Les alertes du tableau de bord mènent aux licenciés à finaliser. Import depuis un tableur (Footclubs, Excel) et export CSV dans «&nbsp;Licenciés&nbsp;».</span></div></li>
+          <li><div><b>Équipes, éducateurs et créneaux</b><span>Menu Équipes : effectif, créneaux d'entraînement et éducateurs de chaque équipe.</span></div></li>
+          <li><div><b>Calendrier du club</b><span>Les matchs des PV du District s'y ajoutent tout seuls. Ajoutez vos événements : tournoi, réunion, stage.</span></div></li>
+          <li><div><b>PV du District</b><span>Chaque semaine : sanctions, échéances et amendes qui concernent le club.</span></div></li>
+        </ol>
+        <p class="astuce">💡 Imprimez l'affiche (dernier onglet) et collez-la au club-house et dans les vestiaires.</p>
+      </div>
+    </section>
+
+    <!-- ===== Affiche ===== -->
+    <section class="fiche" id="affiche">
+      <div class="affiche">
+        <span class="crest" aria-hidden="true">ES<small>GA</small></span>
+        <h2>L'appli du club</h2>
+        <p class="sous">Matchs, convocations, absences et messages de l'équipe.<br>Scannez avec l'appareil photo de votre téléphone.</p>
+        <div class="qr" id="qr" role="img" aria-label="QR code vers l'application du club"></div>
+        <p class="url" id="url"></p>
+        <div class="trois">
+          <div><b>1. Scannez</b><span>L'appli s'ouvre, rien à télécharger.</span></div>
+          <div><b>2. Dites qui vous êtes</b><span>Parent, joueuse, éducateur ou dirigeant.</span></div>
+          <div><b>3. Ajoutez-la à l'écran d'accueil</b><span>Elle s'ouvre ensuite comme une application.</span></div>
+        </div>
+      </div>
+      <div class="boutons no-print">
+        <button class="btn prim" onclick="window.print()">🖨️ Imprimer l'affiche</button>
+      </div>
+    </section>
+
+    <!-- Commun à toutes les fiches -->
+    <div class="carte no-print" id="installer">
+      <h2>Mettre l'appli sur l'écran d'accueil</h2>
+      <p class="pour">Une icône ESGA sur votre téléphone, comme une vraie application.</p>
+      <div class="installer">
+        <div><h3>iPhone (Safari)</h3><p>Touchez le bouton Partager (carré avec une flèche), puis «&nbsp;Sur l'écran d'accueil&nbsp;».</p></div>
+        <div><h3>Android (Chrome)</h3><p>Touchez les trois points en haut à droite, puis «&nbsp;Ajouter à l'écran d'accueil&nbsp;».</p></div>
+      </div>
+      <div class="boutons">
+        <a class="btn prim" href="./#bienvenue">Ouvrir l'appli</a>
+        <button class="btn" id="imprimerFiche" onclick="window.print()">🖨️ Imprimer cette fiche</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const accueil = new URL("./", location.href).href;
+      document.getElementById("url").textContent = accueil.replace(/^https?:\/\//, "");
+      try {
+        const qr = qrcode(0, "M"); qr.addData(accueil); qr.make();
+        document.getElementById("qr").innerHTML = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+      } catch (e) { document.getElementById("qr").textContent = accueil; }
+
+      // Fiche ouverte : #parent, #joueur, #coach, #dirigeant, #affiche ; sinon le rôle du profil choisi à l'accueil
+      const fiches = ["parent", "joueur", "coach", "dirigeant", "affiche"];
+      function choisie() {
+        const h = location.hash.slice(1);
+        if (fiches.includes(h)) return h;
+        try { const r = (JSON.parse(localStorage.getItem("esga-profil")) || {}).role; if (fiches.includes(r)) return r; } catch (e) {}
+        return "parent";
+      }
+      function montrer(f) {
+        fiches.forEach((x) => document.getElementById(x).classList.toggle("active", x === f));
+        document.querySelectorAll(".onglets button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.f === f));
+        document.getElementById("installer").style.display = f === "affiche" ? "none" : "";
+      }
+      document.querySelectorAll(".onglets button").forEach((b) => b.addEventListener("click", () => { history.replaceState(null, "", "#" + b.dataset.f); montrer(b.dataset.f); }));
+      window.addEventListener("hashchange", () => montrer(choisie()));
+      montrer(choisie());
+    })();
+  </script>
+</body>
+</html>
