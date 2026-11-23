@@ -13,99 +13,94 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Récupérer les équipes Scorenco
+      - name: Équipes ESGA
         run: |
           set -e
           mkdir -p data
-
-          # Champs valides d après l introspection : id name slug gender age_category rank number
           curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
             -d '{"query":"{ teams_team(where:{club_id:{_eq:128233}}) { id name slug gender age_category rank number } }"}' \
             -o /tmp/teams.json
-
-          echo "=== Réponse brute (100 premiers chars) ==="
-          head -c 200 /tmp/teams.json
-          echo ""
-
           python3 -c "
           import json
           d = json.load(open('/tmp/teams.json'))
-          if 'errors' in d:
-              print('ERREURS:', d['errors'])
           teams = d.get('data',{}).get('teams_team',[])
-          print(f'{len(teams)} équipes trouvées')
+          print(f'{len(teams)} équipes')
           for t in teams:
               print(f'  {t[\"id\"]:>8}  {t[\"slug\"]:25}  {t.get(\"age_category\",\"\")}  rang={t.get(\"rank\",\"?\")}')
-          # Sauvegarder les IDs
           with open('/tmp/team_ids.txt','w') as f:
-              for t in teams:
-                  f.write(str(t['id']) + '\n')
+              for t in teams: f.write(str(t['id']) + '\n')
           "
 
-      - name: Introspection event_detail
+      - name: Introspection args event_detail_by_club_id
         run: |
-          echo "=== Champs de competitions_event_detail ==="
           curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d '{"query":"{ __type(name:\"competitions_event_detail\") { fields { name type { name kind ofType { name kind } } } } }"}' | python3 -c "
-          import json,sys
-          d=json.load(sys.stdin)
-          fields = d.get('data',{}).get('__type',{}).get('fields',[])
-          if not fields: print('Type non trouvé')
-          for f in sorted(fields, key=lambda x:x['name']):
-              t = f['type']
-              tname = t.get('name') or (t.get('ofType',{}) or {}).get('name','?')
-              print(f'  {f[\"name\"]:35} {t[\"kind\"]:10} {tname}')
-          "
+            -d '{"query":"{ __type(name:\"competitions_event_detail_by_club_id_args\") { inputFields { name type { name kind ofType { name } } } } }"}' \
+            | python3 -m json.tool
 
-      - name: Introspection ranking_detail
+      - name: Test event avec champs jsonb teams
         run: |
-          echo "=== Champs de competitions_ranking_detail ==="
+          TID=$(head -1 /tmp/team_ids.txt)
+          echo "Team $TID"
           curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d '{"query":"{ __type(name:\"competitions_ranking_detail\") { fields { name type { name kind ofType { name kind } } } } }"}' | python3 -c "
-          import json,sys
-          d=json.load(sys.stdin)
-          fields = d.get('data',{}).get('__type',{}).get('fields',[])
-          if not fields: print('Type non trouvé')
-          for f in sorted(fields, key=lambda x:x['name']):
-              t = f['type']
-              tname = t.get('name') or (t.get('ofType',{}) or {}).get('name','?')
-              print(f'  {f[\"name\"]:35} {t[\"kind\"]:10} {tname}')
-          "
-
-      - name: Matchs du club via event_detail_by_club_id
-        run: |
-          echo "=== Matchs par club_id ==="
-          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
-            -H "Content-Type: application/json" \
-            -d '{"query":"{ competitions_event_detail_by_club_id(args:{club_id:128233}, limit:5, order_by:{date:desc}) { id date time home_team_name away_team_name home_score away_score status round_day_name team_id } }"}' \
+            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name last_events { id date time status teams url level_name } } }\"}" \
             | python3 -m json.tool | head -60
 
-      - name: Matchs d une équipe via last_events
+      - name: Test next_events
         run: |
-          TID=$(head -1 /tmp/team_ids.txt 2>/dev/null || echo "")
-          if [ -z "$TID" ]; then echo "Pas d équipe trouvée"; exit 0; fi
-          echo "Team ID: $TID"
+          TID=$(head -1 /tmp/team_ids.txt)
           curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name slug rank last_events { id date time home_team_name away_team_name home_score away_score status } next_events { id date time home_team_name away_team_name home_score away_score status } } }\"}" \
-            | python3 -m json.tool | head -80
+            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name next_events { id date time status teams url level_name } } }\"}" \
+            | python3 -m json.tool | head -60
 
-      - name: Classement d une équipe
+      - name: Classement détaillé
         run: |
-          TID=$(head -1 /tmp/team_ids.txt 2>/dev/null || echo "")
-          if [ -z "$TID" ]; then echo "Pas d équipe trouvée"; exit 0; fi
-          echo "Team ID: $TID"
-          # Essayer competitions_ranking avec team_id
+          TID=$(head -1 /tmp/team_ids.txt)
+          echo "Team $TID"
           curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d "{\"query\":\"{ competitions_ranking(where:{team_id:{_eq:$TID}}) { id team_id rank points played won drawn lost goals_for goals_against } }\"}" \
-            | python3 -m json.tool | head -40
-          echo ""
-          echo "=== ranking_detail ==="
+            -d "{\"query\":\"{ competitions_ranking_detail(where:{team_id:{_eq:$TID}}) { id team_id rank pts played win lost even gf ga gd name_in_competition team_slug club_slug } }\"}" \
+            | python3 -m json.tool
+
+      - name: Classement complet de la poule
+        run: |
+          # Chercher le level_in_season_id de la première équipe pour avoir toute la poule
+          TID=$(head -1 /tmp/team_ids.txt)
+          # D abord trouver le level_in_season_id via un event
           curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d "{\"query\":\"{ competitions_ranking_detail(where:{team_id:{_eq:$TID}}) { id team_id rank points played won drawn lost goals_for goals_against team_name } }\"}" \
-            | python3 -m json.tool | head -40
+            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { last_events { level_in_season_id } } }\"}" \
+            -o /tmp/level.json
+          LEVEL=$(python3 -c "
+          import json
+          d=json.load(open('/tmp/level.json'))
+          evs=d.get('data',{}).get('teams_team_by_pk',{}).get('last_events',[])
+          if evs: print(evs[0].get('level_in_season_id',''))
+          " 2>/dev/null)
+          echo "Level in season: $LEVEL"
+          if [ -n "$LEVEL" ]; then
+            curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\":\"{ competitions_ranking_detail(where:{team_in_season:{level_in_season_id:{_eq:$LEVEL}}}, order_by:{rank:asc}) { rank pts played win even lost gf ga gd name_in_competition team_slug club_slug } }\"}" \
+              | python3 -m json.tool | head -80
+          fi
+
+      - name: Calendrier de la poule (adversaires)
+        run: |
+          TID=$(head -1 /tmp/team_ids.txt)
+          LEVEL=$(python3 -c "
+          import json
+          d=json.load(open('/tmp/level.json'))
+          evs=d.get('data',{}).get('teams_team_by_pk',{}).get('last_events',[])
+          if evs: print(evs[0].get('level_in_season_id',''))
+          " 2>/dev/null)
+          echo "Level $LEVEL : tous les matchs de la poule"
+          if [ -n "$LEVEL" ]; then
+            curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\":\"{ competitions_event_detail(where:{level_in_season_id:{_eq:$LEVEL}}, order_by:{date:asc}, limit:10) { id date time status teams url } }\"}" \
+              | python3 -m json.tool | head -80
+          fi
