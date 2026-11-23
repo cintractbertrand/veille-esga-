@@ -333,6 +333,7 @@
   const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; d.videos = d.videos || {}; d.envois = d.envois || []; d.rappels = d.rappels || {}; d.connexions = d.connexions || {}; d.covoit = d.covoit || {}; return d; }; // données plus anciennes
   completer(D);
   let MATCHS = []; // matchs officiels (data/matchs.json)
+  let SAISON_OFF = null; // data/calendrier-scorenco.json
   const abonnes = [];
   const notifier = () => abonnes.forEach((cb) => { try { cb(); } catch (e) { console.error(e); } });
   let enLot = 0, sale = false;
@@ -349,6 +350,24 @@
     return Object.assign({ id, equipe: eq, type: "match", source: "pv", titre: (m.a_domicile ? "ESGA – " : "") + adv + (m.a_domicile ? "" : " – ESGA"),
       adversaire: adv, domicile: !!m.a_domicile, date: m.date, heure: m.heure || "15:00", duree: 105, lieu: (m.lieu || "").replace(/\s+à\s*$/, "").replace(/\s+à\s+/, ", "),
       competition: m.competition, coupe: /coupe/i.test(m.competition), pv: m.pv, statut: "prevu" }, ex);
+  }
+  // Matchs officiels = PV + Scorenco (Scorenco ajoute les matchs absents des PV et le score officiel)
+  const SCO_STATUT = { withdrawal: " (forfait)", postponed: " (reporté)" };
+  function scoEvt(m) {
+    const adv = m.a_domicile ? m.exterieur : m.domicile, id = "s-" + m.id, ex = D.exceptions[id] || {};
+    return Object.assign({ id, equipe: m.equipe, type: "match", source: "scorenco", titre: (m.a_domicile ? "ESGA – " + adv : adv + " – ESGA") + (SCO_STATUT[m.statut] || ""),
+      adversaire: adv, domicile: !!m.a_domicile, date: m.date, heure: m.heure || "15:00", duree: 105, lieu: "", competition: m.competition, coupe: /coupe/i.test(m.competition || ""),
+      url: m.url, officiel: offScore(m), statut: "prevu" }, ex);
+  }
+  function offScore(m) {
+    if (m.statut !== "finish" || m.score_dom == null || m.score_ext == null) return null;
+    return m.a_domicile ? { nous: m.score_dom, eux: m.score_ext } : { nous: m.score_ext, eux: m.score_dom };
+  }
+  function officiels() {
+    const sco = SAISON_OFF ? SAISON_OFF.matchs.filter((m) => m.equipe && m.date) : [], cle = (eq, d) => eq + "|" + d;
+    const parCle = new Map(sco.map((m) => [cle(m.equipe, m.date), m]));
+    const pv = MATCHS.map(matchEvt).map((e) => { const m = parCle.get(cle(e.equipe, e.date)); if (m) { parCle.delete(cle(e.equipe, e.date)); e.officiel = offScore(m); e.url = m.url; } return e; });
+    return pv.concat([...parCle.values()].map(scoEvt));
   }
   function entrainements(du, au, equipe) {
     const out = [];
@@ -370,11 +389,11 @@
   function evenements({ equipe, equipes, du, au, types } = {}) {
     du = du || ajout(auj(), -60); au = au || ajout(auj(), 120);
     const garde = (e) => (!equipe || e.equipe === equipe || (e.equipe == null && !equipes)) && (!equipes || equipes.includes(e.equipe) || e.equipe == null) && (!types || types.includes(e.type)) && e.date >= du && e.date <= au;
-    const liste = [...MATCHS.map(matchEvt), ...entrainements(du, au, equipe), ...D.evenements.map((e) => Object.assign({ source: "manuel", statut: "prevu", duree: 90 }, e))];
+    const liste = [...officiels(), ...entrainements(du, au, equipe), ...D.evenements.map((e) => Object.assign({ source: "manuel", statut: "prevu", duree: 90 }, e))];
     return liste.filter(garde).sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
   }
   function evenement(id) {
-    if (id.startsWith("m-")) { const m = MATCHS.find((x) => "m-" + x.numero === id); return m ? matchEvt(m) : null; }
+    if (id.startsWith("m-") || id.startsWith("s-")) return officiels().find((e) => e.id === id) || null;
     if (id.startsWith("e-")) { const date = id.slice(-10), cr = id.slice(2, -11); const c = D.creneaux.find((x) => x.id === cr); return c ? entrainements(date, date, c.equipe).find((e) => e.id === id) || null : null; }
     const e = D.evenements.find((x) => x.id === id); return e ? Object.assign({ source: "manuel", statut: "prevu", duree: 90 }, e) : null;
   }
@@ -396,7 +415,7 @@
     D.convocations = D.convocations.filter((c) => !vieux.has(c.evenement));
     ["dispos", "sondages", "covoit", "feuilles", "rappels", "presences"].forEach((k) => vieux.forEach((id) => { if (D[k]) delete D[k][id]; }));
     const sem = t.replace(/-/g, "");
-    const samedi = ajout(t, ((6 - jour(t).getDay() + 7) % 7) || 7), autres = MATCHS.map(matchEvt).concat(D.evenements.filter((e) => RENCONTRES.includes(e.type)));
+    const samedi = ajout(t, ((6 - jour(t).getDay() + 7) % 7) || 7), autres = officiels().concat(D.evenements.filter((e) => RENCONTRES.includes(e.type)));
     D.equipes.forEach((eq, i) => {
       const ecole = /^U(7|9|11|13)$/.test(eq.categorie), senior = /Seniors|Vétérans|U20/.test(eq.categorie);
       let date = eq.id === "U15F-2" ? samedi : senior ? ajout(samedi, 1) : samedi;
@@ -650,7 +669,7 @@
   function retirerEnvoi(id) { D.envois = D.envois.filter((x) => x.id !== id); sauver(); }
   function statsJoueur(id) {
     const p = personne(id); if (!p) return null;
-    const passes = MATCHS.map(matchEvt).concat(D.evenements.filter((e) => e.type === "amical")).filter((e) => e.equipe === p.equipe && e.date < auj());
+    const passes = officiels().concat(D.evenements.filter((e) => e.type === "amical")).filter((e) => e.equipe === p.equipe && e.date < auj());
     const convs = D.convocations.filter((c) => c.joueurs.includes(id));
     let joues = 0, buts = 0, pd = 0;
     Object.values(D.feuilles).forEach((f) => { if ((f.joueurs || []).includes(id)) joues++; const st = (f.stats || {})[id]; if (st) { buts += st.buts || 0; pd += st.passes || 0; } });
@@ -707,7 +726,6 @@
   // En ligne : on attend la première lecture (6 s au plus, sinon on part de la copie locale)
   const premier = NUAGE.actif ? Promise.race([NUAGE.tirer(), new Promise((r) => setTimeout(r, 6000))]) : null;
   // Saison officielle (data/calendrier-scorenco.json, mis à jour chaque lundi) : résultats, classements et matchs des poules
-  let SAISON_OFF = null;
   function saisonOfficielle(eq) {
     if (!SAISON_OFF) return null;
     const mes = SAISON_OFF.equipes.filter((t) => t.equipe === eq), ids = mes.map((t) => t.id);
@@ -717,9 +735,21 @@
     return {
       maj: SAISON_OFF.maj,
       poules: lids.map((l) => Object.assign({ id: l }, SAISON_OFF.poules[l])).filter((p) => p.classement),
-      matchs,
+      ids, matchs,
       autres: (l) => SAISON_OFF.matchs.filter((m) => String(m.poule) === String(l) && !ids.includes(m.esga_id)),
     };
+  }
+  // Récapitulatif : place de chaque équipe dans son championnat et forme (5 derniers résultats)
+  function classements() {
+    return D.equipes.map((q) => {
+      const o = saisonOfficielle(q.id); if (!o || !o.poules.length) return null;
+      const cle = (o.matchs.find((m) => m.statut === "to_come" && m.poule != null) || o.matchs.filter((m) => m.poule != null).pop() || {}).poule;
+      const p = o.poules.find((x) => String(x.id) === String(cle)) || o.poules[0], l = p.classement.find((x) => o.ids.includes(x.team_id));
+      if (!l) return null;
+      const forme = o.matchs.filter((m) => m.statut === "finish" && m.score_dom != null).slice(-5).map((m) => { const a = m.a_domicile ? m.score_dom : m.score_ext, b = m.a_domicile ? m.score_ext : m.score_dom; return a > b ? "V" : a < b ? "D" : "N"; });
+      const pro = o.matchs.find((m) => m.statut === "to_come");
+      return { equipe: q.id, championnat: p.nom, rang: l.rang, nb: p.classement.length, pts: l.pts, j: l.j, diff: l.diff, forme, prochain: pro || null };
+    }).filter(Boolean);
   }
   const json = (f, def) => fetch(BASE + "data/" + f).then((r) => r.ok ? r.json() : def).catch(() => def);
   const pret = Promise.all([json("matchs.json", []), json("calendrier-scorenco.json", null), premier]).then(([m, s]) => { MATCHS = Array.isArray(m) ? m : []; SAISON_OFF = s && s.matchs ? s : null; presencesDemo(); return window.CLUB; });
@@ -733,7 +763,7 @@
     presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, setCovoit, covoiturage, meteo, matchsTest: (forcer) => { if (NUAGE.actif) return false; const ok = matchsTest(forcer); if (ok) sauver(); return ok; }, modeTest: window.ESGA_MODE_TEST, tauxPresence, categorieAge,
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
     feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,
-    seance: (evt) => D.seances[evt] || null, setSeance, saisonOfficielle,
+    seance: (evt) => D.seances[evt] || null, setSeance, saisonOfficielle, classements,
     // Rappel « lancer le sondage le… » choisi par le coach (par défaut 7 jours avant le match)
     rappel: (evt) => D.rappels[evt] || null, setRappel: (evt, date) => { if (date) D.rappels[evt] = date; else delete D.rappels[evt]; sauver(); },
     video: (evt) => D.videos[evt] || null, setVideo, envoyerSequence, envois, envoi: (id) => D.envois.find((x) => x.id === id) || null, vuEnvoi, retirerEnvoi, voixEnvoi,

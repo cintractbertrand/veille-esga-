@@ -561,3 +561,9 @@ details.autres h3 { font-size: .8rem; text-transform: uppercase; letter-spacing:
 .liste.saison td.nom, .liste.saison td.rencontre { white-space: normal; }
 .liste.saison .sc { display: inline-block; min-width: 3.2em; text-align: center; color: var(--esga-gris); font-variant-numeric: tabular-nums; }
 .liste.saison .sc b { color: var(--esga-texte, inherit); }
+.recap-cl { margin-bottom: 18px; }
+.liste .forme .etiq { padding: 2px 6px; margin-right: 2px; }
+.liste sup { font-size: .65em; }
+.recap-cl td.nom b { white-space: nowrap; }
+@media (max-width: 820px) { .liste .forme .etiq:nth-child(-n+2) { display: none; } .liste .forme .etiq { padding: 2px 5px; } }
+@media (max-width: 820px) { .recap-cl .liste .seul-m { display: block; margin-top: 2px; } }

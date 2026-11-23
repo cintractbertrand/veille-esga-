@@ -447,16 +447,21 @@
     const eqs = C.equipes().filter((e) => peutVoir(e.id));
     if (!estDirigeant() && eqs.length === 1) { location.replace("#equipe/" + eqs[0].id); return ""; }
     const groupes = [["Seniors et vétérans", (e) => /Seniors|Vétérans/.test(e.categorie)], ["Préformation (U15 à U20)", (e) => /U1[5-9]|U20/.test(e.categorie)], ["École de foot (U7 à U13)", (e) => /U7|U9|U1[13]/.test(e.categorie)]];
+    const cls = C.classements().filter((c) => eqs.some((e) => e.id === c.equipe));
     const carte = (e) => {
       const co = C.coachDe(e.id), n = C.joueurs(e.id).length, m = C.prochainMatch(e.id), cr = C.creneaux(e.id);
       return `<a class="eq" href="#equipe/${esc(e.id)}"><h3>${esc(e.nom)} ${e.genre === "F" ? '<span class="etiq bleu">Féminines</span>' : ""}</h3>
         <span class="l">Éducateur : ${co ? `<b>${esc(C.nomComplet(co))}</b>` : '<b style="color:var(--ko)">à pourvoir</b>'}</span>
         <span class="l">${cr.length ? cr.map((c) => `${maj1(JOURS[c.jour]).slice(0, 3)}. ${hh(c.heure)}`).join(" · ") : "Pas de créneau"}</span>
         <span class="l">${m ? `Prochain match : <b>${fJ(m.date)}</b> · ${esc(m.adversaire)}` : e.format < 11 ? "Plateaux et tournois" : "Aucun match à venir"}</span>
-        <span class="chiffres"><span class="etiq">${pl(n, "joueur")}</span><span class="etiq">Foot à ${e.format}</span>${m && !C.convocation(m.id) && jour(m.date) - jour(auj()) <= 8 * 864e5 ? '<span class="etiq att">À convoquer</span>' : ""}</span></a>`;
+        <span class="chiffres">${(() => { const c = cls.find((x) => x.equipe === e.id); return c ? `<span class="etiq bleu">${c.rang}${c.rang === 1 ? "er" : "e"} / ${c.nb}</span>` : ""; })()}<span class="etiq">${pl(n, "joueur")}</span><span class="etiq">Foot à ${e.format}</span>${m && !C.convocation(m.id) && jour(m.date) - jour(auj()) <= 8 * 864e5 ? '<span class="etiq att">À convoquer</span>' : ""}</span></a>`;
     };
+    const forme = (f) => f.map((r) => `<span class="etiq ${r === "V" ? "ok" : r === "D" ? "ko" : "or"}">${r}</span>`).join("");
+    const recap = cls.length ? `<section class="carte recap-cl"><h2>Classements de la saison</h2><div class="table-wrap"><table class="liste saison"><thead><tr><th>Équipe</th><th class="cache-m">Championnat</th><th class="c">Place</th><th class="c">Pts</th><th class="c cache-m">J</th><th>Forme</th></tr></thead><tbody>
+      ${cls.map((c) => `<tr data-a="lien" data-href="#equipe/${esc(c.equipe)}/saison"><td class="nom"><b>${esc(C.nomEquipe(c.equipe))}</b><small class="seul-m discret">${esc(c.championnat)}</small></td><td class="cache-m discret">${esc(c.championnat)}</td><td class="c"><b>${c.rang}<sup>${c.rang === 1 ? "er" : "e"}</sup></b><small class="discret">/${c.nb}</small></td><td class="c"><b>${c.pts}</b></td><td class="c cache-m">${c.j}</td><td class="forme">${forme(c.forme)}</td></tr>`).join("")}
+      </tbody></table></div><p class="aide">Résultats officiels lus chaque lundi sur Scorenco. Touchez une équipe pour voir le classement complet et les matchs de sa poule.</p></section>` : "";
     return `<div class="entete"><div><h1>${estDirigeant() ? "Équipes" : "Mes équipes"}</h1><p class="sous">${pl(eqs.length, "équipe")} · saison ${C.SAISON.libelle}</p></div>${estDirigeant() ? '<div class="actions"><button class="btn prim" data-a="nouvelle-equipe">+ Équipe</button></div>' : ""}</div>`
-      + groupes.map(([t, f]) => { const l = eqs.filter(f); return l.length ? `<h2 class="groupe-titre">${t}</h2><div class="equipes">${l.map(carte).join("")}</div>` : ""; }).join("");
+      + recap + groupes.map(([t, f]) => { const l = eqs.filter(f); return l.length ? `<h2 class="groupe-titre">${t}</h2><div class="equipes">${l.map(carte).join("")}</div>` : ""; }).join("");
   }
 
   function pageEquipe(id, onglet) {
@@ -508,7 +513,7 @@
     const table = (l, vide) => l.length ? `<div class="table-wrap"><table class="liste saison"><tbody>${l.map(ligne).join("")}</tbody></table></div>` : `<p class="vide">${vide}</p>`;
     const joues = off.matchs.filter((m) => m.statut !== "to_come").reverse(), avenir = off.matchs.filter((m) => m.statut === "to_come");
     const classement = (p) => `<section class="carte"><h2>${esc(p.nom)}</h2><div class="table-wrap"><table class="liste saison"><thead><tr><th>#</th><th>Équipe</th><th class="c">Pts</th><th class="c cache-m">J</th><th class="c cache-m">V</th><th class="c cache-m">N</th><th class="c cache-m">D</th><th class="c cache-m">BP</th><th class="c cache-m">BC</th><th class="c">Diff</th></tr></thead><tbody>
-      ${p.classement.map((l) => `<tr${l.esga ? ' class="moi"' : ""}><td class="num">${l.rang}</td><td class="nom">${l.esga ? "<b>" + esc(l.nom) + "</b>" : esc(l.nom)}</td><td class="c"><b>${l.pts}</b></td><td class="c cache-m">${l.j}</td><td class="c cache-m">${l.v}</td><td class="c cache-m">${l.n}</td><td class="c cache-m">${l.d}</td><td class="c cache-m">${l.bp}</td><td class="c cache-m">${l.bc}</td><td class="c">${l.diff > 0 ? "+" : ""}${l.diff}</td></tr>`).join("")}
+      ${p.classement.map((l) => `<tr${off.ids.includes(l.team_id) ? ' class="moi"' : ""}><td class="num">${l.rang}</td><td class="nom">${l.esga ? "<b>" + esc(l.nom) + "</b>" : esc(l.nom)}</td><td class="c"><b>${l.pts}</b></td><td class="c cache-m">${l.j}</td><td class="c cache-m">${l.v}</td><td class="c cache-m">${l.n}</td><td class="c cache-m">${l.d}</td><td class="c cache-m">${l.bp}</td><td class="c cache-m">${l.bc}</td><td class="c">${l.diff > 0 ? "+" : ""}${l.diff}</td></tr>`).join("")}
       </tbody></table></div>
       <details class="autres"><summary>Matchs des autres équipes de la poule</summary>${(() => { const a = off.autres(p.id), j = a.filter((m) => m.statut !== "to_come").reverse().slice(0, 12), v = a.filter((m) => m.statut === "to_come").slice(0, 12);
         return `<h3>Derniers résultats</h3>${table(j, "Aucun résultat.")}<h3>Prochains matchs</h3>${table(v, "Aucun match prévu.")}`; })()}</details></section>`;
@@ -738,6 +743,7 @@
   const compteDispo = (so, e) => { const f = (C.equipe(e.equipe) || {}).genre === "F" ? "e" : "", s = (n) => (n > 1 ? "s" : "");
     return `${so.oui} présent${f}${s(so.oui)} · ${so.peut} peut-être · ${so.non} absent${f}${s(so.non)} · ${so.sans} sans réponse`; };
   function scoreHTML(e, f) {
+    f = f || e.officiel;
     if (!f) return '<span class="etiq att">Score à saisir</span>';
     const r = f.nous > f.eux ? "ok" : f.nous < f.eux ? "ko" : "";
     return `<span class="score ${r}">${e.domicile ? `${f.nous} – ${f.eux}` : `${f.eux} – ${f.nous}`}</span>`;
