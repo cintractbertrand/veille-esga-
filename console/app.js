@@ -827,6 +827,8 @@
             : `<p class="alerte info" style="margin-top:0"><b>Mode démo.</b> Les données sont gardées dans ce navigateur. Entrez le code du club pour les partager avec tous les appareils.</p>`}
           ${blocCode()}
           <div class="form"><div class="pied" style="justify-content:flex-start"><a class="btn" href="guide.html#affiche" title="Le guide par rôle et l'affiche à imprimer avec le QR code">📖 Guide et affiche QR</a><a class="btn" href="simulateur.html" title="Un match préparé de A à Z, joué tout seul sur des données de test">🧪 Simulateur de test</a><button class="btn" data-a="export-json">Sauvegarder (JSON)</button><button class="btn" data-a="import-json">Restaurer</button>${N.actif ? "" : '<button class="btn danger" data-a="raz">Remettre la démo à zéro</button>'}</div></div>
+          <div class="form"><p class="petit" style="margin:4px 0 6px"><b>🧪 Matchs fictifs pour tester</b> : un match dans les 7 jours pour chaque équipe qui n'en a pas déjà un (domicile et extérieur, avec la météo), et pour les U15F 2 un match à l'extérieur déjà convoqué avec du covoiturage en cours.${N.actif ? " Le mode test travaille sur une copie gardée sur cet appareil : les vraies données du club ne bougent pas." : ""}</p>
+            <div class="pied" style="justify-content:flex-start">${N.actif ? '<button class="btn prim" data-a="mode-test">Tester avec des matchs fictifs</button>' : `<button class="btn" data-a="matchs-test">Recréer les matchs fictifs</button>${C.modeTest && C.modeTest.actif ? '<button class="btn" data-a="mode-test-sortir">Quitter le mode test</button>' : ""}`}</div></div>
           <input type="file" id="fichierJSON" accept="application/json,.json" hidden>
           <p class="petit discret">Dernière modification : ${new Date(C.maj).toLocaleString("fr-FR")}</p></section>
       </div>`;
@@ -864,7 +866,7 @@
   function rendreProfils() {
     const el = $("#quiSuisJe"); if (el) el.textContent = profil ? C.nomProfil(profil) : "pas encore choisi";
     const m = $("#modeClub"); if (!m) return;
-    const t = { demo: ["Démo", "Les données restent dans ce navigateur. Entrez le code du club (Changer de profil) pour partager avec tout le club."], ok: ["🟢 En ligne", "Données partagées avec tout le club, mises à jour toutes les 15 secondes."], connexion: ["En ligne…", "Connexion au club…"], "hors-ligne": ["🟠 Hors ligne", "Pas de réseau : vos modifications partiront dès son retour."], erreur: ["🟠 En ligne", "Un envoi a échoué, nouvel essai bientôt."], code: ["Code à saisir", "Le code du club a changé : entrez le nouveau code."] }[N.etat] || ["Démo", ""];
+    const t = { demo: ["Démo", "Les données restent dans ce navigateur. Entrez le code du club (Changer de profil) pour partager avec tout le club."], ok: ["🟢 En ligne", "Données partagées avec tout le club, mises à jour toutes les 15 secondes."], connexion: ["En ligne…", "Connexion au club…"], "hors-ligne": ["🟠 Hors ligne", "Pas de réseau : vos modifications partiront dès son retour."], erreur: ["🟠 En ligne", "Un envoi a échoué, nouvel essai bientôt."], code: ["Code à saisir", "Le code du club a changé : entrez le nouveau code."] }[C.modeTest && C.modeTest.actif && N.etat === "demo" ? "test" : N.etat] || ["🧪 Mode test", "Copie de test sur cet appareil, avec des matchs fictifs : rien n'est envoyé au club."];
     m.textContent = t[0]; m.parentElement.title = t[1]; document.body.classList.toggle("en-ligne", N.actif);
   }
   function blocCode() {
@@ -1135,6 +1137,9 @@
     if (a === "export-json") { telecharger(new Blob([C.exporter()], { type: "application/json" }), `club-esga-${auj()}.json`); return toast("Sauvegarde téléchargée."); }
     if (a === "import-json") return $("#fichierJSON").click();
     if (a === "deconnexion") { if (confirmer("Se déconnecter du club ? Ce navigateur repassera en démo (les données du club restent en ligne).")) { N.deconnecter(); C.setProfil(null); location.href = location.pathname; } return; }
+    if (a === "mode-test") { C.modeTest.entrer(); return; }
+    if (a === "mode-test-sortir") { C.modeTest.sortir(); return; }
+    if (a === "matchs-test") { C.matchsTest(true); toast("Matchs fictifs ajoutés pour les 7 prochains jours."); return; }
     if (a === "raz") { if (confirmer("Remettre toute la démo à zéro ? Les modifications faites dans la console seront perdues.")) { C.reinitialiser(); Object.keys(brouillons).forEach((k) => delete brouillons[k]); toast("Démo remise à zéro."); } return; }
   });
   function allerA(h, msg) { rendreProfils(); if (window.ESGA && ESGA.bandeau) ESGA.bandeau(); if (location.hash === h) rendre(); else location.hash = h; if (msg) toast(msg); }
