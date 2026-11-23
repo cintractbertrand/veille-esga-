@@ -1,0 +1,37 @@
+name: Test sources matchs
+on: workflow_dispatch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Scorenco GraphQL
+        run: |
+          echo "=== Scorenco GraphQL ==="
+          curl -s -w "\nHTTP %{http_code}" -X POST \
+            "https://graphql.scorenco.com/v1/graphql" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ teams_team(where:{club_id:{_eq:128233}},limit:3){id name slug}}"}'
+          echo ""
+
+      - name: Test SportCorico
+        run: |
+          echo "=== SportCorico ==="
+          curl -s -w "\nHTTP %{http_code}" -o /dev/null \
+            "https://www.sportcorico.com/clubs/evs-genas-azieu"
+          echo ""
+
+      - name: Test SportCorico équipe
+        run: |
+          echo "=== SportCorico Seniors 1 ==="
+          curl -s -w "\nHTTP %{http_code}" \
+            "https://www.sportcorico.com/clubs/evs-genas-azieu/evs-genas-azieu-7" \
+            | head -c 500
+          echo ""
+
+      - name: Test Scorenco page
+        run: |
+          echo "=== Scorenco page ==="
+          curl -s -w "\nHTTP %{http_code}" -o /dev/null \
+            "https://scorenco.com/football/clubs/eveil-sportif-genas-azieu-football-2qy1"
+          echo ""
