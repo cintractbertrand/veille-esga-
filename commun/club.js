@@ -300,7 +300,7 @@
   /* ---------- état ---------- */
   let D = STOCKAGE.lire();
   if (!D || D.version !== VERSION) { D = graine(); STOCKAGE.ecrire(D); }
-  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; d.videos = d.videos || {}; d.envois = d.envois || []; d.rappels = d.rappels || {}; d.connexions = d.connexions || {}; return d; }; // données plus anciennes
+  const completer = (d) => { d.feuilles = d.feuilles || {}; d.sondages = d.sondages || {}; d.seances = d.seances || {}; d.videos = d.videos || {}; d.envois = d.envois || []; d.rappels = d.rappels || {}; d.connexions = d.connexions || {}; d.covoit = d.covoit || {}; return d; }; // données plus anciennes
   completer(D);
   let MATCHS = []; // matchs officiels (data/matchs.json)
   const abonnes = [];
@@ -487,6 +487,51 @@
     lies(evt).forEach((x) => setDispo(x, jid, info, true));
     sauver();
   }
+  // Covoiturage d'une rencontre, géré par les familles entre elles (le coach n'a rien à faire).
+  // D.covoit[evt][jid] = { places: n } (je conduis) | { cherche: true } | { avec: jid du conducteur }
+  function setCovoit(evt, jid, info) {
+    const p = (D.covoit[evt] = D.covoit[evt] || {});
+    if (info) p[jid] = Object.assign({ date: new Date().toISOString() }, info); else delete p[jid];
+    NUAGE.op({ type: "covoit", evt, jid, info: info || null });
+    sauver();
+  }
+  // Qui conduit (places libres, passagers) et qui cherche encore une place. Seuls les convoqués non absents comptent.
+  function covoiturage(evt) {
+    const c = D.covoit[evt] || {}, cv = convocation(evt), dp = D.dispos[evt] || {};
+    const ok = (jid) => !cv || (cv.joueurs.includes(jid) && !(dp[jid] && dp[jid].statut === "absent"));
+    const conducteurs = Object.entries(c).filter(([j, x]) => x.places > 0 && ok(j)).map(([jid, x]) => ({ jid, places: x.places, passagers: [] }));
+    const cherche = [];
+    Object.entries(c).forEach(([jid, x]) => {
+      if (!ok(jid) || x.places > 0) return;
+      const v = x.avec && conducteurs.find((y) => y.jid === x.avec);
+      if (v && v.passagers.length < v.places) v.passagers.push(jid); else if (x.avec || x.cherche) cherche.push(jid);
+    });
+    conducteurs.forEach((v) => (v.libres = v.places - v.passagers.length));
+    return { conducteurs, cherche, de: (jid) => c[jid] || null };
+  }
+  // Météo prévue pour une rencontre (Open-Meteo, sans clé), jusqu'à 7 jours avant. Lieu : la ville après la virgule, sinon Genas.
+  const METEO_CODES = [[0, "☀️", "Ensoleillé"], [2, "🌤️", "Éclaircies"], [3, "☁️", "Couvert"], [48, "🌫️", "Brouillard"], [57, "🌦️", "Bruine"], [67, "🌧️", "Pluie"], [77, "🌨️", "Neige"], [82, "🌧️", "Averses"], [86, "🌨️", "Averses de neige"], [99, "⛈️", "Orage"]];
+  const GENAS = { lat: 45.7317, lon: 5.0019, nom: "Genas" };
+  async function meteo(evt) {
+    const e = evenement(evt); if (!e || !e.date) return null;
+    const jours = (jour(e.date) - jour(auj())) / 864e5; if (jours < 0 || jours > 7) return null;
+    const cle = "esga-meteo:" + evt + ":" + e.date + ":" + (e.heure || "") + ":" + (e.lieu || "");
+    try { const m = JSON.parse(localStorage.getItem(cle)); if (m && Date.now() - m.t < 3 * 3600e3) return m.v; } catch (x) {}
+    try {
+      const ville = !e.lieu || e.domicile ? "" : (e.lieu.split(",").slice(-1)[0] || "").replace(/\(.*\)/g, "").trim();
+      let pos = GENAS;
+      if (ville && !/genas|azieu/i.test(ville)) {
+        const g = await (await fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=fr&country=FR&name=" + encodeURIComponent(ville))).json();
+        if (g && g.results && g.results[0]) pos = { lat: g.results[0].latitude, lon: g.results[0].longitude, nom: g.results[0].name };
+      }
+      const f = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.lat}&longitude=${pos.lon}&hourly=temperature_2m,precipitation_probability,weathercode,windspeed_10m&timezone=Europe%2FParis&start_date=${e.date}&end_date=${e.date}`)).json();
+      const h = +(e.heure || "15:00").slice(0, 2), i = Math.min(23, Math.max(0, h)), H = f.hourly;
+      const code = H.weathercode[i], [, ic, lib] = METEO_CODES.find(([c]) => code <= c) || METEO_CODES[METEO_CODES.length - 1];
+      const v = { ic, lib, temp: Math.round(H.temperature_2m[i]), pluie: H.precipitation_probability ? H.precipitation_probability[i] : null, vent: Math.round(H.windspeed_10m[i]), ville: pos.nom };
+      try { localStorage.setItem(cle, JSON.stringify({ t: Date.now(), v })); } catch (x) {}
+      return v;
+    } catch (x) { return null; }
+  }
   // Plusieurs écritures d'un coup : un seul enregistrement à la fin
   function lot(fn) { enLot++; try { fn(); } finally { enLot--; if (!enLot && sale) { sale = false; sauver(); } } }
   function publierConvocation(c) {
@@ -594,7 +639,7 @@
     equipes: () => D.equipes.slice(), equipe, nomEquipe, joueurs, personne, nomComplet, staff: () => D.staff.slice(), staffDe, coachDe,
     creneaux: (eq) => D.creneaux.filter((c) => !eq || c.equipe === eq),
     evenements, evenement, prochainMatch, prochainsEntrainements, RENCONTRES, rencontres, JOURS_SONDAGE, ouvertureSondage, sondagePossible, weekend, equipesDe, convocation, convocations: (eq) => D.convocations.filter((c) => !eq || c.equipe === eq),
-    presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, tauxPresence, categorieAge,
+    presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, setCovoit, covoiturage, meteo, tauxPresence, categorieAge,
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
     feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,
     seance: (evt) => D.seances[evt] || null, setSeance,
