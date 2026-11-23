@@ -17,10 +17,38 @@
      et elle ne se connecte jamais au club en ligne. Le profil (coach, parent…) est propre à chaque écran. */
   let simu = false;
   try { simu = window.top !== window && /^simu-/.test(window.name) && window.top.document.documentElement.hasAttribute("data-simulateur"); } catch (e) {}
-  if (!simu) return;
-  const PRE = "esga-simu:", ECRAN = PRE + window.name + ":", PROPRES = ["esga-profil", "esga-session", "esga-messagerie-moi", "esga-connexions"];
+  /* Mode test (?test=1, ?test=0 pour en sortir) : même principe sur cet appareil, avec des matchs fictifs.
+     Copie rangée sous « esga-test: », jamais en ligne : les vraies données du club ne bougent pas. */
+  let VRAI = null; try { VRAI = window.localStorage; } catch (e) {}
+  let test = false;
+  if (!simu) {
+    try {
+      const q = new URLSearchParams(location.search).get("test");
+      if (q === "1") VRAI.setItem("esga-mode-test", "1"); else if (q === "0") VRAI.removeItem("esga-mode-test");
+      if (q != null) { const u = new URL(location.href); u.searchParams.delete("test"); history.replaceState(null, "", u.pathname + u.search + u.hash); }
+      test = VRAI.getItem("esga-mode-test") === "1";
+      // On garde le profil choisi (coach, parent…) en entrant dans le mode test
+      if (test && VRAI.getItem("esga-test:esga-profil") == null && VRAI.getItem("esga-profil") != null) VRAI.setItem("esga-test:esga-profil", VRAI.getItem("esga-profil"));
+    } catch (e) {}
+  }
+  window.ESGA_MODE_TEST = {
+    actif: test,
+    entrer() { try { VRAI.setItem("esga-mode-test", "1"); } catch (e) {} location.reload(); },
+    sortir() { try { VRAI.removeItem("esga-mode-test"); } catch (e) {} location.reload(); },
+    effacer() { try { for (let i = VRAI.length - 1; i >= 0; i--) { const k = VRAI.key(i); if (k && k.startsWith("esga-test:")) VRAI.removeItem(k); } } catch (e) {} },
+  };
+  if (!simu && !test) return;
+  const PRE = simu ? "esga-simu:" : "esga-test:", ECRAN = simu ? PRE + window.name + ":" : PRE + "ecran:", PROPRES = simu ? ["esga-profil", "esga-session", "esga-messagerie-moi", "esga-connexions"] : [];
+  if (test) {
+    // Bandeau visible sur toutes les pages tant que le mode test est actif
+    const poser = () => { if (document.getElementById("esgaTest")) return; const b = document.createElement("div"); b.id = "esgaTest";
+      b.style.cssText = "position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:9999;background:#c9a227;color:#0b1f3a;font:600 14px/1.3 system-ui,sans-serif;padding:8px 10px 8px 14px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px)";
+      b.innerHTML = '<span>🧪 Mode test : matchs fictifs, rien n\'est envoyé au club</span><button type="button" style="font:inherit;border:0;border-radius:999px;background:#0b1f3a;color:#fff;padding:6px 12px;cursor:pointer;white-space:nowrap">Quitter</button>';
+      b.querySelector("button").onclick = () => window.ESGA_MODE_TEST.sortir(); document.body.appendChild(b); };
+    if (document.body) poser(); else document.addEventListener("DOMContentLoaded", poser);
+  }
   const vers = (k) => (PROPRES.includes(k) ? ECRAN : PRE) + k;
-  const depuis = (k) => (k.startsWith(ECRAN) ? k.slice(ECRAN.length) : k.startsWith(PRE) && !/^esga-simu:simu-[^:]*:/.test(k) ? k.slice(PRE.length) : null);
+  const depuis = (k) => (k.startsWith(ECRAN) ? k.slice(ECRAN.length) : k.startsWith(PRE) && !/^esga-simu:simu-[^:]*:/.test(k) && !k.startsWith("esga-test:ecran:") ? k.slice(PRE.length) : null);
   function copie(vrai) {
     const cles = () => { const o = []; for (let i = 0; i < vrai.length; i++) { const k = depuis(vrai.key(i)); if (k != null) o.push(k); } return o; };
     const api = {
@@ -37,6 +65,7 @@
   Object.defineProperty(window, "localStorage", { value: local, configurable: true });
   Object.defineProperty(window, "sessionStorage", { value: session, configurable: true });
   window.ESGA_BAC_A_SABLE = true;
+  window.ESGA_MODE_TEST.actif = test;
   // Les écrans du simulateur se parlent entre eux (comme des onglets), et n'entendent pas les vrais onglets du club
   window.addEventListener("storage", (ev) => {
     if (ev.__simu) return;
@@ -156,6 +185,7 @@
     }
     function op(o) { if (!code || role !== "famille") return false; ops.push(o); viderOps(); return true; }
     async function connecter(c) {
+      if (window.ESGA_BAC_A_SABLE) throw new Error("Mode test : touchez « Quitter » en bas de l'écran avant d'entrer le code du club."); // la copie de test ne part jamais en ligne
       c = String(c || "").trim(); if (!c) throw new Error("Tapez le code du club.");
       let r; try { r = await rpc("esga_versions", { code: c, cles: [] }); } catch (e) { throw new Error(e.code ? "Code incorrect." : e.reseau ? "Pas de réseau." : e.message); }
       code = c; role = r._role; ls("esga-code", c); ls("esga-role", role);
@@ -350,8 +380,53 @@
   }
 
   /* ---------- historique de démo : présences des entraînements passés ---------- */
+  /* ---------- matchs fictifs à venir (démo et mode test, jamais en ligne) ----------
+     Toujours quelque chose à préparer : un match par équipe dans les 7 jours (domicile ou extérieur, météo affichée),
+     et pour les U15F 2 un match à l'extérieur déjà convoqué avec du covoiturage en cours.
+     Renouvelés quand ils sont tous passés (ou avec CLUB.matchsTest(true)). */
+  const ADVERSAIRES = [["AS Meyzieu", "Stade des Servizières, Meyzieu"], ["FC Saint-Priest", "Stade Jacques Joly, Saint-Priest"], ["Chassieu Décines FC", "Stade Raymond Troussier, Décines-Charpieu"],
+    ["Olympique Bron", "Stade Jean Jaurès, Bron"], ["FC Vaulx-en-Velin", "Stade Aubert, Vaulx-en-Velin"], ["AS Mions", "Stade Joseph Dessaigne, Mions"], ["Villeurbanne FC", "Stade des Iris, Villeurbanne"],
+    ["FC Pusignan", "Stade municipal, Pusignan"], ["US Jonage", "Stade du Grand Large, Jonage"], ["Saint-Bonnet FC", "Stade municipal, Saint-Bonnet-de-Mure"], ["AS Colombier-Saugnieu", "Stade municipal, Colombier-Saugnieu"]];
+  function matchsTest(forcer) {
+    const t = auj(), testes = D.evenements.filter((e) => /^ev-test-/.test(e.id));
+    if (!forcer && testes.some((e) => e.date >= t)) return false;
+    // On retire les anciens matchs fictifs (et ce qui s'y rattache) avant d'en créer des nouveaux
+    const vieux = new Set(testes.map((e) => e.id));
+    D.evenements = D.evenements.filter((e) => !vieux.has(e.id));
+    D.convocations = D.convocations.filter((c) => !vieux.has(c.evenement));
+    ["dispos", "sondages", "covoit", "feuilles", "rappels", "presences"].forEach((k) => vieux.forEach((id) => { if (D[k]) delete D[k][id]; }));
+    const sem = t.replace(/-/g, "");
+    const samedi = ajout(t, ((6 - jour(t).getDay() + 7) % 7) || 7), autres = MATCHS.map(matchEvt).concat(D.evenements.filter((e) => RENCONTRES.includes(e.type)));
+    D.equipes.forEach((eq, i) => {
+      const ecole = /^U(7|9|11|13)$/.test(eq.categorie), senior = /Seniors|Vétérans|U20/.test(eq.categorie);
+      let date = eq.id === "U15F-2" ? samedi : senior ? ajout(samedi, 1) : samedi;
+      if (date > ajout(t, 7)) date = ajout(t, 6);
+      if (eq.id !== "U15F-2" && autres.some((e) => e.equipe === eq.id && Math.abs((jour(e.date) - jour(date)) / 864e5) <= 1)) return; // déjà un vrai match ce week-end
+      const [adv, stade] = ADVERSAIRES[(i * 7 + sem.length) % ADVERSAIRES.length], ext = eq.id === "U15F-2" || i % 2 === 1;
+      const heure = ecole ? "10:00" : senior ? "15:00" : ["13:30", "14:00", "15:30"][i % 3];
+      const id = `ev-test-${eq.id.replace(/\s/g, "")}-${sem}`;
+      D.evenements.push({ id, equipe: eq.id, type: ecole ? "plateau" : "match", titre: ecole ? `Plateau ${eq.categorie}${ext ? " à " + stade.split(", ")[1] : " à domicile"} (test)` : ext ? `${adv} – ESGA (test)` : `ESGA – ${adv} (test)`,
+        adversaire: ecole ? "" : adv, domicile: !ext, date, heure, duree: ecole ? 150 : 105, lieu: ext ? stade : LIEUX[i % 2], competition: ecole ? "Plateau (match fictif)" : "Championnat (match fictif)",
+        notes: "Match fictif pour tester la console : il disparaît tout seul quand il est passé.", cree: new Date().toISOString() });
+      if (eq.id !== "U15F-2") return;
+      // U15F 2 : sondage lancé, réponses reçues, convocation publiée et covoiturage commencé (Léa et Inès n'ont rien choisi : à vous de tester)
+      const so = (statut) => ({ statut, motif: statut === "present" ? "Présent (sondage)" : statut === "absent" ? "Absent (sondage)" : "Peut-être (sondage)", par: "sondage", date: new Date(Date.now() - 864e5).toISOString() });
+      D.sondages[id] = { lance: new Date(Date.now() - 2 * 864e5).toISOString() };
+      const dm = (D.dispos[id] = {}), js = joueurs("U15F-2");
+      js.forEach((j) => { const n = +j.id.split("-").pop(); dm[j.id] = so(n === 9 ? "absent" : n === 14 ? "incertain" : "present"); });
+      const conv = js.filter((j) => dm[j.id].statut === "present").slice(0, 14).map((j) => j.id);
+      D.convocations.push({ id: uid("cv"), evenement: id, equipe: "U15F-2", joueurs: conv, rdvHeure: "12:15", rdvLieu: "Parking du stade Edmond Pouzet", tenue: "Tenue du club, protège-tibias", mot: "Départ en voiture à 12 h 30, merci aux familles qui peuvent conduire.", publiee: new Date(Date.now() - 864e5).toISOString(), source: "console", cree: new Date(Date.now() - 864e5).toISOString() });
+      const c = (D.covoit[id] = {}), q = (n) => conv.find((x) => x === "j-U15F-2-" + n), d0 = new Date().toISOString();
+      // Jade conduit (3 places, emmène Manon), Sarah conduit (2 places) ; Chloé et Emma cherchent une place
+      if (q(3)) c[q(3)] = { places: 3, date: d0 }; if (q(6) && q(3)) c[q(6)] = { avec: q(3), date: d0 };
+      if (q(7)) c[q(7)] = { places: 2, date: d0 }; if (q(4)) c[q(4)] = { cherche: true, date: d0 }; if (q(8)) c[q(8)] = { cherche: true, date: d0 };
+    });
+    return true;
+  }
+
   function presencesDemo() {
     if (NUAGE.actif) return; // en ligne : les vraies données du club, pas d'exemples ajoutés
+    if (matchsTest()) STOCKAGE.ecrire(D);
     seancesDemo(); videosDemo();
     if (D.presencesDemo) { if (!D.matchsDemo) { matchsDemo(alea("matchs")); STOCKAGE.ecrire(D); } return; }
     const r = alea("presences");
@@ -639,7 +714,7 @@
     equipes: () => D.equipes.slice(), equipe, nomEquipe, joueurs, personne, nomComplet, staff: () => D.staff.slice(), staffDe, coachDe,
     creneaux: (eq) => D.creneaux.filter((c) => !eq || c.equipe === eq),
     evenements, evenement, prochainMatch, prochainsEntrainements, RENCONTRES, rencontres, JOURS_SONDAGE, ouvertureSondage, sondagePossible, weekend, equipesDe, convocation, convocations: (eq) => D.convocations.filter((c) => !eq || c.equipe === eq),
-    presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, setCovoit, covoiturage, meteo, tauxPresence, categorieAge,
+    presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, setCovoit, covoiturage, meteo, matchsTest: (forcer) => { if (NUAGE.actif) return false; const ok = matchsTest(forcer); if (ok) sauver(); return ok; }, modeTest: window.ESGA_MODE_TEST, tauxPresence, categorieAge,
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
     feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,
     seance: (evt) => D.seances[evt] || null, setSeance,
