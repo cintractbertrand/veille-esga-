@@ -386,7 +386,7 @@
     if (rappelDu(e) || !avecRappel) return `<span class="rappel-du">⏰ C'est le moment de lancer le sondage</span>${boutonsSondage(e, true)}<a class="btn mini lien" href="#convoc/${esc(e.id)}">ou convoquer directement</a>`;
     return `<label class="petit rappel">⏰ Rappel le <input type="date" class="rappel-date" data-id="${esc(e.id)}" value="${esc(dateRappel(e))}" min="${esc(C.ouvertureSondage(e))}" max="${esc(e.date)}"></label>${boutonsSondage(e, false)}`;
   }
-  const ligneRencontre = (e, avecEquipe, avecRappel) => `<li class="${rappelDu(e) ? "du" : ""}"><button class="btn lien quand" data-a="evt" data-id="${esc(e.id)}"><b>${fJ(e.date)}</b> ${hh(e.heure)}</button><span class="qui"><b>${esc(e.titre)}</b><small>${esc([avecEquipe ? C.nomEquipe(e.equipe) : "", e.competition || TYPES[e.type] || "", e.lieu].filter(Boolean).join(" · "))}</small></span><span class="etat">${etatRencontre(e, avecRappel)}</span></li>`;
+  const ligneRencontre = (e, avecEquipe, avecRappel) => `<li class="${rappelDu(e) ? "du" : ""}"><button class="btn lien quand" data-a="evt" data-id="${esc(e.id)}"><b>${fJ(e.date)}</b> ${hh(e.heure)}</button><span class="qui"><b>${esc(e.titre)}</b><small>${esc([avecEquipe ? C.nomEquipe(e.equipe) : "", e.competition || TYPES[e.type] || "", e.lieu].filter(Boolean).join(" · "))}${meteoTag(e)}</small></span><span class="etat">${etatRencontre(e, avecRappel)}</span></li>`;
   // Tous les matchs du week-end, toutes équipes du coach (même deux matchs pour une équipe)
   function carteWeekend(eqs) {
     const w = ceWeekend(), l = eqs.flatMap((eq) => C.rencontres(eq, w.du, w.au)).sort((a, b) => (a.date + a.heure).localeCompare(b.date + b.heure));
@@ -912,10 +912,10 @@
   // Une rencontre vue par la famille : convocation, sinon sondage (ouvert par le coach), sinon « prévenir d'une absence »
   function carteMatchFamille(m, j, parent) {
     const f = j.genre === "F", e_ = f ? "e" : "", cv = C.convocation(m.id), dm = C.dispos(m.id)[j.id], conv = cv && cv.joueurs.includes(j.id);
-    const tete = `<p class="gros">${esc(m.titre)}</p><p class="discret" style="margin:0 0 12px">${fJL(m.date)} · ${hh(m.heure)}<br>${esc(m.lieu)}${m.type !== "match" ? ` · ${esc(TYPES[m.type])}` : ""}</p>`;
+    const tete = `<p class="gros">${esc(m.titre)}</p><p class="discret" style="margin:0 0 12px">${fJL(m.date)} · ${hh(m.heure)}<br>${esc(m.lieu)}${m.type !== "match" ? ` · ${esc(TYPES[m.type])}` : ""}${meteoTag(m)}</p>`;
     const absent = dm && dm.statut === "absent";
     if (cv && conv && !absent) return tete + `<div class="statut-convoc">✅ <span><b>${parent ? `${esc(j.prenom)} est convoqué${e_}` : "Vous êtes convoqué" + e_}</b><br>Rendez-vous <b>${hh(cv.rdvHeure)}</b> · ${esc(cv.rdvLieu)}<br><small>${esc(cv.tenue)}</small>${cv.mot ? `<br><small>💬 ${esc(cv.mot)}</small>` : ""}</span></div>
-          <button class="btn" data-a="dispo-match" data-id="${esc(m.id)}" data-v="absent">${parent ? `${esc(j.prenom)} ne peut pas venir` : "Je ne peux pas venir"}</button>`;
+          <button class="btn" data-a="dispo-match" data-id="${esc(m.id)}" data-v="absent">${parent ? `${esc(j.prenom)} ne peut pas venir` : "Je ne peux pas venir"}</button>` + covoitHTML(m, j, parent);
     if (cv && conv) return tete + `<div class="statut-convoc att">⚠️ <span>Vous avez prévenu le coach : <b>${esc(dm.motif || "absent" + e_)}</b>.</span></div><button class="btn" data-a="dispo-annuler" data-id="${esc(m.id)}">${parent ? `Finalement ${esc(j.prenom)} peut venir` : "Finalement je peux venir"}</button>`;
     if (cv) return tete + `<div class="statut-convoc att">ℹ️ <span>${parent ? `${esc(j.prenom)} n'est pas convoqué${e_}` : "Vous n'êtes pas convoqué" + e_} pour ce match.</span></div>`;
     const so = C.sondage(m.id);
@@ -927,6 +927,43 @@
     return tete + `<p style="margin:0 0 8px"><b>${parent ? `${esc(j.prenom)} sera-t-${f ? "elle" : "il"} disponible ?` : "Serez-vous disponible ?"}</b></p>
           <div class="reponse-match">${[["present", "✓ Présent" + e_, "ok"], ["incertain", "? Peut-être", "att"], ["absent", "✕ Absent" + e_, "ko"]].map(([k, l, c]) => `<button class="rep ${c}" data-a="dispo-match" data-id="${esc(m.id)}" data-v="${k}" aria-pressed="${dm ? dm.statut === k : false}">${l}</button>`).join("")}</div>
           <p class="aide" style="margin-top:8px">${so.lies ? `🔗 Une seule réponse pour les 2 matchs du week-end (${so.lies.map((x) => C.evenement(x)).filter(Boolean).map((x) => esc(x.adversaire || x.titre) + " " + fJ(x.date)).join(" et ")}). ` : ""}${dm ? "Réponse envoyée au coach. Vous pouvez la changer." : "Le coach fera la convocation avec ces réponses."}</p>`;
+  }
+  /* ---------- météo du match (prévision à 7 jours, remplie après l'affichage) ---------- */
+  const meteoTag = (e) => (estMatch(e) || ["amical", "plateau", "tournoi"].includes(e.type)) ? `<span class="meteo" data-meteo="${esc(e.id)}"></span>` : "";
+  function remplirMeteo() {
+    document.querySelectorAll("[data-meteo]:not([data-ok])").forEach((el) => {
+      el.dataset.ok = "1";
+      C.meteo(el.dataset.meteo).then((v) => { if (!v) return el.remove();
+        const pluvieux = /pluie|averse|bruine|orage|neige/i.test(v.lib);
+        el.innerHTML = `${v.ic} <b>${v.temp}°</b> ${esc(v.lib.toLowerCase())}${v.pluie != null && v.pluie >= 20 ? (pluvieux ? ` (${v.pluie} %)` : ` · pluie ${v.pluie} %`) : ""}${v.vent >= 30 ? ` · vent ${v.vent} km/h` : ""}`;
+        el.title = `Prévision à l'heure du match${v.ville ? " · " + v.ville : ""} (Open-Meteo)`; });
+    });
+  }
+
+  /* ---------- covoiturage : les familles s'organisent entre elles, le coach n'a rien à faire ---------- */
+  let covoitOffre = null; // rencontre où la famille choisit son nombre de places
+  const famDe = (jid) => { const p = C.personne(jid) || {}; return `${/^[aeiouyhéèêàâîïôû]/i.test(p.prenom || "") ? "la famille d'" : "la famille de "}${esc(p.prenom || "?")}`; };
+  const prenomDe = (jid) => esc((C.personne(jid) || {}).prenom || "?");
+  function covoitHTML(m, j, parent) {
+    const cv = C.covoiturage(m.id), moi = cv.de(j.id) || {}, f = j.genre === "F";
+    const conduit = cv.conducteurs.find((v) => v.jid === j.id), monte = cv.conducteurs.find((v) => v.passagers.includes(j.id));
+    let etat = "", choix = "";
+    if (conduit) etat = `<p class="covoit-moi ok">🚗 <span><b>${conduit.passagers.length ? `${parent ? "Vous emmenez" : "Ta famille emmène"} ${conduit.passagers.map(prenomDe).join(", ")}` : `${parent ? "Vous n'emmenez" : "Ta famille n'emmène"} personne pour l'instant`}</b><br><small>${conduit.libres ? `${conduit.libres} place${conduit.libres > 1 ? "s" : ""} encore libre${conduit.libres > 1 ? "s" : ""}` : "Voiture complète"} · ${conduit.places} en tout</small></span></p>
+        <p class="covoit-actions"><button class="btn mini" data-a="covoit" data-id="${esc(m.id)}" data-v="offrir">Changer le nombre de places</button><button class="btn mini lien" data-a="covoit" data-id="${esc(m.id)}" data-v="aucun">${parent ? "Nous ne conduisons plus" : "Ma famille ne conduit plus"}</button></p>`;
+    else if (monte) etat = `<p class="covoit-moi ok">✅ <span><b>${parent ? esc(j.prenom) + " monte" : "Tu montes"} avec ${famDe(monte.jid)}</b><br><small>Rendez-vous à l'heure de la convocation.</small></span></p>
+        <p class="covoit-actions"><button class="btn mini lien" data-a="covoit" data-id="${esc(m.id)}" data-v="cherche">Ne plus monter avec eux</button></p>`;
+    else {
+      const libres = cv.conducteurs.filter((v) => v.libres > 0);
+      choix = libres.length ? `<ul class="covoit-liste">${libres.map((v) => `<li><span><b>🚗 ${maj1(famDe(v.jid))}</b><small>${v.libres} place${v.libres > 1 ? "s" : ""} libre${v.libres > 1 ? "s" : ""}${v.passagers.length ? " · avec " + v.passagers.map(prenomDe).join(", ") : ""}</small></span><button class="btn mini prim" data-a="covoit" data-id="${esc(m.id)}" data-v="avec:${esc(v.jid)}">${parent ? esc(j.prenom) + " monte" : "Je monte"}</button></li>`).join("")}</ul>` : "";
+      etat = moi.cherche || moi.avec ? `<p class="covoit-moi att">🙋 <span><b>${parent ? esc(j.prenom) + " cherche" : "Tu cherches"} une place</b><br><small>Les familles qui conduisent le voient.</small></span></p>` : "";
+      etat += `<p class="covoit-actions"><button class="btn mini" data-a="covoit" data-id="${esc(m.id)}" data-v="offrir">${parent ? "Je peux emmener des enfants" : "Ma famille peut emmener"}</button>${moi.cherche || moi.avec ? `<button class="btn mini lien" data-a="covoit" data-id="${esc(m.id)}" data-v="aucun">Plus besoin</button>` : `<button class="btn mini" data-a="covoit" data-id="${esc(m.id)}" data-v="cherche">${parent ? "Nous cherchons une place" : "Je cherche une place"}</button>`}</p>`;
+    }
+    const offre = covoitOffre === m.id ? `<div class="covoit-places"><span>Combien de places pour les enfants ?</span>${[1, 2, 3, 4].map((n) => `<button class="btn${conduit && conduit.places === n ? " prim" : ""}" data-a="covoit" data-id="${esc(m.id)}" data-v="places:${n}">${n}</button>`).join("")}</div>` : "";
+    const autres = cv.cherche.filter((x) => x !== j.id);
+    return `<div class="covoit"><h3>🚗 Covoiturage <small>entre familles</small></h3>${etat}${offre}${choix}
+      ${autres.length ? `<p class="covoit-cherche"><b>Cherche${autres.length > 1 ? "nt" : ""} une place :</b> ${autres.map(prenomDe).join(", ")}</p>` : ""}
+      ${!cv.conducteurs.length && !cv.cherche.length && !offre ? `<p class="aide" style="margin:0">Personne ne s'est encore proposé. Le premier qui conduit lance le mouvement 🙂</p>` : ""}
+      <p class="aide" style="margin:6px 0 0">L'heure et le lieu de départ se calent dans le <a href="${URL_MOD.messagerie(j.equipe)}">Blabla de l'équipe</a>.</p></div>`;
   }
   function pageMoi() {
     const j = moiJoueur(); if (!j) return pageBienvenue();
@@ -1000,6 +1037,7 @@
     else if (r.page === "parametres") html = pageParametres();
     else html = pageAccueil();
     $("#contenu").innerHTML = html;
+    remplirMeteo();
     document.title = `${($("#contenu h1") || {}).textContent || "Console"} · Console ESGA`;
     if (r.page === "accueil") {
       chargerPV(); if (!PVS) chargerPVs().then(() => { if (route().page === "accueil") rendre(true); });
@@ -1049,6 +1087,16 @@
     if (a === "f-joue") { const f = feuilles[route().a]; f.joueurs = t.checked ? [...new Set([...f.joueurs, id])] : f.joueurs.filter((x) => x !== id); return rendre(true); }
     if (a === "f-score-auto") { const f = feuilles[route().a]; f.nous = Object.values(f.stats).reduce((x, y) => x + (y.buts || 0), 0); return rendre(true); }
     if (a === "f-enregistrer") { const f = feuilles[id]; f.notes = ($("#fNotes") || {}).value || ""; Object.keys(f.stats).forEach((k) => { if (!f.stats[k].buts && !f.stats[k].passes) delete f.stats[k]; }); C.setFeuille(id, f); delete feuilles[id]; location.hash = "#convocations/joues"; return toast("Match enregistré : les fiches des joueurs sont à jour."); }
+    if (a === "covoit") {
+      const j = moiJoueur(), v = t.dataset.v || ""; if (!j) return;
+      if (v === "offrir") { covoitOffre = covoitOffre === id ? null : id; return rendre(true); }
+      covoitOffre = null;
+      if (v.startsWith("places:")) { C.setCovoit(id, j.id, { places: +v.slice(7) }); toast("Merci ! Les autres familles voient vos places. 🚗"); }
+      else if (v.startsWith("avec:")) { C.setCovoit(id, j.id, { avec: v.slice(5) }); toast("C'est noté, la place est réservée. 👍"); }
+      else if (v === "cherche") { C.setCovoit(id, j.id, { cherche: true }); toast("C'est noté : les familles qui conduisent le voient."); }
+      else C.setCovoit(id, j.id, null);
+      return rendre(true);
+    }
     if (a === "dispo-annuler") { C.setDispo(id, moiJoueur().id, null); return toast("C'est noté, le coach est prévenu."); }
     if (a === "lien") { location.hash = t.dataset.href; return; }
     if (a === "evt") { ev.stopPropagation(); return ouvrirEvt(id); }
