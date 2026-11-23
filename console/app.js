@@ -306,7 +306,7 @@
   }
 
   /* ---------- convoqués en tuiles : sur l'accueil de chaque rôle ---------- */
-  // Les rencontres à venir dont la convocation est publiée, une tuile par convoqué (numéro, prénom, poste).
+  // Les rencontres à venir dont la convocation est publiée, une tuile par convoqué (numéro, prénom), sans poste : l'entraîneur les décide le jour même.
   // Famille : son équipe, sa tuile en or. Coach : ses équipes. Dirigeant : tout le club, replié s'il y a beaucoup de matchs.
   function tuilesConvoques(eqs, jours, { moi = null, replier = false, avecEquipe = true } = {}) {
     const evs = (eqs ? eqs.flatMap((eq) => C.rencontres(eq, auj(), ajout(auj(), jours))) : C.rencontres(null, auj(), ajout(auj(), jours)))
@@ -319,7 +319,7 @@
     }
     const tuile = (p, e) => { const d = C.dispos(e.id)[p.id], abs = d && d.statut === "absent", f = p.genre === "F", c = moi === p.id;
       return `<li class="tuile-j${c ? " moi" : ""}${abs ? " abs" : ""}"${fam ? "" : ` data-a="fiche" data-id="${esc(p.id)}" role="button" tabindex="0"`} title="${esc(C.nomComplet(p))}">
-        <span class="num">${p.numero || initiales(p)}</span><b>${esc(p.prenom)}${p.nom ? " " + esc(p.nom[0]) + "." : ""}</b><small>${abs ? `absent${f ? "e" : ""}` : c ? (profil.role === "parent" ? "votre enfant" : "c'est vous") : esc(p.poste || "")}</small></li>`; };
+        <span class="num">${p.numero || initiales(p)}</span><b>${esc(p.prenom)}${p.nom ? " " + esc(p.nom[0]) + "." : ""}</b><small>${abs ? `absent${f ? "e" : ""}` : c ? (profil.role === "parent" ? "votre enfant" : "c'est vous") : ""}</small></li>`; };
     const bloc = (e, ouvert) => { const cv = C.convocation(e.id), js = cv.joueurs.map(C.personne).filter(Boolean).sort((a, b) => (a.numero || 99) - (b.numero || 99) || a.prenom.localeCompare(b.prenom)), mx = maxConv(e);
       const resume = `<span class="cq-date"><b>${fmt(e.date, { weekday: "short" })}</b><span>${jour(e.date).getDate()}</span><small>${fmt(e.date, { month: "short" })}</small></span>
         <span class="cq-titre"><b>${avecEquipe ? esc(C.nomEquipe(e.equipe)) + " · " : ""}${esc(e.adversaire || e.titre)}</b><small>${hh(e.heure)} · ${esc(e.lieu || "")}${e.type !== "match" ? " · " + esc(TYPES[e.type]) : ""}<br>⏰ RDV ${hh(cv.rdvHeure)} · ${esc(cv.rdvLieu || "")}</small></span>
