@@ -1,37 +1,82 @@
-name: Test sources matchs
-on: workflow_dispatch
+name: Mise à jour du calendrier
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 6 * * 1"
+
+permissions:
+  contents: write
 
 jobs:
-  test:
+  calendrier:
     runs-on: ubuntu-latest
     steps:
-      - name: Test Scorenco GraphQL
+      - uses: actions/checkout@v4
+
+      - name: Récupérer les équipes Scorenco
         run: |
-          echo "=== Scorenco GraphQL ==="
-          curl -s -w "\nHTTP %{http_code}" -X POST \
-            "https://graphql.scorenco.com/v1/graphql" \
+          set -e
+          mkdir -p data
+          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
             -H "Content-Type: application/json" \
-            -d '{"query":"{ teams_team(where:{club_id:{_eq:128233}},limit:3){id name slug}}"}'
-          echo ""
+            -d '{"query":"{ teams_team(where:{club_id:{_eq:128233}}) { id name slug season_id competition { id name slug } } }"}' \
+            -o /tmp/teams.json
+          cat /tmp/teams.json | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          teams = d.get('data',{}).get('teams_team',[])
+          print(f'{len(teams)} équipes trouvées')
+          for t in teams:
+              comp = t.get('competition') or {}
+              print(f'  {t[\"id\"]:>8}  {t[\"slug\"]:20}  {comp.get(\"name\",\"?\")}')
+          "
 
-      - name: Test SportCorico
+      - name: Introspection du type teams_team
         run: |
-          echo "=== SportCorico ==="
-          curl -s -w "\nHTTP %{http_code}" -o /dev/null \
-            "https://www.sportcorico.com/clubs/evs-genas-azieu"
-          echo ""
+          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ __type(name:\"teams_team\") { fields { name type { name kind ofType { name kind } } } } }"}' | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          fields = d.get('data',{}).get('__type',{}).get('fields',[])
+          for f in sorted(fields, key=lambda x:x['name']):
+              t = f['type']
+              tname = t.get('name') or (t.get('ofType',{}) or {}).get('name','?')
+              print(f'  {f[\"name\"]:30} {t[\"kind\"]:10} {tname}')
+          "
 
-      - name: Test SportCorico équipe
+      - name: Tables de matchs et classements
         run: |
-          echo "=== SportCorico Seniors 1 ==="
-          curl -s -w "\nHTTP %{http_code}" \
-            "https://www.sportcorico.com/clubs/evs-genas-azieu/evs-genas-azieu-7" \
-            | head -c 500
-          echo ""
+          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ __schema { queryType { fields { name } } } }"}' | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          fields = d.get('data',{}).get('__schema',{}).get('queryType',{}).get('fields',[])
+          for f in sorted(fields, key=lambda x:x['name']):
+              n = f['name']
+              if any(k in n.lower() for k in ['match','event','game','fixture','result','standing','rank','calendar','score']):
+                  print(f'  {n}')
+          "
 
-      - name: Test Scorenco page
+      - name: Test matchs d une équipe
         run: |
-          echo "=== Scorenco page ==="
-          curl -s -w "\nHTTP %{http_code}" -o /dev/null \
-            "https://scorenco.com/football/clubs/eveil-sportif-genas-azieu-football-2qy1"
-          echo ""
+          TID=$(cat /tmp/teams.json | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)
+          teams=d.get('data',{}).get('teams_team',[])
+          if teams: print(teams[0]['id'])
+          ")
+          echo "Team ID: $TID"
+          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name slug matches(order_by:{date:asc}) { id date time home_team_name away_team_name home_score away_score status matchday venue { name } } } }\"}" | python3 -m json.tool | head -80
+
+      - name: Test events d une équipe
+        run: |
+          TID=$(cat /tmp/teams.json | python3 -c "
+          import json,sys; d=json.load(sys.stdin); print(d['data']['teams_team'][0]['id'])
+          ")
+          curl -sf -X POST "https://graphql.scorenco.com/v1/graphql" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name slug events(order_by:{date:asc}) { id date time home_team_name away_team_name home_score away_score status matchday } } }\"}" | python3 -m json.tool | head -80
