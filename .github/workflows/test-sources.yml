@@ -13,94 +13,130 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Équipes ESGA
+      - name: Récupérer les données Scorenco
         run: |
-          set -e
-          mkdir -p data
-          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
-            -H "Content-Type: application/json" \
-            -d '{"query":"{ teams_team(where:{club_id:{_eq:128233}}) { id name slug gender age_category rank number } }"}' \
-            -o /tmp/teams.json
-          python3 -c "
-          import json
-          d = json.load(open('/tmp/teams.json'))
-          teams = d.get('data',{}).get('teams_team',[])
-          print(f'{len(teams)} équipes')
+          python3 << 'PYEOF'
+          import json, urllib.request, sys, time
+
+          API = "https://graphql.scorenco.com/v1/graphql"
+          CLUB_ID = 128233
+
+          def gql(query, retries=3):
+              body = json.dumps({"query": query}).encode()
+              for attempt in range(retries):
+                  try:
+                      req = urllib.request.Request(API, body, {"Content-Type": "application/json"})
+                      with urllib.request.urlopen(req, timeout=30) as r:
+                          d = json.loads(r.read())
+                      if "errors" in d:
+                          print(f"  GraphQL error: {d['errors'][0]['message']}", file=sys.stderr)
+                          return None
+                      return d.get("data", {})
+                  except Exception as e:
+                      print(f"  Retry {attempt+1}: {e}", file=sys.stderr)
+                      time.sleep(2)
+              return None
+
+          print("== Équipes ==")
+          d = gql(f'{{ teams_team(where:{{club_id:{{_eq:{CLUB_ID}}}}}) {{ id name slug gender age_category rank number }} }}')
+          teams = d.get("teams_team", []) if d else []
+          print(f"{len(teams)} équipes")
+          if not teams:
+              sys.exit("Aucune équipe : on garde l'ancien fichier")
+
+          print("\n== Matchs ==")
+          EVENT_FIELDS = "id date time status teams url level_name level_in_season_id"
+          all_events = {}
           for t in teams:
-              print(f'  {t[\"id\"]:>8}  {t[\"slug\"]:25}  {t.get(\"age_category\",\"\")}  rang={t.get(\"rank\",\"?\")}')
-          with open('/tmp/team_ids.txt','w') as f:
-              for t in teams: f.write(str(t['id']) + '\n')
-          "
+              q = f'{{ teams_team_by_pk(id:{t["id"]}) {{ last_events {{ {EVENT_FIELDS} }} next_events {{ {EVENT_FIELDS} }} }} }}'
+              d = gql(q)
+              if not d:
+                  print(f"  {t['slug']}: erreur")
+                  continue
+              pk = d.get("teams_team_by_pk") or {}
+              last = pk.get("last_events") or []
+              nxt = pk.get("next_events") or []
+              for ev in last + nxt:
+                  all_events[ev["id"]] = ev
+              print(f"  {t['slug']}: {len(last)} passés + {len(nxt)} à venir")
+              time.sleep(0.1)
 
-      - name: Introspection args event_detail_by_club_id
-        run: |
-          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
-            -H "Content-Type: application/json" \
-            -d '{"query":"{ __type(name:\"competitions_event_detail_by_club_id_args\") { inputFields { name type { name kind ofType { name } } } } }"}' \
-            | python3 -m json.tool
+          print("\n== Classements ==")
+          RANK_FIELDS = "rank pts played win lost even gf ga gd name_in_competition team_id club_id"
+          rankings = {}
+          for t in teams:
+              d = gql(f'{{ competitions_ranking_detail(where:{{team_id:{{_eq:{t["id"]}}}}}) {{ {RANK_FIELDS} }} }}')
+              rows = (d or {}).get("competitions_ranking_detail") or []
+              if rows:
+                  rankings[t["id"]] = rows[0]
+                  print(f"  {t['slug']}: {rows[0].get('rank')}e  {rows[0].get('pts')} pts")
+              time.sleep(0.1)
 
-      - name: Test event avec champs jsonb teams
-        run: |
-          TID=$(head -1 /tmp/team_ids.txt)
-          echo "Team $TID"
-          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
-            -H "Content-Type: application/json" \
-            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name last_events { id date time status teams url level_name } } }\"}" \
-            | python3 -m json.tool | head -60
+          def heure(ev):
+              tm = ev.get("time") or ""
+              return tm.split("T")[1][:5] if "T" in tm else None
 
-      - name: Test next_events
-        run: |
-          TID=$(head -1 /tmp/team_ids.txt)
-          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
-            -H "Content-Type: application/json" \
-            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { id name next_events { id date time status teams url level_name } } }\"}" \
-            | python3 -m json.tool | head -60
+          def parse_event(ev):
+              tt = ev.get("teams") or []
+              home = next((x for x in tt if x.get("role") == "home"), {})
+              away = next((x for x in tt if x.get("role") == "away"), {})
+              dom = home.get("club_id") == CLUB_ID
+              ext = away.get("club_id") == CLUB_ID
+              return {
+                  "id": ev.get("id"),
+                  "date": ev.get("date"),
+                  "heure": heure(ev),
+                  "statut": ev.get("status"),
+                  "competition": ev.get("level_name"),
+                  "domicile": home.get("name_in_competition", ""),
+                  "exterieur": away.get("name_in_competition", ""),
+                  "equipe_dom": home.get("name_in_club"),
+                  "equipe_ext": away.get("name_in_club"),
+                  "score_dom": home.get("score"),
+                  "score_ext": away.get("score"),
+                  "a_domicile": dom,
+                  "team_id_esga": home.get("team_id") if dom else (away.get("team_id") if ext else None),
+                  "url": "https://scorenco.com" + ev["url"] if ev.get("url") else None,
+              }
 
-      - name: Classement détaillé
-        run: |
-          TID=$(head -1 /tmp/team_ids.txt)
-          echo "Team $TID"
-          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
-            -H "Content-Type: application/json" \
-            -d "{\"query\":\"{ competitions_ranking_detail(where:{team_id:{_eq:$TID}}) { id team_id rank pts played win lost even gf ga gd name_in_competition team_slug club_slug } }\"}" \
-            | python3 -m json.tool
+          matchs = [parse_event(e) for e in sorted(all_events.values(), key=lambda e: (e.get("date") or "", e.get("time") or ""))]
 
-      - name: Classement complet de la poule
-        run: |
-          # Chercher le level_in_season_id de la première équipe pour avoir toute la poule
-          TID=$(head -1 /tmp/team_ids.txt)
-          # D abord trouver le level_in_season_id via un event
-          curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
-            -H "Content-Type: application/json" \
-            -d "{\"query\":\"{ teams_team_by_pk(id: $TID) { last_events { level_in_season_id } } }\"}" \
-            -o /tmp/level.json
-          LEVEL=$(python3 -c "
-          import json
-          d=json.load(open('/tmp/level.json'))
-          evs=d.get('data',{}).get('teams_team_by_pk',{}).get('last_events',[])
-          if evs: print(evs[0].get('level_in_season_id',''))
-          " 2>/dev/null)
-          echo "Level in season: $LEVEL"
-          if [ -n "$LEVEL" ]; then
-            curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
-              -H "Content-Type: application/json" \
-              -d "{\"query\":\"{ competitions_ranking_detail(where:{team_in_season:{level_in_season_id:{_eq:$LEVEL}}}, order_by:{rank:asc}) { rank pts played win even lost gf ga gd name_in_competition team_slug club_slug } }\"}" \
-              | python3 -m json.tool | head -80
-          fi
+          equipes = []
+          for t in teams:
+              r = rankings.get(t["id"])
+              equipes.append({
+                  "id": t["id"],
+                  "slug": t["slug"],
+                  "nom": t["name"],
+                  "categorie": t.get("age_category"),
+                  "genre": t.get("gender"),
+                  "classement": {
+                      "rang": r.get("rank"), "pts": r.get("pts"), "j": r.get("played"),
+                      "v": r.get("win"), "n": r.get("even"), "d": r.get("lost"),
+                      "bp": r.get("gf"), "bc": r.get("ga"), "diff": r.get("gd"),
+                  } if r else None,
+              })
 
-      - name: Calendrier de la poule (adversaires)
+          out = {
+              "source": "scorenco",
+              "club_id": CLUB_ID,
+              "maj": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+              "equipes": equipes,
+              "matchs": matchs,
+          }
+          with open("data/calendrier-scorenco.json", "w", encoding="utf-8") as f:
+              json.dump(out, f, ensure_ascii=False, indent=1)
+          print(f"\n{len(equipes)} équipes, {len(matchs)} matchs, {len(rankings)} classements")
+          PYEOF
+
+      - name: Commit et push
         run: |
-          TID=$(head -1 /tmp/team_ids.txt)
-          LEVEL=$(python3 -c "
-          import json
-          d=json.load(open('/tmp/level.json'))
-          evs=d.get('data',{}).get('teams_team_by_pk',{}).get('last_events',[])
-          if evs: print(evs[0].get('level_in_season_id',''))
-          " 2>/dev/null)
-          echo "Level $LEVEL : tous les matchs de la poule"
-          if [ -n "$LEVEL" ]; then
-            curl -s -X POST "https://graphql.scorenco.com/v1/graphql" \
-              -H "Content-Type: application/json" \
-              -d "{\"query\":\"{ competitions_event_detail(where:{level_in_season_id:{_eq:$LEVEL}}, order_by:{date:asc}, limit:10) { id date time status teams url } }\"}" \
-              | python3 -m json.tool | head -80
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/calendrier-scorenco.json
+          if git diff --cached --quiet; then
+            echo "Pas de changement"
+          else
+            git commit -m "Mise à jour automatique du calendrier Scorenco"
+            git push
           fi
