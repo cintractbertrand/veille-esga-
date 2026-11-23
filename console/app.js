@@ -464,13 +464,15 @@
     if (!e || !peutVoir(id)) return `<p class="vide">Équipe introuvable ou non accessible.</p>`;
     onglet = onglet || "effectif";
     const staff = C.staffDe(id), js = C.joueurs(id);
-    const tabs = [["effectif", `Effectif (${js.length})`], ["calendrier", "Calendrier"], ["presences", "Présences"], ["creneaux", "Horaires"]];
+    const off = C.saisonOfficielle(id);
+    const tabs = [["effectif", `Effectif (${js.length})`], ["calendrier", "Calendrier"], ...(off ? [["saison", "Classement"]] : []), ["presences", "Présences"], ["creneaux", "Horaires"]];
     let corps = "";
     if (onglet === "effectif") corps = tableJoueurs(js, { equipe: false }) + `<p style="margin-top:12px"><button class="btn" data-a="nouveau-joueur" data-equipe="${esc(id)}">+ Ajouter un joueur</button></p>`;
     if (onglet === "calendrier") {
       const av = C.evenements({ equipe: id, du: auj(), au: ajout(auj(), 35) }), pa = C.evenements({ equipe: id, du: ajout(auj(), -21), au: ajout(auj(), -1) }).reverse();
       corps = `<div class="grille g2"><section class="carte"><h2>À venir <button class="btn mini plus" data-a="nouvel-evt" data-equipe="${esc(id)}">+ Ajouter</button></h2>${agenda(av, false)}</section><section class="carte"><h2>3 dernières semaines</h2>${agenda(pa, false)}</section></div>`;
     }
+    if (onglet === "saison") corps = off ? pageSaison(off) : '<p class="vide">Pas encore de données officielles pour cette équipe.</p>';
     if (onglet === "presences") corps = matricePresences(id);
     if (onglet === "creneaux") corps = `<section class="carte"><h2>Créneaux d'entraînement hebdomadaires</h2><p class="aide" style="margin:-6px 0 12px">Les entraînements du calendrier sont créés à partir de ces créneaux, hors vacances scolaires. Une séance peut ensuite être annulée ou déplacée une par une.</p>
       ${C.creneaux(id).length ? `<ul class="taches">${C.creneaux(id).map((c) => `<li><span class="pt ok"></span><span class="tx"><b>${maj1(JOURS[c.jour])} · ${hh(c.heure)}</b> (${c.duree} min)<small>${esc(c.lieu)}</small></span><button class="btn mini" data-a="creneau" data-id="${esc(c.id)}">Modifier</button></li>`).join("")}</ul>` : '<p class="vide">Aucun créneau.</p>'}
@@ -494,6 +496,27 @@
 
   /* ---------- licenciés ---------- */
   let filtres = { q: "", equipe: "", licence: "", certif: "" };
+  // Onglet Classement : classement de chaque poule (recalculé d'après les résultats), matchs de l'équipe et des adversaires
+  function pageSaison(off) {
+    const score = (m) => m.statut === "withdrawal" ? '<span class="etiq att">Forfait</span>' : m.statut === "postponed" ? '<span class="etiq att">Reporté</span>'
+      : m.score_dom != null && m.score_ext != null ? `<b>${m.score_dom} – ${m.score_ext}</b>` : hh(m.heure || "") || "";
+    const issue = (m) => { if (m.statut !== "finish" || m.score_dom == null || m.esga_id == null) return "";
+      const p = m.a_domicile ? m.score_dom : m.score_ext, c = m.a_domicile ? m.score_ext : m.score_dom;
+      return p > c ? '<span class="etiq ok">V</span>' : p < c ? '<span class="etiq ko">D</span>' : '<span class="etiq or">N</span>'; };
+    const nom = (m, cote) => m.a_domicile === (cote === "dom") ? `<b>${esc(cote === "dom" ? m.domicile : m.exterieur)}</b>` : esc(cote === "dom" ? m.domicile : m.exterieur);
+    const ligne = (m) => `<tr data-lien="${esc(m.url || "")}"><td class="num">${fmt(m.date, { day: "numeric", month: "numeric" })}</td><td class="rencontre">${nom(m, "dom")} <span class="sc">${score(m)}</span> ${nom(m, "ext")}</td><td class="c">${issue(m)}</td></tr>`;
+    const table = (l, vide) => l.length ? `<div class="table-wrap"><table class="liste saison"><tbody>${l.map(ligne).join("")}</tbody></table></div>` : `<p class="vide">${vide}</p>`;
+    const joues = off.matchs.filter((m) => m.statut !== "to_come").reverse(), avenir = off.matchs.filter((m) => m.statut === "to_come");
+    const classement = (p) => `<section class="carte"><h2>${esc(p.nom)}</h2><div class="table-wrap"><table class="liste saison"><thead><tr><th>#</th><th>Équipe</th><th class="c">Pts</th><th class="c cache-m">J</th><th class="c cache-m">V</th><th class="c cache-m">N</th><th class="c cache-m">D</th><th class="c cache-m">BP</th><th class="c cache-m">BC</th><th class="c">Diff</th></tr></thead><tbody>
+      ${p.classement.map((l) => `<tr${l.esga ? ' class="moi"' : ""}><td class="num">${l.rang}</td><td class="nom">${l.esga ? "<b>" + esc(l.nom) + "</b>" : esc(l.nom)}</td><td class="c"><b>${l.pts}</b></td><td class="c cache-m">${l.j}</td><td class="c cache-m">${l.v}</td><td class="c cache-m">${l.n}</td><td class="c cache-m">${l.d}</td><td class="c cache-m">${l.bp}</td><td class="c cache-m">${l.bc}</td><td class="c">${l.diff > 0 ? "+" : ""}${l.diff}</td></tr>`).join("")}
+      </tbody></table></div>
+      <details class="autres"><summary>Matchs des autres équipes de la poule</summary>${(() => { const a = off.autres(p.id), j = a.filter((m) => m.statut !== "to_come").reverse().slice(0, 12), v = a.filter((m) => m.statut === "to_come").slice(0, 12);
+        return `<h3>Derniers résultats</h3>${table(j, "Aucun résultat.")}<h3>Prochains matchs</h3>${table(v, "Aucun match prévu.")}`; })()}</details></section>`;
+    return (off.poules.length ? off.poules.map(classement).join("") : '<p class="vide">Pas de championnat suivi pour cette équipe (coupes ou plateaux seulement).</p>')
+      + `<div class="grille g2"><section class="carte"><h2>Prochains matchs</h2>${table(avenir, "Aucun match prévu.")}</section><section class="carte"><h2>Résultats</h2>${table(joues, "Aucun match joué.")}</section></div>
+      <p class="aide">Source : Scorenco, mis à jour chaque lundi (dernière lecture ${fmt(off.maj.slice(0, 10), { day: "numeric", month: "long" })}). Classement recalculé d'après les résultats (3 points la victoire, 1 le nul), hors pénalités éventuelles du District.</p>`;
+  }
+
   function tableJoueurs(js, { equipe = true } = {}) {
     if (!js.length) return `<p class="vide">Aucun joueur ne correspond.</p>`;
     return `<div class="table-wrap"><table class="liste"><thead><tr><th>N°</th><th>Nom</th>${equipe ? "<th>Équipe</th>" : ""}<th class="cache-m">Poste</th><th class="cache-m">Âge</th><th>Licence</th><th>Certificat</th><th class="cache-m">Présence</th><th class="cache-m" title="Buts">⚽</th><th class="cache-m" title="Passes décisives">PD</th><th class="cache-m">Contact</th></tr></thead><tbody>
@@ -1056,6 +1079,7 @@
 
   /* ---------- événements ---------- */
   document.addEventListener("click", (ev) => {
+    const l = ev.target.closest("tr[data-lien]"); if (l && l.dataset.lien) { window.open(l.dataset.lien, "_blank", "noopener"); return; }
     const t = ev.target.closest("[data-a]"); if (!t) return;
     if (ev.target.closest("[data-stop]")) return;
     const a = t.dataset.a, id = t.dataset.id;

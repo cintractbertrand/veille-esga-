@@ -7,129 +7,20 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: calendrier
+  cancel-in-progress: false
+
 jobs:
   calendrier:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Récupérer les données Scorenco
-        run: |
-          python3 << 'PYEOF'
-          import json, urllib.request, sys, time
+      - name: Lire Scorenco (matchs, résultats, poules)
+        run: python3 outils/scorenco.py data/calendrier-scorenco.json
 
-          API = "https://graphql.scorenco.com/v1/graphql"
-          CLUB_ID = 128233
-
-          def gql(query, retries=3):
-              body = json.dumps({"query": query}).encode()
-              for attempt in range(retries):
-                  try:
-                      req = urllib.request.Request(API, body, {"Content-Type": "application/json"})
-                      with urllib.request.urlopen(req, timeout=30) as r:
-                          d = json.loads(r.read())
-                      if "errors" in d:
-                          print(f"  GraphQL error: {d['errors'][0]['message']}", file=sys.stderr)
-                          return None
-                      return d.get("data", {})
-                  except Exception as e:
-                      print(f"  Retry {attempt+1}: {e}", file=sys.stderr)
-                      time.sleep(2)
-              return None
-
-          print("== Équipes ==")
-          d = gql(f'{{ teams_team(where:{{club_id:{{_eq:{CLUB_ID}}}}}) {{ id name slug gender age_category rank number }} }}')
-          teams = d.get("teams_team", []) if d else []
-          print(f"{len(teams)} équipes")
-          if not teams:
-              sys.exit("Aucune équipe : on garde l'ancien fichier")
-
-          print("\n== Matchs ==")
-          EVENT_FIELDS = "id date time status teams url level_name level_in_season_id"
-          all_events = {}
-          for t in teams:
-              q = f'{{ teams_team_by_pk(id:{t["id"]}) {{ last_events {{ {EVENT_FIELDS} }} next_events {{ {EVENT_FIELDS} }} }} }}'
-              d = gql(q)
-              if not d:
-                  print(f"  {t['slug']}: erreur")
-                  continue
-              pk = d.get("teams_team_by_pk") or {}
-              last = pk.get("last_events") or []
-              nxt = pk.get("next_events") or []
-              for ev in last + nxt:
-                  all_events[ev["id"]] = ev
-              print(f"  {t['slug']}: {len(last)} passés + {len(nxt)} à venir")
-              time.sleep(0.1)
-
-          print("\n== Classements ==")
-          RANK_FIELDS = "rank pts played win lost even gf ga gd name_in_competition team_id club_id"
-          rankings = {}
-          for t in teams:
-              d = gql(f'{{ competitions_ranking_detail(where:{{team_id:{{_eq:{t["id"]}}}}}) {{ {RANK_FIELDS} }} }}')
-              rows = (d or {}).get("competitions_ranking_detail") or []
-              if rows:
-                  rankings[t["id"]] = rows[0]
-                  print(f"  {t['slug']}: {rows[0].get('rank')}e  {rows[0].get('pts')} pts")
-              time.sleep(0.1)
-
-          def heure(ev):
-              tm = ev.get("time") or ""
-              return tm.split("T")[1][:5] if "T" in tm else None
-
-          def parse_event(ev):
-              tt = ev.get("teams") or []
-              home = next((x for x in tt if x.get("role") == "home"), {})
-              away = next((x for x in tt if x.get("role") == "away"), {})
-              dom = home.get("club_id") == CLUB_ID
-              ext = away.get("club_id") == CLUB_ID
-              return {
-                  "id": ev.get("id"),
-                  "date": ev.get("date"),
-                  "heure": heure(ev),
-                  "statut": ev.get("status"),
-                  "competition": ev.get("level_name"),
-                  "domicile": home.get("name_in_competition", ""),
-                  "exterieur": away.get("name_in_competition", ""),
-                  "equipe_dom": home.get("name_in_club"),
-                  "equipe_ext": away.get("name_in_club"),
-                  "score_dom": home.get("score"),
-                  "score_ext": away.get("score"),
-                  "a_domicile": dom,
-                  "team_id_esga": home.get("team_id") if dom else (away.get("team_id") if ext else None),
-                  "url": "https://scorenco.com" + ev["url"] if ev.get("url") else None,
-              }
-
-          matchs = [parse_event(e) for e in sorted(all_events.values(), key=lambda e: (e.get("date") or "", e.get("time") or ""))]
-
-          equipes = []
-          for t in teams:
-              r = rankings.get(t["id"])
-              equipes.append({
-                  "id": t["id"],
-                  "slug": t["slug"],
-                  "nom": t["name"],
-                  "categorie": t.get("age_category"),
-                  "genre": t.get("gender"),
-                  "classement": {
-                      "rang": r.get("rank"), "pts": r.get("pts"), "j": r.get("played"),
-                      "v": r.get("win"), "n": r.get("even"), "d": r.get("lost"),
-                      "bp": r.get("gf"), "bc": r.get("ga"), "diff": r.get("gd"),
-                  } if r else None,
-              })
-
-          out = {
-              "source": "scorenco",
-              "club_id": CLUB_ID,
-              "maj": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-              "equipes": equipes,
-              "matchs": matchs,
-          }
-          with open("data/calendrier-scorenco.json", "w", encoding="utf-8") as f:
-              json.dump(out, f, ensure_ascii=False, indent=1)
-          print(f"\n{len(equipes)} équipes, {len(matchs)} matchs, {len(rankings)} classements")
-          PYEOF
-
-      - name: Commit et push
+      - name: Enregistrer
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

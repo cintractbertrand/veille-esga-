@@ -706,7 +706,23 @@
 
   // En ligne : on attend la première lecture (6 s au plus, sinon on part de la copie locale)
   const premier = NUAGE.actif ? Promise.race([NUAGE.tirer(), new Promise((r) => setTimeout(r, 6000))]) : null;
-  const pret = Promise.all([fetch(BASE + "data/matchs.json").then((r) => r.json()).catch(() => []), premier]).then(([m]) => { MATCHS = Array.isArray(m) ? m : []; presencesDemo(); return window.CLUB; });
+  // Saison officielle (data/calendrier-scorenco.json, mis à jour chaque lundi) : résultats, classements et matchs des poules
+  let SAISON_OFF = null;
+  function saisonOfficielle(eq) {
+    if (!SAISON_OFF) return null;
+    const mes = SAISON_OFF.equipes.filter((t) => t.equipe === eq), ids = mes.map((t) => t.id);
+    if (!ids.length) return null;
+    const lids = [...new Set(mes.flatMap((t) => t.poules))], matchs = SAISON_OFF.matchs.filter((m) => ids.includes(m.esga_id));
+    if (!matchs.length) return null;
+    return {
+      maj: SAISON_OFF.maj,
+      poules: lids.map((l) => Object.assign({ id: l }, SAISON_OFF.poules[l])).filter((p) => p.classement),
+      matchs,
+      autres: (l) => SAISON_OFF.matchs.filter((m) => String(m.poule) === String(l) && !ids.includes(m.esga_id)),
+    };
+  }
+  const json = (f, def) => fetch(BASE + "data/" + f).then((r) => r.ok ? r.json() : def).catch(() => def);
+  const pret = Promise.all([json("matchs.json", []), json("calendrier-scorenco.json", null), premier]).then(([m, s]) => { MATCHS = Array.isArray(m) ? m : []; SAISON_OFF = s && s.matchs ? s : null; presencesDemo(); return window.CLUB; });
 
   window.CLUB = {
     get mode() { return STOCKAGE.mode; }, bacASable: !!window.ESGA_BAC_A_SABLE, enLigne: NUAGE, BASE, SAISON, pret, LIEUX,
@@ -717,7 +733,7 @@
     presences: (evt) => D.presences[evt] || {}, dispos: (evt) => D.dispos[evt] || {}, setCovoit, covoiturage, meteo, matchsTest: (forcer) => { if (NUAGE.actif) return false; const ok = matchsTest(forcer); if (ok) sauver(); return ok; }, modeTest: window.ESGA_MODE_TEST, tauxPresence, categorieAge,
     enregistrer, supprimer, majClub, lot, modifierEvenement, setPresence, setDispo, publierConvocation,
     feuille: (evt) => D.feuilles[evt] || null, setFeuille, sondage: (evt) => D.sondages[evt] || null, lancerSondage, statsJoueur,
-    seance: (evt) => D.seances[evt] || null, setSeance,
+    seance: (evt) => D.seances[evt] || null, setSeance, saisonOfficielle,
     // Rappel « lancer le sondage le… » choisi par le coach (par défaut 7 jours avant le match)
     rappel: (evt) => D.rappels[evt] || null, setRappel: (evt, date) => { if (date) D.rappels[evt] = date; else delete D.rappels[evt]; sauver(); },
     video: (evt) => D.videos[evt] || null, setVideo, envoyerSequence, envois, envoi: (id) => D.envois.find((x) => x.id === id) || null, vuEnvoi, retirerEnvoi, voixEnvoi,
