@@ -107,6 +107,7 @@
       $("#menu").innerHTML = `<div class="profil"><b>${esc(C.nomProfil(profil))}</b><span>${esc(j ? C.nomEquipe(j.equipe) : "")}</span></div>
         <a href="#moi"${page === "moi" ? ' aria-current="page"' : ""}>${svg("accueil")}<span class="long">Mon espace</span><span class="court">Accueil</span></a>
         <a href="${URL_MOD.messagerie(j && j.equipe)}">${svg("messagerie")}<span class="long">Messagerie de l'équipe</span><span class="court">Messages</span></a>
+        <a href="guide.html#${profil.role}">${svg("accueil")}<span class="long">Guide de l'appli</span><span class="court">Guide</span></a>
         <a href="#bienvenue">${svg("equipes")}<span class="long">Changer de profil</span><span class="court">Profil</span></a>`;
       return;
     }
@@ -825,7 +826,7 @@
           ${N.actif ? `<p class="alerte info" style="margin-top:0"><b>En ligne.</b> Console, messagerie, Monteur, PV et Atelier partagent les mêmes données sur tous les appareils (mise à jour toutes les 15 s). Ce navigateur en garde une copie pour fonctionner sans réseau.</p>`
             : `<p class="alerte info" style="margin-top:0"><b>Mode démo.</b> Les données sont gardées dans ce navigateur. Entrez le code du club pour les partager avec tous les appareils.</p>`}
           ${blocCode()}
-          <div class="form"><div class="pied" style="justify-content:flex-start"><a class="btn" href="simulateur.html" title="Un match préparé de A à Z, joué tout seul sur des données de test">🧪 Simulateur de test</a><button class="btn" data-a="export-json">Sauvegarder (JSON)</button><button class="btn" data-a="import-json">Restaurer</button>${N.actif ? "" : '<button class="btn danger" data-a="raz">Remettre la démo à zéro</button>'}</div></div>
+          <div class="form"><div class="pied" style="justify-content:flex-start"><a class="btn" href="guide.html#affiche" title="Le guide par rôle et l'affiche à imprimer avec le QR code">📖 Guide et affiche QR</a><a class="btn" href="simulateur.html" title="Un match préparé de A à Z, joué tout seul sur des données de test">🧪 Simulateur de test</a><button class="btn" data-a="export-json">Sauvegarder (JSON)</button><button class="btn" data-a="import-json">Restaurer</button>${N.actif ? "" : '<button class="btn danger" data-a="raz">Remettre la démo à zéro</button>'}</div></div>
           <input type="file" id="fichierJSON" accept="application/json,.json" hidden>
           <p class="petit discret">Dernière modification : ${new Date(C.maj).toLocaleString("fr-FR")}</p></section>
       </div>`;
@@ -885,7 +886,7 @@
     if (!choix.role) return `<div class="bienvenue">${tete}<p class="bv-intro">Dites-nous qui vous êtes : l'application ne montre que ce qui vous concerne.</p>
       ${blocCode()}
       <div class="roles">${ROLES_ACCUEIL.filter(([k]) => !famillesSeules() || ["parent", "joueur"].includes(k)).map(([k, e, t, d]) => `<button class="role" data-a="role" data-v="${k}"><span class="emoji">${e}</span><b>${t}</b><span>${d}</span></button>`).join("")}</div>
-      <p class="discret petit">${N.actif ? "Vous pourrez changer de profil à tout moment." : "Démo : choisissez librement, vous pourrez changer à tout moment."}</p></div>`;
+      <p class="discret petit">${N.actif ? "Vous pourrez changer de profil à tout moment." : "Démo : choisissez librement, vous pourrez changer à tout moment."}</p><p class="petit"><a href="guide.html">📖 Première fois ? Le guide en 2 minutes</a></p></div>`;
     const retour = `<button class="btn lien" data-a="role" data-v="">‹ Retour</button>`;
     if (choix.role === "dirigeant") { // le nom sert à retrouver « depuis votre dernière visite » sur tous vos appareils
       const ds = C.staff().filter((x) => !["coach", "adjoint"].includes(x.role));
