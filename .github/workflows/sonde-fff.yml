@@ -1,0 +1,23 @@
+name: Sonde API FFF (temporaire)
+on:
+  push:
+    branches: [claude/project-thread-6c3uj4]
+    paths: [.github/workflows/sonde-fff.yml]
+jobs:
+  sonde:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for u in \
+            "https://api-dofa.fff.fr/api" \
+            "https://api-dofa.fff.fr/api/clubs/523341.json" \
+            "https://api-dofa.fff.fr/api/clubs/523341/equipes.json" \
+            "https://api-dofa.fff.fr/api/clubs/523341/calendrier.json" \
+            "https://api-dofa.fff.fr/api/engagements.json?club.cl_no=523341" \
+            "https://api-dofa.fff.fr/api/match_entities.json?clNo=523341" \
+            "https://epreuves.fff.fr/competition/club/523341-genas-azieu-e-s/information" \
+            ; do
+            echo "=================== $u"
+            curl -s -m 30 -A "veille-esga (GitHub Actions)" -o out -w "HTTP %{http_code} %{content_type}\n" "$u"
+            head -c 2500 out; echo
+          done
