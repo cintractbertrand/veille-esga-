@@ -1,0 +1,70 @@
+name: Veille PV District – ES Genas Azieu
+
+on:
+  schedule:
+    # Chaque jeudi à 17h UTC = 18h Paris (hiver) / 19h Paris (été)
+    - cron: "0 17 * * 4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: veille-pv
+  cancel-in-progress: false
+
+jobs:
+  veille:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer pdftotext et Python
+        run: |
+          sudo apt-get install -y poppler-utils
+          pip install requests
+
+      - name: Télécharger le dernier PV
+        id: telecharger
+        run: |
+          resultat=$(python3 outils/telecharger_pv.py)
+          echo "resultat=$resultat" >> "$GITHUB_OUTPUT"
+          action=$(echo "$resultat" | python3 -c "import json,sys; print(json.load(sys.stdin)['action'])")
+          echo "action=$action" >> "$GITHUB_OUTPUT"
+          if [ "$action" = "nouveau" ]; then
+            chemin=$(echo "$resultat" | python3 -c "import json,sys; print(json.load(sys.stdin)['chemin'])")
+            url=$(echo "$resultat" | python3 -c "import json,sys; print(json.load(sys.stdin)['url'])")
+            echo "chemin=$chemin" >> "$GITHUB_OUTPUT"
+            echo "url=$url" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extraire matchs, dossiers et sommaire
+        if: steps.telecharger.outputs.action == 'nouveau'
+        run: python3 outils/extraire_pv.py
+
+      - name: Enregistrer le PDF et les données extraites
+        if: steps.telecharger.outputs.action == 'nouveau'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pv-pdf/ data/matchs.json data/dossiers.json data/sommaire.json
+          if git diff --cached --quiet; then
+            echo "Pas de changement"
+          else
+            git commit -m "PV téléchargé automatiquement (jeudi)"
+            git push
+          fi
+
+      - name: Résultat
+        run: |
+          ACTION="${{ steps.telecharger.outputs.action }}"
+          if [ "$ACTION" = "nouveau" ]; then
+            echo "✅ Nouveau PDF téléchargé. La tâche Claude du jeudi soir générera les fiches pv.json."
+          elif [ "$ACTION" = "deja_present" ]; then
+            echo "ℹ️ Pas de nouveau PV cette semaine."
+          else
+            echo "⚠️ Erreur lors du téléchargement : ${{ steps.telecharger.outputs.resultat }}"
+            exit 1
+          fi
