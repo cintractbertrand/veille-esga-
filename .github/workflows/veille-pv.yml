@@ -2,8 +2,8 @@ name: Veille PV District – ES Genas Azieu
 
 on:
   schedule:
-    # Chaque jeudi à 17h UTC = 18h Paris (hiver) / 19h Paris (été)
-    - cron: "0 17 * * 4"
+    # Chaque jeudi à 16h UTC = 17h Paris (hiver) / 18h Paris (été)
+    - cron: "0 16 * * 4"
   workflow_dispatch:
 
 permissions:
@@ -29,9 +29,11 @@ jobs:
       - name: Télécharger le dernier PV
         id: telecharger
         run: |
-          resultat=$(python3 outils/telecharger_pv.py)
+          set +e
+          resultat=$(python3 outils/telecharger_pv.py 2>&1)
+          echo "Script output: $resultat"
           echo "resultat=$resultat" >> "$GITHUB_OUTPUT"
-          action=$(echo "$resultat" | python3 -c "import json,sys; print(json.load(sys.stdin)['action'])")
+          action=$(echo "$resultat" | python3 -c "import json,sys; print(json.load(sys.stdin).get('action','erreur'))" 2>/dev/null || echo "erreur")
           echo "action=$action" >> "$GITHUB_OUTPUT"
           if [ "$action" = "nouveau" ]; then
             chemin=$(echo "$resultat" | python3 -c "import json,sys; print(json.load(sys.stdin)['chemin'])")

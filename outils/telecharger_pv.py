@@ -63,8 +63,14 @@ def main():
         res = telecharger(url)
         print(json.dumps(res))
     except Exception as e:
-        print(json.dumps({"action": "erreur", "message": str(e)}))
-        sys.exit(1)
+        msg = str(e)
+        try:
+            if hasattr(e, 'response') and e.response is not None:
+                msg = f"HTTP {e.response.status_code} – {e.response.reason}"
+        except Exception:
+            pass
+        print(json.dumps({"action": "erreur", "message": msg}), flush=True)
+        sys.exit(0)  # sortie 0 : le workflow affiche l'erreur et s'arrête proprement
 
 
 if __name__ == "__main__":
