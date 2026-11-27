@@ -1971,7 +1971,7 @@
   "exterieur": "Ev.S. Genas Azieu 35",
   "a_domicile": false,
   "lieu": "Complexe Sportif Gil La Forêt à",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "79537701",
@@ -1985,7 +1985,7 @@
   "exterieur": "Ev.S. Genas Azieu 1",
   "a_domicile": false,
   "lieu": "Stade Municipal 2 à COLOMBIER",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "55684494",
@@ -1999,7 +1999,7 @@
   "exterieur": "C.F.F. 1968 2",
   "a_domicile": true,
   "lieu": "Stade Marcel Gonzales à GENAS",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "55675837",
@@ -2013,7 +2013,7 @@
   "exterieur": "Ev.S. Genas Azieu 2",
   "a_domicile": false,
   "lieu": "Stade De La Revole 2 à VILLETTE D",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "79546695",
@@ -2027,7 +2027,7 @@
   "exterieur": "As Saint Priest 2",
   "a_domicile": true,
   "lieu": "Stade Léon Garaud à GENAS",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "55796874",
@@ -2041,7 +2041,7 @@
   "exterieur": "Ev.S. Genas Azieu 1",
   "a_domicile": false,
   "lieu": "Stade Pierre Bavozet 1 à LYON",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "55677760",
@@ -2055,7 +2055,7 @@
   "exterieur": "Ev.S. Genas Azieu 3",
   "a_domicile": false,
   "lieu": "Stade Jean Jaurès à BRON",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "56077444",
@@ -2069,7 +2069,7 @@
   "exterieur": "Ev.S. Genas Azieu 1",
   "a_domicile": false,
   "lieu": "Stade Municipal 1 à VEZERONCE",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "79446439",
@@ -2083,7 +2083,7 @@
   "exterieur": "Ev.S. Genas Azieu 2",
   "a_domicile": false,
   "lieu": "Stade De Cambergères à",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "79546561",
@@ -2097,7 +2097,7 @@
   "exterieur": "Ev.S. Genas Azieu 4",
   "a_domicile": false,
   "lieu": "Stade Lucien Benoit à SATOLAS ET",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "55839402",
@@ -2111,12 +2111,12 @@
   "exterieur": "Ev.S. Genas Azieu 2",
   "a_domicile": false,
   "lieu": "Stade Des Iris 1 à VILLEURBANNE",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "55672981",
   "date": "2026-11-29",
-  "heure": "15:00",
+  "heure": "14:30",
   "competition": "Seniors D1",
   "poule": "Poule B",
   "categorie": "Seniors",
@@ -2125,7 +2125,7 @@
   "exterieur": "Ev.S. Genas Azieu 2",
   "a_domicile": false,
   "lieu": "Stade Pierre Berger à LIERGUES",
-  "pv": 766
+  "pv": 767
  },
  {
   "numero": "56077633",
@@ -2139,6 +2139,216 @@
   "exterieur": "Ev.S. Genas Azieu 1",
   "a_domicile": false,
   "lieu": "Plaine De Jeux Mager 1 à",
-  "pv": 766
+  "pv": 767
+ },
+ {
+  "numero": "79343170",
+  "date": "2026-12-04",
+  "heure": "20:45",
+  "competition": "Veterans",
+  "poule": "Poule F",
+  "categorie": "Vétérans",
+  "equipe": 35,
+  "domicile": "Ev.S. Genas Azieu 35",
+  "exterieur": "Foot Vet Col Saugn. 35",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 767
+ },
+ {
+  "numero": "55678170",
+  "date": "2026-12-05",
+  "heure": "12:30",
+  "competition": "U15 D3",
+  "poule": "Poule A",
+  "categorie": "U15",
+  "equipe": 2,
+  "domicile": "Am.Laiq. Mions 1",
+  "exterieur": "Ev.S. Genas Azieu 2",
+  "a_domicile": false,
+  "lieu": "Stade Des Tilleuls 2 à MIONS",
+  "pv": 767
+ },
+ {
+  "numero": "81641319",
+  "date": "2026-12-05",
+  "heure": "13:00",
+  "competition": "U15 D1",
+  "poule": "Poule Maintien B",
+  "categorie": "U15",
+  "equipe": 1,
+  "domicile": "Grand Ouest Associat 2",
+  "exterieur": "Ev.S. Genas Azieu 1",
+  "a_domicile": false,
+  "lieu": "Stade Ansolia à ANSE",
+  "pv": 767
+ },
+ {
+  "numero": "55796877",
+  "date": "2026-12-05",
+  "heure": "14:30",
+  "competition": "U17 D2",
+  "poule": "Poule A",
+  "categorie": "U17",
+  "equipe": 1,
+  "domicile": "Ev.S. Genas Azieu 1",
+  "exterieur": "Hte Brevenne F. 1",
+  "a_domicile": true,
+  "lieu": "Stade Léon Garaud à GENAS",
+  "pv": 767
+ },
+ {
+  "numero": "79537704",
+  "date": "2026-12-05",
+  "heure": "17:30",
+  "competition": "U20 D2",
+  "poule": "Poule C",
+  "categorie": "U20",
+  "equipe": 1,
+  "domicile": "C.S. Ozon 1",
+  "exterieur": "Ev.S. Genas Azieu 1",
+  "a_domicile": false,
+  "lieu": "Stade De La Plaine 2 à ST",
+  "pv": 767
+ },
+ {
+  "numero": "55684455",
+  "date": "2026-12-05",
+  "heure": "17:30",
+  "competition": "Féminines U18 D1 A 11",
+  "poule": "Poule Unique",
+  "categorie": "U18F",
+  "equipe": 2,
+  "domicile": "Gf2f 1",
+  "exterieur": "Ev.S. Genas Azieu 2",
+  "a_domicile": false,
+  "lieu": "Complexe Sportif Roger Marduel à",
+  "pv": 767
+ },
+ {
+  "numero": "55672989",
+  "date": "2026-12-05",
+  "heure": "18:00",
+  "competition": "Seniors D1",
+  "poule": "Poule B",
+  "categorie": "Seniors",
+  "equipe": 2,
+  "domicile": "Ev.S. Genas Azieu 2",
+  "exterieur": "F.C Point Jour 1",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 767
+ },
+ {
+  "numero": "55677762",
+  "date": "2026-12-05",
+  "heure": "18:00",
+  "competition": "Seniors D3",
+  "poule": "Poule E",
+  "categorie": "Seniors",
+  "equipe": 3,
+  "domicile": "Ev.S. Genas Azieu 3",
+  "exterieur": "C. S. Meginand 3",
+  "a_domicile": true,
+  "lieu": "Stade Marcel Gonzales à GENAS",
+  "pv": 767
+ },
+ {
+  "numero": "79376805",
+  "date": "2026-12-06",
+  "heure": "10:00",
+  "competition": "U17 D3",
+  "poule": "Poule A",
+  "categorie": "U17",
+  "equipe": 2,
+  "domicile": "Ev.S. Genas Azieu 2",
+  "exterieur": "Muroise F. St Bonnet 2",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 767
+ },
+ {
+  "numero": "79546564",
+  "date": "2026-12-06",
+  "heure": "10:00",
+  "competition": "U15 D4",
+  "poule": "Poule G",
+  "categorie": "U15",
+  "equipe": 4,
+  "domicile": "Sc Bron Terraillon F 3",
+  "exterieur": "Ev.S. Genas Azieu 4",
+  "a_domicile": false,
+  "lieu": "Stade Léo Lagrange à BRON",
+  "pv": 767
+ },
+ {
+  "numero": "81693821",
+  "date": "2026-12-06",
+  "heure": "12:30",
+  "competition": "Feminines U15 D2 A 11",
+  "poule": "Poule B Basse",
+  "categorie": "U15F",
+  "equipe": 2,
+  "domicile": "Ent. Ols Charly 1",
+  "exterieur": "Ev.S. Genas Azieu 2",
+  "a_domicile": false,
+  "lieu": "Stade Du Brotillon 2 à PIERRE",
+  "pv": 767
+ },
+ {
+  "numero": "56077636",
+  "date": "2026-12-06",
+  "heure": "13:00",
+  "competition": "U18 Feminin Regional 1",
+  "poule": "Poule Unique",
+  "categorie": "U18F",
+  "equipe": 1,
+  "domicile": "Ev.S. Genas Azieu 1",
+  "exterieur": "Andrezieux-Boutheon 1",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 767
+ },
+ {
+  "numero": "56129625",
+  "date": "2026-12-06",
+  "heure": "14:30",
+  "competition": "Seniors Regional 3",
+  "poule": "Poule I",
+  "categorie": "Seniors",
+  "equipe": 1,
+  "domicile": "Cot. Luenaz Fc 1",
+  "exterieur": "Ev.S. Genas Azieu 1",
+  "a_domicile": false,
+  "lieu": "Stade Les Gravelles 1 à LA BOISSE",
+  "pv": 767
+ },
+ {
+  "numero": "55839410",
+  "date": "2026-12-06",
+  "heure": "15:00",
+  "competition": "Fem Seniors D1 A 11 Ideal Pneu",
+  "poule": "Poule Unique",
+  "categorie": "Seniors F",
+  "equipe": 2,
+  "domicile": "Ev.S. Genas Azieu 2",
+  "exterieur": "Ev. De Lyon 1",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 767
+ },
+ {
+  "numero": "56077449",
+  "date": "2026-12-06",
+  "heure": "15:00",
+  "competition": "Feminin Regional 2",
+  "poule": "Poule B",
+  "categorie": "Seniors F",
+  "equipe": 1,
+  "domicile": "Ev.S. Genas Azieu 1",
+  "exterieur": "Riorges F.C. 1",
+  "a_domicile": true,
+  "lieu": "Stade Edmond Pouzet 1 à GENAS",
+  "pv": 767
  }
 ]
