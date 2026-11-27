@@ -24,7 +24,7 @@ jobs:
       - name: Installer pdftotext et Python
         run: |
           sudo apt-get install -y poppler-utils
-          pip install requests anthropic
+          pip install requests
 
       - name: Télécharger le dernier PV
         id: telecharger
@@ -40,44 +40,20 @@ jobs:
             echo "url=$url" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Analyser le PV avec Claude
-        if: steps.telecharger.outputs.action == 'nouveau'
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          python3 outils/analyser_pv.py \
-            "${{ steps.telecharger.outputs.chemin }}" \
-            "${{ steps.telecharger.outputs.url }}"
-
       - name: Extraire matchs, dossiers et sommaire
         if: steps.telecharger.outputs.action == 'nouveau'
         run: python3 outils/extraire_pv.py
 
-      - name: Vérifier le JSON
-        if: steps.telecharger.outputs.action == 'nouveau'
-        run: python3 -m json.tool data/pv.json > /dev/null
-
-      - name: Enregistrer
+      - name: Enregistrer le PDF et les données extraites
         if: steps.telecharger.outputs.action == 'nouveau'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Ajouter le PDF téléchargé et les données mises à jour
-          git add pv-pdf/ data/pv.json data/matchs.json data/dossiers.json data/sommaire.json
+          git add pv-pdf/ data/matchs.json data/dossiers.json data/sommaire.json
           if git diff --cached --quiet; then
             echo "Pas de changement"
           else
-            # Trouver le numéro du PV dans pv.json
-            NUMERO=$(python3 -c "import json; d=json.load(open('data/pv.json')); print(d['pvs'][0]['numero'])")
-            DATE_FR=$(python3 -c "
-          import json
-          from datetime import datetime
-          d = json.load(open('data/pv.json'))
-          dt = datetime.strptime(d['pvs'][0]['date'], '%Y-%m-%d')
-          mois = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.']
-          print(f\"{dt.day} {mois[dt.month-1]} {dt.year}\")
-          ")
-            git commit -m "PV n°${NUMERO} du ${DATE_FR} (automatique)"
+            git commit -m "PV téléchargé automatiquement (jeudi)"
             git push
           fi
 
@@ -85,7 +61,7 @@ jobs:
         run: |
           ACTION="${{ steps.telecharger.outputs.action }}"
           if [ "$ACTION" = "nouveau" ]; then
-            echo "✅ PV téléchargé et analysé avec succès."
+            echo "✅ Nouveau PDF téléchargé. La tâche Claude du jeudi soir générera les fiches pv.json."
           elif [ "$ACTION" = "deja_present" ]; then
             echo "ℹ️ Pas de nouveau PV cette semaine."
           else
