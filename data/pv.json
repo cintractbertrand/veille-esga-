@@ -4,14 +4,14 @@
     "nom_pv": "GENAS AZIEU E.S.",
     "numero": "523341"
   },
-  "mis_a_jour": "2026-11-26",
+  "mis_a_jour": "2026-11-27",
   "pvs": [
     {
       "numero": 767,
       "date": "2026-11-26",
       "url": "https://lyon-rhone.fff.fr/wp-content/uploads/sites/105/bsk-pdf-manager/70e6a7bc87f5420de7422ab54343b97b.pdf",
       "pages": 56,
-      "resume": "Deux convocations devant la Discipline le lundi 21 décembre : à 18h pour les incidents après le match U15F à Montchat, et à 19h pour les incidents après le match Seniors F à Saint-Priest. Le club n'est toujours pas à jour de règlement, à régulariser avant le 30 novembre. Lecture partielle (pages 1 à 26 sur 56) : le PDF n'a pas été déposé par le PC.",
+      "resume": "Deux convocations devant la Discipline le lundi 21 décembre : à 18h pour les incidents après le match U15F à Montchat, et à 19h pour les incidents après le match Seniors F à Saint-Priest. Le club n'est toujours pas à jour de règlement, à régulariser avant le 30 novembre. Fin du PV : 4 amendes pour 83,50 €, Genas accueille deux plateaux U11 et un plateau U7 le 28 novembre, et deux matchs U13 sont fixés au 5 décembre à 11h.",
       "items": [
         {
           "id": "767-1",
@@ -93,6 +93,98 @@
             }
           ],
           "page": 2
+        },
+        {
+          "id": "767-5",
+          "categorie": "U13",
+          "commission": "Football d'animation",
+          "type": "match",
+          "gravite": "attention",
+          "titre": "U13 : match en retard le 28/11 et deux horaires fixés le 5/12",
+          "detail": "Groupement Vallée du Rhône. Le match en retard de la poule C, La Revolée – Genas, se joue le samedi 28 novembre. Le 5 décembre, Genas 2 – Mions 2 (poule C) et Genas 5 – Loire 2 (poule H) se jouent à 11h. Rappel : en U13, l'arbitrage est assuré par le club qui reçoit (un bénévole licencié peut arbitrer).",
+          "echeances": [
+            {
+              "date": "2026-11-28",
+              "libelle": "U13 : La Revolée – Genas (match en retard)"
+            },
+            {
+              "date": "2026-12-05",
+              "heure": "11:00",
+              "libelle": "U13 : Genas 2 – Mions 2 et Genas 5 – Loire 2"
+            }
+          ],
+          "page": 52
+        },
+        {
+          "id": "767-6",
+          "categorie": "U11",
+          "commission": "Football d'animation",
+          "type": "match",
+          "gravite": "attention",
+          "titre": "U11 : Genas accueille deux plateaux le 28 novembre à 11h",
+          "detail": "Phase 2, journée 3. Genas 2 reçoit le plateau A2 (St Priest 1 et Chaponnay Marennes 1). Genas 1 reçoit le plateau A5 (Muroise St Bonnet de Mure 1 et Mions 1). Journée « spécial futsal extérieur » du 19 décembre : Genas 1 joue à St Priest (plateau A1, avec Muroise 1 et Colombier Satolas 1) et Genas 2 à Villette d'Anthon (plateau A4, avec Sud Lyonnais 1).",
+          "echeances": [
+            {
+              "date": "2026-11-28",
+              "heure": "11:00",
+              "libelle": "Plateaux U11 à Genas (A2 et A5)"
+            },
+            {
+              "date": "2026-12-19",
+              "heure": "11:00",
+              "libelle": "U11 futsal extérieur : Genas 1 à St Priest, Genas 2 à Villette d'Anthon"
+            }
+          ],
+          "page": 53
+        },
+        {
+          "id": "767-7",
+          "categorie": "U10",
+          "commission": "Football d'animation",
+          "type": "match",
+          "gravite": "info",
+          "titre": "U10 : plateaux du 28 novembre et du 19 décembre",
+          "detail": "28 novembre à 11h : Genas 2 joue à Pont de Chéruy (plateau E4, avec Chasse sur Rhône 1) et Genas 1 à l'Éveil de Lyon (plateau E6, avec Chasse sur Rhône 2). 19 décembre (futsal extérieur) : Genas 2 reçoit le plateau E1 (Villette d'Anthon 2 et Chaponnay Marennes 2), Genas 1 joue à Chasse sur Rhône (plateau E4, avec Éveil de Lyon 19).",
+          "echeances": [
+            {
+              "date": "2026-11-28",
+              "heure": "11:00",
+              "libelle": "U10 : Genas 2 à Pont de Chéruy, Genas 1 à l'Éveil de Lyon"
+            },
+            {
+              "date": "2026-12-19",
+              "heure": "11:00",
+              "libelle": "Plateau U10 à Genas (E1, futsal extérieur)"
+            }
+          ],
+          "page": 55
+        },
+        {
+          "id": "767-8",
+          "categorie": "U7",
+          "commission": "Commission U6/U7",
+          "type": "match",
+          "gravite": "info",
+          "titre": "U7 : plateau à Genas le 28 novembre, U6 à Diémoz",
+          "detail": "Le festi-foot U7 n°22 a lieu à Genas à 9h30 avec 10 équipes : Genas (2), La Verpillière (2), USEL (2, modification), Chaponnay Marennes (3) et Val d'Amby (1). Les U6 de Genas (1 équipe) jouent à Diémoz à 9h30. Le District confirme le retrait d'une équipe U6 et d'une équipe U7 : il reste 2 équipes U7 et 1 équipe U6.",
+          "echeances": [
+            {
+              "date": "2026-11-28",
+              "heure": "09:30",
+              "libelle": "Plateau U7 à Genas (festi-foot n°22)"
+            }
+          ],
+          "page": 57
+        },
+        {
+          "id": "767-9",
+          "categorie": "Club",
+          "commission": "Trésorerie",
+          "type": "tresorerie",
+          "gravite": "attention",
+          "titre": "4 amendes pour 83,50 €",
+          "detail": "Annexe « Dossiers par club » : feuille de match incomplète en Coupe U15 (match du 24/10, 20 €), feuille non signée en fin de match en Seniors D1 (14/11, 20 €), licence manquante en Vétérans (13/11, 10 €) et frais de délégation en Coupe Seniors (11/11, 33,50 €).",
+          "page": 146
         }
       ]
     },
